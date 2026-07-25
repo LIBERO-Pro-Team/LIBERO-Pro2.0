@@ -1,7 +1,7 @@
 # LIBERO-PRO Remote Evaluation Service
 
-> 状态：技术设计初稿（v0.1）  
-> 当前阶段：设计评审，暂未进入正式实现  
+> 状态：第一阶段可运行实现（v0.1）
+> 当前阶段：本地自动化测试已通过，等待 Linux/NVIDIA 服务器真实 LIBERO 验收
 
 ## 1. 当前任务
 
@@ -13,7 +13,123 @@
 - 服务端执行 action，推进环境并返回下一步 observation、reward、终止状态和成功状态。
 - 客户端保持接近 Gym 环境的调用体验，只需要使用 `reset()`、`step()` 和 `close()`。
 
-当前第一项交付物是本设计文档。设计评审通过以后，再按照本文路线开始实现。
+仓库已经实现第一阶段的协议、独立环境 worker、session 生命周期、HTTP 服务和
+Python 客户端。当前代码可以使用确定性的 `fake` 后端完成本地端到端验证；上传到
+Linux/NVIDIA 服务器后，切换为默认的 `libero` 后端进行真实 MuJoCo/EGL 验收。
+
+## 快速验证
+
+开发环境使用 Python 3.8，以保持与 LIBERO-PRO 的运行环境一致：
+
+```bash
+python3.8 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+
+LIBERO_REMOTE_BACKEND=fake \
+LIBERO_REMOTE_HOST=0.0.0.0 \
+libero-remote-server
+```
+
+另一个终端执行：
+
+```bash
+curl http://127.0.0.1:8000/v1/health
+python scripts/server_smoke_test.py --base-url http://127.0.0.1:8000
+```
+
+`fake` 后端不依赖 LIBERO、MuJoCo 或 GPU，只用于验证网络、数组编解码、请求顺序和
+资源清理，不能替代真实评测结果。
+
+## 服务器部署
+
+首个真实部署建议直接在 Linux GPU 服务器上构建。服务器需要 Docker、NVIDIA 驱动和
+NVIDIA Container Toolkit；客户端机器只需要 Python 包，不需要安装 LIBERO 或 MuJoCo。
+
+```bash
+git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+cd LIBERO-Pro2.0
+cp .env.example .env
+docker compose build
+docker compose up -d
+docker compose ps
+docker compose logs -f libero-remote
+```
+
+镜像固定拉取 `LIBERO-PRO` 的 commit
+`eafdb809426b13153aa1e4c42d6601844217dfec`，并安装 Python 3.8、CUDA 11.3 对应的
+PyTorch、robosuite、MuJoCo 和本服务。基础四个 suite 的 BDDL/init state 随该 commit
+进入镜像；Hugging Face 上的扰动数据属于第二阶段，不在第一阶段加载。
+
+启动后先检查廉价就绪探针：
+
+```bash
+curl http://SERVER_IP:8000/v1/health
+curl http://SERVER_IP:8000/v1/tasks
+```
+
+再从另一台机器运行一次真实环境 smoke test：
+
+```bash
+git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+cd LIBERO-Pro2.0
+python3.8 -m venv .venv
+source .venv/bin/activate
+python -m pip install .
+python scripts/server_smoke_test.py --base-url http://SERVER_IP:8000
+```
+
+smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它通过，才能说明
+服务器上的 LIBERO 数据、MuJoCo、EGL、NVIDIA runtime 和 session 清理链路同时可用。
+
+### 部署约束
+
+- 第一阶段没有鉴权和限流，只能放在可信内网、VPN 或 SSH 隧道后，不能直接暴露公网。
+- Uvicorn 必须保持单 API 进程。每个 session 已有独立 `spawn` worker，不能再用多个
+  Uvicorn worker 分割内存中的 session registry。
+- `LIBERO_REMOTE_MAX_SESSIONS` 默认是 `1`；提高前先测量单环境 GPU 显存和主存。
+- `step` 超时后不要生成新 `request_id` 盲目重试；用原 `request_id` 安全重放。
+- `/v1/health` 只检查进程、基础数据目录和容量；真实渲染是否可用由 smoke test 验证。
+
+### 主要配置
+
+| 环境变量 | 默认值 | 作用 |
+| --- | ---: | --- |
+| `LIBERO_REMOTE_PUBLIC_PORT` | `8000` | Compose 暴露的服务器端口 |
+| `LIBERO_REMOTE_MAX_SESSIONS` | `1` | 同时占用环境资源的 session 上限 |
+| `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | `120` | 单次 worker 命令超时；超时后 worker 被终止 |
+| `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | `900` | session 空闲回收时间 |
+| `LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS` | `30` | 后台扫描空闲 session 的间隔 |
+| `NVIDIA_VISIBLE_DEVICES` | `all` | 容器可见 GPU；生产环境建议指定设备 |
+| `LIBERO_PRO_COMMIT` | 固定 commit | 构建时使用的 LIBERO-PRO 版本 |
+
+## 代码作用
+
+| 路径 | 作用 |
+| --- | --- |
+| `libero_remote/protocol/models.py` | 定义协议版本、请求字段、状态和稳定错误码 |
+| `libero_remote/protocol/codec.py` | 用 MessagePack 无损编解码 NumPy dtype、shape 和原始字节 |
+| `libero_remote/environment/` | 统一真实 LIBERO 与测试后端的 `create/reset/step/close` 接口 |
+| `libero_remote/environment/libero.py` | 查找 suite/task/init state 并包装 `OffScreenRenderEnv` |
+| `libero_remote/environment/observations.py` | 白名单化并规范两路图像和机器人本体状态 |
+| `libero_remote/environment/readiness.py` | 不初始化 MuJoCo 的后端与基础数据就绪检查 |
+| `libero_remote/worker/process.py` | 用 `spawn` 子进程隔离 MuJoCo/EGL，并处理超时和强制回收 |
+| `libero_remote/server/session.py` | 保存单个 session 的 episode、step、锁和幂等缓存 |
+| `libero_remote/server/session_manager.py` | 管理容量、顺序、幂等、失败、空闲过期和全局关闭 |
+| `libero_remote/server/app.py` | FastAPI 路由、MessagePack 响应、错误映射和后台清理任务 |
+| `libero_remote/server/settings.py` | 将环境变量转换为经过校验的服务配置 |
+| `libero_remote/client/` | 提供 Gym 风格客户端、HTTP 连接复用和稳定异常类型 |
+| `scripts/server_smoke_test.py` | 从客户端机器验证真实服务器完整交互链路 |
+| `Dockerfile` / `compose.yaml` | 固定服务器依赖并以单 API 进程、GPU/EGL 模式启动 |
+| `tests/` | 覆盖协议、worker 状态保持、session 幂等/回收和端到端调用 |
+
+## 开发质量检查
+
+```bash
+python -m pytest -q
+python -m mypy libero_remote
+python -m ruff check libero_remote tests scripts
+```
 
 ## 2. 背景
 
@@ -77,7 +193,8 @@ flowchart LR
     M["用户本地 VLA 模型"] --> C["RemoteLiberoEnv 客户端"]
     C -->|"HTTP + MessagePack"| T["传输适配器"]
     T --> S["SessionManager"]
-    S --> F["EnvironmentFactory"]
+    S --> W["独立 EnvWorker 进程"]
+    W --> F["EnvironmentFactory"]
     F --> E["OffScreenRenderEnv"]
     E --> U["LIBERO / MuJoCo"]
     E --> O["ObservationCodec"]
@@ -94,6 +211,7 @@ flowchart LR
 | `RemoteLiberoEnv` | 向模型代码提供类似 Gym 的客户端接口 |
 | 传输适配器 | 校验 HTTP 请求，将请求交给会话模块，并编码响应 |
 | `SessionManager` | 管理环境生命周期、调用顺序、超时和资源释放 |
+| `EnvWorker` | 在独立 spawn 进程中隔离 MuJoCo/EGL 环境和故障 |
 | `EnvironmentFactory` | 根据 task 描述创建并初始化 LIBERO 环境 |
 | `ObservationCodec` | 筛选 observation 字段并编解码 NumPy 数组 |
 | `TaskCatalog` | 枚举允许调用的 suite、task 和 action/observation 元数据 |
@@ -314,7 +432,8 @@ CREATING -> READY -> RUNNING -> TERMINATED
 - 进程退出时关闭全部环境。
 - 响应日志记录 suite、task、step、耗时和结果，但不记录完整图像。
 
-第一阶段可以在服务进程内保存单个环境。并发阶段再将环境放入独立 worker 进程，隔离 MuJoCo 渲染上下文和单个环境崩溃。
+当前实现从第一阶段开始就为每个 session 启动独立 `spawn` worker。FastAPI 进程只保存
+session 元数据、进程句柄和请求缓存，不直接导入或持有 MuJoCo 环境。
 
 ## 11. 与现有 LIBERO-PRO 的连接方式
 

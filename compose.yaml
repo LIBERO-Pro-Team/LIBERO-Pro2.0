@@ -1,0 +1,32 @@
+services:
+  libero-remote:
+    build:
+      context: .
+      args:
+        LIBERO_PRO_REPOSITORY: ${LIBERO_PRO_REPOSITORY:-https://github.com/Zxy-MLlab/LIBERO-PRO.git}
+        LIBERO_PRO_COMMIT: ${LIBERO_PRO_COMMIT:-eafdb809426b13153aa1e4c42d6601844217dfec}
+    image: libero-pro-remote:${LIBERO_REMOTE_IMAGE_TAG:-local}
+    restart: unless-stopped
+    ports:
+      - "${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
+    environment:
+      LIBERO_REMOTE_BACKEND: libero
+      LIBERO_REMOTE_HOST: 0.0.0.0
+      LIBERO_REMOTE_PORT: 8000
+      LIBERO_REMOTE_MAX_SESSIONS: ${LIBERO_REMOTE_MAX_SESSIONS:-1}
+      LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS: ${LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS:-120}
+      LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS: ${LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS:-900}
+      LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS: ${LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS:-30}
+      LIBERO_REMOTE_LOG_LEVEL: ${LIBERO_REMOTE_LOG_LEVEL:-info}
+      MUJOCO_GL: egl
+      PYOPENGL_PLATFORM: egl
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    stop_grace_period: 30s
