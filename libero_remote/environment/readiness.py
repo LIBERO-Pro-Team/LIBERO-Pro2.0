@@ -24,9 +24,15 @@ def check_backend_readiness(backend: str) -> Dict[str, Any]:
             "reason": "libero_package_not_found",
         }
 
+    configured_bddl_root = os.environ.get("LIBERO_REMOTE_BDDL_ROOT")
+    bddl_root = (
+        Path(configured_bddl_root).resolve()
+        if configured_bddl_root
+        else package_root / "bddl_files"
+    )
     required_paths = [
         package_root / "assets",
-        *(package_root / "bddl_files" / suite for suite in _base_suites()),
+        *(bddl_root / suite for suite in _base_suites()),
         *(package_root / "init_files" / suite for suite in _base_suites()),
     ]
     missing = [str(path) for path in required_paths if not path.is_dir()]
@@ -34,6 +40,7 @@ def check_backend_readiness(backend: str) -> Dict[str, Any]:
         "name": backend,
         "ready": not missing,
         "package_root": str(package_root),
+        "bddl_root": str(bddl_root),
     }
     if missing:
         result["reason"] = "required_data_missing"

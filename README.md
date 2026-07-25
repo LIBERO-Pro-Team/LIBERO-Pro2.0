@@ -58,8 +58,10 @@ docker compose logs -f libero-remote
 
 镜像固定拉取 `LIBERO-PRO` 的 commit
 `eafdb809426b13153aa1e4c42d6601844217dfec`，并安装 Python 3.8、CUDA 11.3 对应的
-PyTorch、robosuite、MuJoCo 和本服务。基础四个 suite 的 BDDL/init state 随该 commit
-进入镜像；Hugging Face 上的扰动数据属于第二阶段，不在第一阶段加载。
+PyTorch、robosuite、MuJoCo 和本服务。八类 LIBERO-PRO BDDL 已统一保存在
+`assets/bddl/` 并进入镜像；第一阶段的 `base` 请求固定加载
+`assets/bddl/00_original/bddl`，其余七类由后续 variant 路由接入。init state 仍从固定的
+LIBERO-PRO commit 加载。
 
 启动后先检查廉价就绪探针：
 
@@ -100,6 +102,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | `120` | 单次 worker 命令超时；超时后 worker 被终止 |
 | `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | `900` | session 空闲回收时间 |
 | `LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS` | `30` | 后台扫描空闲 session 的间隔 |
+| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/00_original/bddl` | 服务端当前使用的 BDDL 根目录；必须包含四个 suite 子目录 |
 | `NVIDIA_VISIBLE_DEVICES` | `all` | 容器可见 GPU；生产环境建议指定设备 |
 | `LIBERO_PRO_COMMIT` | 固定 commit | 构建时使用的 LIBERO-PRO 版本 |
 
@@ -113,6 +116,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `libero_remote/environment/libero.py` | 查找 suite/task/init state 并包装 `OffScreenRenderEnv` |
 | `libero_remote/environment/observations.py` | 白名单化并规范两路图像和机器人本体状态 |
 | `libero_remote/environment/readiness.py` | 不初始化 MuJoCo 的后端与基础数据就绪检查 |
+| `assets/bddl/` | 集中保存原始任务和七类扰动任务的 320 个正式 BDDL |
 | `libero_remote/worker/process.py` | 用 `spawn` 子进程隔离 MuJoCo/EGL，并处理超时和强制回收 |
 | `libero_remote/server/session.py` | 保存单个 session 的 episode、step、锁和幂等缓存 |
 | `libero_remote/server/session_manager.py` | 管理容量、顺序、幂等、失败、空闲过期和全局关闭 |

@@ -9,6 +9,7 @@ ENV LANG=C.UTF-8 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     LIBERO_PRO_ROOT=/opt/libero-pro \
+    LIBERO_REMOTE_BDDL_ROOT=/opt/libero-remote/assets/bddl/00_original/bddl \
     LIBERO_CONFIG_PATH=/root/.libero \
     MUJOCO_GL=egl \
     PYOPENGL_PLATFORM=egl \
@@ -52,11 +53,12 @@ RUN git clone "${LIBERO_PRO_REPOSITORY}" "${LIBERO_PRO_ROOT}" \
 WORKDIR /opt/libero-remote
 COPY pyproject.toml README.md ./
 COPY libero_remote ./libero_remote
+COPY assets ./assets
 RUN python3.8 -m pip install . \
     && mkdir -p "${LIBERO_CONFIG_PATH}" \
     && printf '%s\n' \
         "assets: ${LIBERO_PRO_ROOT}/libero/libero/assets" \
-        "bddl_files: ${LIBERO_PRO_ROOT}/libero/libero/bddl_files" \
+        "bddl_files: ${LIBERO_REMOTE_BDDL_ROOT}" \
         "benchmark_root: ${LIBERO_PRO_ROOT}/libero/libero" \
         "datasets: ${LIBERO_PRO_ROOT}/libero/datasets" \
         "init_states: ${LIBERO_PRO_ROOT}/libero/libero/init_files" \

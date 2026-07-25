@@ -2,6 +2,7 @@
 
 import os
 import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -46,7 +47,9 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
 
         try:
             self._env = OffScreenRenderEnv(
-                bddl_file_name=self._suite.get_task_bddl_file_path(task_id),
+                bddl_file_name=_resolve_task_bddl_file(
+                    self._suite, self._task, task_id
+                ),
                 camera_names=self._camera_names,
                 camera_heights=int(spec["camera_height"]),
                 camera_widths=int(spec["camera_width"]),
@@ -135,3 +138,19 @@ def _scalar_info(info: Any) -> Dict[str, Any]:
         elif isinstance(value, (str, bool, int, float)) or value is None:
             result[str(key)] = value
     return result
+
+
+def _resolve_task_bddl_file(suite: Any, task: Any, task_id: int) -> str:
+    configured_root = os.environ.get("LIBERO_REMOTE_BDDL_ROOT")
+    if not configured_root:
+        return str(suite.get_task_bddl_file_path(task_id))
+
+    root = Path(configured_root).resolve()
+    candidate = (root / str(task.problem_folder) / str(task.bddl_file)).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("Resolved BDDL path is outside LIBERO_REMOTE_BDDL_ROOT") from exc
+    if not candidate.is_file():
+        raise FileNotFoundError(f"Configured BDDL file does not exist: {candidate}")
+    return str(candidate)
