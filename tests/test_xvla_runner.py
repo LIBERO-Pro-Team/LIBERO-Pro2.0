@@ -5,11 +5,14 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from libero_remote.runner.report import build_run_manifest
 from libero_remote.runner.xvla import (
     EpisodeResult,
     EpisodeSpec,
+    RunManifest,
     XVLAPolicyAdapter,
     append_episode_result,
+    append_run_manifest,
     run_remote_episode,
     to_lerobot_libero_observation,
 )
@@ -164,12 +167,64 @@ def test_episode_results_are_appended_as_json_lines(tmp_path: Path) -> None:
     )
     second = EpisodeResult(**{**first.to_dict(), "episode_id": "ep_2"})
 
+    append_run_manifest(
+        output,
+        RunManifest(
+            created_at="2026-07-25T00:00:00+00:00",
+            protocol_version="1.0",
+            server={"runtime": {"service": {"commit": "a" * 40}}},
+            client={"repo": {"commit": "b" * 40}},
+            model={"sha256": "c" * 64},
+            evaluation={"suite": "libero_goal", "task_id": 0, "seed": 42},
+        ),
+    )
     append_episode_result(output, first)
     append_episode_result(output, second)
 
     records = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
-    assert [record["episode_id"] for record in records] == ["ep_1", "ep_2"]
-    assert records[0]["success"] is True
+    assert [record["record_type"] for record in records] == [
+        "run_manifest",
+        "episode_result",
+        "episode_result",
+    ]
+    assert all(record["report_schema_version"] == "1.0" for record in records)
+    assert records[0]["server"]["runtime"]["service"]["commit"] == "a" * 40
+    assert records[1]["episode_id"] == "ep_1"
+    assert records[2]["episode_id"] == "ep_2"
+    assert records[1]["success"] is True
+
+
+def test_run_manifest_captures_server_client_and_artifact_identity(tmp_path: Path) -> None:
+    model = tmp_path / "model"
+    tokenizer = tmp_path / "tokenizer"
+    model.mkdir()
+    tokenizer.mkdir()
+    (model / "config.json").write_text('{"model":"xvla"}', encoding="utf-8")
+    (model / "model.safetensors").write_bytes(b"weights")
+    (tokenizer / "tokenizer.json").write_text("{}", encoding="utf-8")
+    health = {
+        "status": "ok",
+        "version": "0.1.0",
+        "backend": {"name": "libero", "ready": True},
+        "runtime": {"service": {"commit": "a" * 40}},
+    }
+
+    manifest = build_run_manifest(
+        health=health,
+        repo_root=tmp_path,
+        lerobot_root=tmp_path,
+        model_path=model,
+        tokenizer_path=tokenizer,
+        evaluation={"suite": "libero_goal", "task_id": 0, "seed": 42},
+    )
+
+    assert manifest.protocol_version == "1.0"
+    assert manifest.server["runtime"]["service"]["commit"] == "a" * 40
+    assert set(manifest.client) == {"repo", "lerobot", "packages", "python", "os", "gpu"}
+    assert manifest.model["weights"]["file_count"] == 2
+    assert len(manifest.model["weights"]["sha256"]) == 64
+    assert manifest.model["tokenizer"]["file_count"] == 1
+    assert len(manifest.model["tokenizer"]["sha256"]) == 64
 
 
 def test_xvla_adapter_uses_lerobot_processing_order() -> None:

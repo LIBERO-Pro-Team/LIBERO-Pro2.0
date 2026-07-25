@@ -10,6 +10,8 @@ from typing import Any, Callable, Dict, Iterator
 
 import numpy as np
 
+REPORT_SCHEMA_VERSION = "1.0"
+
 
 @dataclass(frozen=True)
 class EpisodeSpec:
@@ -39,6 +41,19 @@ class EpisodeResult:
     truncated: bool
     started_at: str
     duration_seconds: float
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class RunManifest:
+    created_at: str
+    protocol_version: str
+    server: Dict[str, Any]
+    client: Dict[str, Any]
+    model: Dict[str, Any]
+    evaluation: Dict[str, Any]
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -167,9 +182,25 @@ class XVLAPolicyAdapter:
 def append_episode_result(path: Path, result: EpisodeResult) -> None:
     """Append one durable, independently parseable episode result."""
 
+    _append_report_record(path, "episode_result", result.to_dict())
+
+
+def append_run_manifest(path: Path, manifest: RunManifest) -> None:
+    """Append the reproducibility metadata for one evaluation invocation."""
+
+    _append_report_record(path, "run_manifest", manifest.to_dict())
+
+
+def _append_report_record(path: Path, record_type: str, payload: Dict[str, Any]) -> None:
+    record = {
+        "report_schema_version": REPORT_SCHEMA_VERSION,
+        "record_type": record_type,
+        **payload,
+    }
+
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as stream:
-        json.dump(result.to_dict(), stream, sort_keys=True)
+        json.dump(record, stream, sort_keys=True)
         stream.write("\n")
 
 

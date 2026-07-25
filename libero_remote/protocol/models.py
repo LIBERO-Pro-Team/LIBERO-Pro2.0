@@ -102,6 +102,10 @@ class ActionSchema(BaseModel):
     high: List[float]
     controller: str
     control_mode: Literal["relative", "absolute"]
+    translation_frame: Literal["world"]
+    rotation_frame: Literal["world"]
+    rotation_representation: Literal["axis_angle"]
+    gripper_semantics: Literal["negative_open_positive_close_zero_hold"]
     control_freq: int
     action_repeat: int = 1
 

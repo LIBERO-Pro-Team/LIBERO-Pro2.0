@@ -136,6 +136,7 @@ try {
     try {
         & wsl.exe -d $Distro -- env "PYTHONPATH=$pythonPath" $WslPython $runnerWsl `
             --base-url $baseUrl `
+            --lerobot-root $lerobotWsl `
             --model-path $modelWsl `
             --tokenizer-path $tokenizerWsl `
             --suite $Suite `

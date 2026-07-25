@@ -690,8 +690,10 @@ Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
 启动脚本先从 WSL 检查远程健康状态。若 `172.x.x.x:18082` 不可用，它会在 Windows 后台建立
 `WSL gateway:18082 -> server 127.0.0.1:8000` 的 SSH 隧道；只有由本次命令创建的隧道才会在评测结束后关闭。
 
-多 episode 运行时，第 `n` 个 episode 使用 `init_state_id + n` 和 `seed + n`。每个结果立即追加到
-`results/xvla_remote_eval.jsonl`，包含 task、seed、step 数、reward、success、结束原因和耗时。
+多 episode 运行时，第 `n` 个 episode 使用 `init_state_id + n` 和 `seed + n`。每次启动 runner 时，先向
+`results/xvla_remote_eval.jsonl` 追加一条 `run_manifest`，再逐 episode 追加 `episode_result`。两类记录都使用
+`report_schema_version="1.0"`。运行清单固化服务端 runtime、客户端与 LeRobot commit、Python/OS/GPU、模型及
+tokenizer 目录的 SHA-256，以及 suite、task、seed、步数和控制模式；episode 结果记录 reward、success、结束原因和耗时。
 
 主要文件职责：
 
@@ -700,8 +702,43 @@ Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
 | `libero_remote/runner/xvla.py` | observation 映射、LeRobot/xVLA 预处理与后处理、episode 循环、资源关闭、结果模型 |
 | `scripts/run_xvla_remote_eval.py` | WSL 中运行的命令行入口，加载一次模型并执行一个或多个 episode |
 | `scripts/Start-XvlaRemoteEval.ps1` | Windows 入口，检查/建立 SSH 隧道、转换 WSL 路径并启动 Python runner |
+| `libero_remote/runner/report.py` | 收集客户端/服务端运行环境并计算模型与 tokenizer 文件树哈希 |
 | `libero_remote/protocol/models.py` | 声明并校验 `relative` / `absolute` 控制模式 |
 | `libero_remote/environment/libero.py` | 服务器端设置 `controller.use_delta`，并返回与控制模式匹配的 action schema |
 | `tests/test_xvla_runner.py` | 验证 observation 映射、处理顺序、动作校验、session 清理和 JSONL 输出 |
 
-xVLA 必须使用 `control_mode="absolute"`。runner 会检查服务端返回的 action schema；旧服务若静默忽略该参数，评测会立即失败，不会用错误的动作语义继续运行。因此首次端到端测试前，需要先把本次协议和 LIBERO adapter 更新部署到服务器并重启 `libero-remote.service`。
+xVLA 必须使用 `control_mode="absolute"`。runner 会检查服务端返回的 action schema；旧服务若静默忽略该参数，评测会立即失败，不会用错误的动作语义继续运行。因此首次端到端测试前，需要先部署匹配版本。部署动作本身不自动启动服务；执行 smoke test、一致性验收或模型评测前，由操作者显式启动 `libero-remote.service`，测试结束后可再次停止。
+
+## 22. SOP 一致性验收与审计格式
+
+服务端审计日志采用单行 JSON，`audit_schema_version="1.0"`。当前覆盖 `session_created`、
+`session_reset`、`step_committed`、`step_replayed`、`step_rejected`、`worker_failed`、
+`session_expired`、`session_closed` 和 `environment_creation_failed`。日志只记录 session/episode/request 标识、
+step、action SHA-256、耗时、结果、错误码和清理原因，不记录完整 action 或 observation。
+
+SOP 第 8 节的三层验收由下面的命令执行。该命令需要在能够直接创建 LIBERO 环境的 Linux/NVIDIA 环境中运行；
+它同时连接已启动的远程服务，并用相同 task、init state、seed 和固定 action 序列创建一个独立本地环境：
+
+```bash
+python scripts/validate_local_remote_equivalence.py \
+  --base-url http://127.0.0.1:8000 \
+  --local-backend libero \
+  --suite libero_goal \
+  --task-id 0 \
+  --init-state-id 0 \
+  --seed 42 \
+  --control-mode relative \
+  --steps 10 \
+  --output results/local_remote_equivalence.json
+```
+
+未传 `--actions` 时使用固定的全零 `float32` action 序列；也可传入二维 JSON 数组。报告使用
+`equivalence_report_schema_version="1.0"`，记录 action 序列哈希和以下结果：
+
+1. MessagePack 往返后的键、dtype、shape、C-contiguous layout 和原始字节是否一致。
+2. 远程 observation 映射为 xVLA/LeRobot 输入后，五个源数组是否逐元素一致。
+3. 两个独立环境每一步的 reward、success、terminated/truncated、step index、状态误差，以及图像最大/平均绝对误差和不一致像素比例。
+
+真实环境首次验收默认要求图像逐像素一致。若硬件或渲染栈确实产生可解释差异，必须通过
+`--image-max-abs`、`--image-mean-abs` 和 `--image-mismatch-ratio` 显式声明阈值，并把阈值保留在报告中；
+不能在代码里静默放宽。`/v1/health` 仍只表示进程、依赖和数据目录就绪，不能替代 smoke test 或该一致性验收。

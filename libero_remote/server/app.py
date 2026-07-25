@@ -18,6 +18,7 @@ from libero_remote.protocol.models import (
 )
 
 from .errors import PlatformError
+from .runtime import collect_runtime_manifest
 from .session_manager import SessionManager
 from .settings import Settings
 
@@ -31,6 +32,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         request_cache_size=resolved.request_cache_size,
         session_idle_timeout_seconds=resolved.session_idle_timeout_seconds,
     )
+    runtime_manifest = collect_runtime_manifest()
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -82,6 +84,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
             "version": __version__,
             "backend": backend,
             "sessions": manager.capacity_snapshot(),
+            "runtime": runtime_manifest,
         }
         if not backend["ready"]:
             body["status"] = "not_ready"

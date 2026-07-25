@@ -1,4 +1,7 @@
+import json
+import logging
 import time
+from typing import Any
 
 import numpy as np
 from fastapi.testclient import TestClient
@@ -59,15 +62,32 @@ def test_health_reports_backend_readiness_and_capacity() -> None:
     with TestClient(app) as http_client:
         response = http_client.get("/v1/health")
 
+    payload = response.json()
+
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
-    assert response.json()["backend"] == {"name": "fake", "ready": True}
-    assert response.json()["sessions"] == {
+    assert payload["status"] == "ok"
+    assert payload["backend"] == {"name": "fake", "ready": True}
+    assert payload["sessions"] == {
         "active": 0,
         "capacity": 2,
         "available": 2,
         "by_status": {},
     }
+    assert set(payload["runtime"]) == {
+        "service",
+        "libero",
+        "packages",
+        "python",
+        "os",
+        "gpu",
+        "egl",
+    }
+    assert len(payload["runtime"]["service"]["commit"]) == 40
+    assert "robosuite" in payload["runtime"]["packages"]
+    assert "mujoco" in payload["runtime"]["packages"]
+    assert payload["runtime"]["python"]["version"]
+    assert "driver_version" in payload["runtime"]["gpu"]
+    assert "MUJOCO_GL" in payload["runtime"]["egl"]
 
 
 def test_task_catalog_advertises_supported_control_modes() -> None:
@@ -101,3 +121,44 @@ def test_lifespan_cleanup_expires_an_idle_session() -> None:
         assert response.status_code == 200
         assert response.json()["status"] == "expired"
         env.close()
+
+
+def test_server_emits_structured_audit_events(caplog: Any) -> None:
+    app = create_app(
+        Settings(
+            environment_backend="fake",
+            max_sessions=1,
+            worker_timeout_seconds=5.0,
+        )
+    )
+
+    audit_logger = logging.getLogger("libero_remote.audit")
+    audit_logger.addHandler(caplog.handler)
+    try:
+        with caplog.at_level(logging.INFO, logger="libero_remote.audit"):
+            with TestClient(app) as http_client:
+                env = RemoteLiberoEnv(base_url="http://testserver", http_client=http_client)
+                env.reset(camera_height=16, camera_width=16, max_steps=10)
+                env.step(np.array([0.25, 0.0], dtype=np.float32))
+                env.close()
+    finally:
+        audit_logger.removeHandler(caplog.handler)
+
+    events = [
+        json.loads(record.message)
+        for record in caplog.records
+        if record.name == "libero_remote.audit"
+    ]
+    by_name = {event["event"]: event for event in events}
+    committed = by_name["step_committed"]
+
+    assert {"session_created", "step_committed", "session_closed"} <= set(by_name)
+    assert committed["audit_schema_version"] == "1.0"
+    assert committed["request_id"].startswith("req_")
+    assert committed["expected_step_index"] == 0
+    assert committed["step_index"] == 0
+    assert len(committed["action_sha256"]) == 64
+    assert committed["server_step_seconds"] >= 0.0
+    assert committed["success"] is False
+    assert "action" not in committed
+    assert "observation" not in committed

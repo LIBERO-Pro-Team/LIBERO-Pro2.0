@@ -12,6 +12,8 @@ from libero_remote.runner import (
     EpisodeSpec,
     XVLAPolicyAdapter,
     append_episode_result,
+    append_run_manifest,
+    build_run_manifest,
     run_remote_episode,
 )
 
@@ -20,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://172.18.224.1:18082")
     parser.add_argument("--model-path", default="/mnt/d/models/xvla-libero")
+    parser.add_argument("--lerobot-root", default="/mnt/d/lerobot")
     parser.add_argument(
         "--tokenizer-path", default="/mnt/d/models/facebook-bart-large-tokenizer"
     )
@@ -45,6 +48,12 @@ def main() -> None:
     model_path = Path(args.model_path).expanduser().resolve()
     if not model_path.is_dir():
         raise SystemExit(f"xVLA model directory does not exist: {model_path}")
+    tokenizer_path = Path(args.tokenizer_path).expanduser().resolve()
+    if not tokenizer_path.is_dir():
+        raise SystemExit(f"tokenizer directory does not exist: {tokenizer_path}")
+    lerobot_root = Path(args.lerobot_root).expanduser().resolve()
+    if not lerobot_root.is_dir():
+        raise SystemExit(f"LeRobot directory does not exist: {lerobot_root}")
 
     health = read_health(args.base_url)
     if health.get("status") != "ok":
@@ -57,10 +66,29 @@ def main() -> None:
         )
 
     output = args.output or default_output_path()
+    repo_root = Path(__file__).resolve().parents[1]
+    manifest = build_run_manifest(
+        health=health,
+        repo_root=repo_root,
+        lerobot_root=lerobot_root,
+        model_path=model_path,
+        tokenizer_path=tokenizer_path,
+        evaluation={
+            "suite": args.suite,
+            "task_id": args.task_id,
+            "initial_init_state_id": args.init_state_id,
+            "episodes": args.episodes,
+            "initial_seed": args.seed,
+            "max_steps": args.max_steps,
+            "control_mode": "absolute",
+            "device": args.device,
+        },
+    )
+    append_run_manifest(output, manifest)
     policy = XVLAPolicyAdapter.load(
         str(model_path),
         device=args.device,
-        tokenizer_path=args.tokenizer_path,
+        tokenizer_path=str(tokenizer_path),
     )
     results = []
     for episode_index in range(args.episodes):

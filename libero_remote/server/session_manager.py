@@ -20,8 +20,9 @@ from libero_remote.protocol.models import (
 )
 from libero_remote.worker.process import EnvWorker, WorkerError, WorkerTimeoutError
 
+from .audit import emit_audit
 from .errors import PlatformError
-from .session import CachedStep, SessionRecord
+from .session import CachedError, CachedStep, SessionRecord
 
 _INACTIVE_STATUSES = {
     SessionStatus.CLOSED,
@@ -91,6 +92,17 @@ class SessionManager:
             worker.terminate()
             async with self._registry_lock:
                 self._sessions.pop(session_id, None)
+            emit_audit(
+                "environment_creation_failed",
+                session_id=session_id,
+                episode_id=episode_id,
+                worker_pid=worker.pid,
+                suite=request.suite,
+                task_id=request.task_id,
+                error_code=ErrorCode.ENVIRONMENT_CREATION_FAILED.value,
+                cause=str(error),
+                status=SessionStatus.FAILED.value,
+            )
             raise PlatformError(
                 ErrorCode.ENVIRONMENT_CREATION_FAILED,
                 "The environment could not be initialized",
@@ -103,7 +115,7 @@ class SessionManager:
         record.spec["_action_schema"] = created["action_schema"]
         record.spec["_session_metadata"] = {key: created[key] for key in _SESSION_METADATA_KEYS}
         record.last_committed = None
-        return {
+        response = {
             "protocol_version": PROTOCOL_VERSION,
             "session_id": session_id,
             "episode_id": episode_id,
@@ -113,17 +125,35 @@ class SessionManager:
             "task_id": request.task_id,
             **created,
         }
+        emit_audit(
+            "session_created",
+            session_id=session_id,
+            episode_id=episode_id,
+            worker_pid=worker.pid,
+            suite=request.suite,
+            task_id=request.task_id,
+            init_state_id=request.init_state_id,
+            seed=request.seed,
+            variant=request.variant,
+            control_mode=request.control_mode,
+            observation_schema_version=created["observation_schema_version"],
+            action_schema_version=created["action_schema"]["version"],
+            status=record.status.value,
+        )
+        return response
 
     async def reset(self, session_id: str, request: ResetRequest) -> Dict[str, Any]:
         record = self._get_record(session_id)
         async with record.lock:
             self._require_usable(record)
+            previous_episode_id = record.episode_id
             try:
                 reset = await _run_blocking(
                     record.worker.reset, request.init_state_id, request.seed
                 )
             except WorkerError as error:
-                self._fail_worker(record, error)
+                platform_error = self._mark_worker_failed(record, error, operation="reset")
+                raise platform_error from error
             record.episode_id = f"ep_{uuid.uuid4().hex}"
             record.next_step_index = 0
             record.cache.clear()
@@ -132,7 +162,7 @@ class SessionManager:
             record.last_activity_at = self._clock()
             record.spec["init_state_id"] = request.init_state_id
             record.spec["seed"] = request.seed
-            return {
+            response = {
                 "protocol_version": PROTOCOL_VERSION,
                 "session_id": record.session_id,
                 "episode_id": record.episode_id,
@@ -141,20 +171,40 @@ class SessionManager:
                 **record.spec["_session_metadata"],
                 **reset,
             }
+            emit_audit(
+                "session_reset",
+                session_id=record.session_id,
+                previous_episode_id=previous_episode_id,
+                episode_id=record.episode_id,
+                worker_pid=record.worker.pid,
+                suite=record.spec["suite"],
+                task_id=record.spec["task_id"],
+                init_state_id=request.init_state_id,
+                seed=request.seed,
+                status=record.status.value,
+            )
+            return response
 
     async def step(self, session_id: str, request: StepRequest) -> Dict[str, Any]:
         record = self._get_record(session_id)
         async with record.lock:
-            self._require_usable(record)
+            if record.status in {SessionStatus.CLOSED, SessionStatus.EXPIRED}:
+                try:
+                    self._require_usable(record, request.request_id)
+                except PlatformError as inactive_error:
+                    self._audit_step_rejected(record, request, inactive_error)
+                    raise
             if request.episode_id != record.episode_id:
-                raise PlatformError(
+                rejection = PlatformError(
                     ErrorCode.STALE_EPISODE,
                     "The step belongs to an inactive episode",
                     status_code=409,
                     request_id=request.request_id,
                 )
+                self._audit_step_rejected(record, request, rejection)
+                raise rejection
 
-            action = self._validate_action(record, request)
+            action = np.ascontiguousarray(request.action, dtype=np.float32)
             action_hash = hashlib.sha256(action.tobytes(order="C")).hexdigest()
             cached = record.cache.get(request.request_id)
             if cached is not None:
@@ -163,43 +213,92 @@ class SessionManager:
                     or cached.expected_step_index != request.expected_step_index
                     or cached.action_hash != action_hash
                 ):
-                    raise PlatformError(
+                    rejection = PlatformError(
                         ErrorCode.REQUEST_ID_CONFLICT,
                         "The request_id was already used with a different action",
                         status_code=409,
                         request_id=request.request_id,
                     )
+                    self._audit_step_rejected(record, request, rejection, action_hash)
+                    raise rejection
                 record.last_activity_at = self._clock()
-                return cached.response
+                emit_audit(
+                    "step_replayed",
+                    session_id=record.session_id,
+                    episode_id=record.episode_id,
+                    worker_pid=record.worker.pid,
+                    suite=record.spec["suite"],
+                    task_id=record.spec["task_id"],
+                    request_id=request.request_id,
+                    expected_step_index=request.expected_step_index,
+                    action_sha256=action_hash,
+                    cached_produced_at=cached.produced_at,
+                    cached_outcome="error" if cached.error is not None else "response",
+                    cached_error_code=(
+                        cached.error.code.value if cached.error is not None else None
+                    ),
+                    status=record.status.value,
+                )
+                return cached.replay()
+
+            try:
+                self._require_usable(record, request.request_id)
+            except PlatformError as unusable_error:
+                self._audit_step_rejected(record, request, unusable_error, action_hash)
+                raise
 
             if request.expected_step_index < record.next_step_index:
-                raise PlatformError(
+                rejection = PlatformError(
                     ErrorCode.DUPLICATE_OR_EXPIRED_STEP,
                     "The requested step has already been committed and is no longer cached",
                     status_code=409,
                     request_id=request.request_id,
                 )
+                self._cache_error(record, request, action_hash, rejection)
+                self._audit_step_rejected(record, request, rejection, action_hash)
+                raise rejection
             if request.expected_step_index > record.next_step_index:
-                raise PlatformError(
+                rejection = PlatformError(
                     ErrorCode.OUT_OF_ORDER_STEP,
                     "The requested step is ahead of the environment",
                     status_code=409,
                     request_id=request.request_id,
                 )
+                self._audit_step_rejected(record, request, rejection, action_hash)
+                raise rejection
             if record.status in {SessionStatus.TERMINATED, SessionStatus.TRUNCATED}:
-                raise PlatformError(
+                rejection = PlatformError(
                     ErrorCode.EPISODE_NOT_ACTIVE,
                     "Reset the session before sending another action",
                     status_code=409,
                     request_id=request.request_id,
                 )
+                self._cache_error(record, request, action_hash, rejection)
+                self._audit_step_rejected(record, request, rejection, action_hash)
+                raise rejection
+
+            try:
+                self._validate_action(record, request, action)
+            except PlatformError as invalid_action_error:
+                self._cache_error(record, request, action_hash, invalid_action_error)
+                self._audit_step_rejected(
+                    record, request, invalid_action_error, action_hash
+                )
+                raise
 
             record.status = SessionStatus.STEPPING
             started_at = time.perf_counter()
             try:
                 result = await _run_blocking(record.worker.step, action)
             except WorkerError as error:
-                self._fail_worker(record, error, request.request_id)
+                platform_error = self._mark_worker_failed(
+                    record, error, operation="step", request_id=request.request_id
+                )
+                self._cache_error(record, request, action_hash, platform_error)
+                self._audit_step_rejected(
+                    record, request, platform_error, action_hash
+                )
+                raise platform_error from error
 
             committed_index = record.next_step_index
             record.next_step_index += 1
@@ -220,16 +319,33 @@ class SessionManager:
                 "server_step_seconds": time.perf_counter() - started_at,
                 **result,
             }
+            emit_audit(
+                "step_committed",
+                session_id=record.session_id,
+                episode_id=record.episode_id,
+                worker_pid=record.worker.pid,
+                suite=record.spec["suite"],
+                task_id=record.spec["task_id"],
+                request_id=request.request_id,
+                expected_step_index=request.expected_step_index,
+                step_index=committed_index,
+                next_step_index=record.next_step_index,
+                action_sha256=action_hash,
+                server_step_seconds=response["server_step_seconds"],
+                reward=float(response["reward"]),
+                success=bool(response["success"]),
+                terminated=bool(response["terminated"]),
+                truncated=bool(response["truncated"]),
+                status=record.status.value,
+            )
             cached_step = CachedStep(
                 episode_id=record.episode_id,
                 expected_step_index=committed_index,
                 action_hash=action_hash,
+                produced_at=time.time(),
                 response=response,
             )
-            record.cache[request.request_id] = cached_step
-            record.cache.move_to_end(request.request_id)
-            while len(record.cache) > self._request_cache_size:
-                record.cache.popitem(last=False)
+            self._store_cache_entry(record, request.request_id, cached_step)
             record.last_committed = response
             record.last_activity_at = self._clock()
             return response
@@ -241,18 +357,31 @@ class SessionManager:
                 record.last_activity_at = self._clock()
             return record.snapshot()
 
-    async def close(self, session_id: str) -> None:
+    async def close(self, session_id: str, reason: str = "client_request") -> None:
         record = self._get_record(session_id)
         async with record.lock:
             if record.status == SessionStatus.CLOSED:
                 return
+            previous_status = record.status
             await _run_blocking(record.worker.close)
             record.status = SessionStatus.CLOSED
+            emit_audit(
+                "session_closed",
+                session_id=record.session_id,
+                episode_id=record.episode_id,
+                worker_pid=record.worker.pid,
+                suite=record.spec["suite"],
+                task_id=record.spec["task_id"],
+                next_step_index=record.next_step_index,
+                previous_status=previous_status.value,
+                close_reason=reason,
+                status=record.status.value,
+            )
 
     async def close_all(self) -> None:
         for session_id in list(self._sessions):
             try:
-                await self.close(session_id)
+                await self.close(session_id, reason="server_shutdown")
             except Exception:
                 pass
 
@@ -269,11 +398,26 @@ class SessionManager:
                     continue
                 if now - record.last_activity_at <= self._session_idle_timeout_seconds:
                     continue
+                idle_seconds = now - record.last_activity_at
+                close_succeeded = True
                 try:
                     await _run_blocking(record.worker.close)
                 except Exception:
+                    close_succeeded = False
                     record.worker.terminate()
                 record.status = SessionStatus.EXPIRED
+                emit_audit(
+                    "session_expired",
+                    session_id=record.session_id,
+                    episode_id=record.episode_id,
+                    worker_pid=record.worker.pid,
+                    suite=record.spec["suite"],
+                    task_id=record.spec["task_id"],
+                    next_step_index=record.next_step_index,
+                    idle_seconds=idle_seconds,
+                    close_succeeded=close_succeeded,
+                    status=record.status.value,
+                )
                 expired += 1
         return expired
 
@@ -312,16 +456,21 @@ class SessionManager:
         return record
 
     @staticmethod
-    def _require_usable(record: SessionRecord) -> None:
+    def _require_usable(
+        record: SessionRecord, request_id: Optional[str] = None
+    ) -> None:
         if record.status in _INACTIVE_STATUSES:
             raise PlatformError(
                 ErrorCode.SESSION_NOT_ACTIVE,
                 "The session can no longer execute environment operations",
                 status_code=410 if record.status == SessionStatus.EXPIRED else 409,
+                request_id=request_id,
             )
 
     @staticmethod
-    def _validate_action(record: SessionRecord, request: StepRequest) -> np.ndarray:
+    def _validate_action(
+        record: SessionRecord, request: StepRequest, action: np.ndarray
+    ) -> None:
         schema = record.last_committed.get("action_schema") if record.last_committed else None
         if schema is None:
             schema = getattr(record, "action_schema", None)
@@ -333,7 +482,6 @@ class SessionManager:
         if schema is None:
             raise PlatformError(ErrorCode.INTERNAL_ERROR, "Action schema is unavailable", 500)
 
-        action = np.ascontiguousarray(request.action, dtype=np.float32)
         expected_shape = tuple(schema["shape"])
         low = np.asarray(schema["low"], dtype=np.float32)
         high = np.asarray(schema["high"], dtype=np.float32)
@@ -351,12 +499,65 @@ class SessionManager:
                 status_code=400,
                 request_id=request.request_id,
             )
-        return action
+
+    def _cache_error(
+        self,
+        record: SessionRecord,
+        request: StepRequest,
+        action_hash: str,
+        error: PlatformError,
+    ) -> None:
+        self._store_cache_entry(
+            record,
+            request.request_id,
+            CachedStep(
+                episode_id=record.episode_id,
+                expected_step_index=request.expected_step_index,
+                action_hash=action_hash,
+                produced_at=time.time(),
+                error=CachedError.from_exception(error),
+            ),
+        )
+
+    def _store_cache_entry(
+        self, record: SessionRecord, request_id: str, entry: CachedStep
+    ) -> None:
+        record.cache[request_id] = entry
+        record.cache.move_to_end(request_id)
+        while len(record.cache) > self._request_cache_size:
+            record.cache.popitem(last=False)
 
     @staticmethod
-    def _fail_worker(
-        record: SessionRecord, error: WorkerError, request_id: Optional[str] = None
+    def _audit_step_rejected(
+        record: SessionRecord,
+        request: StepRequest,
+        error: PlatformError,
+        action_hash: Optional[str] = None,
     ) -> None:
+        emit_audit(
+            "step_rejected",
+            session_id=record.session_id,
+            episode_id=record.episode_id,
+            worker_pid=record.worker.pid,
+            suite=record.spec["suite"],
+            task_id=record.spec["task_id"],
+            request_id=request.request_id,
+            requested_episode_id=request.episode_id,
+            expected_step_index=request.expected_step_index,
+            next_step_index=record.next_step_index,
+            action_sha256=action_hash,
+            error_code=error.code.value,
+            status_code=error.status_code,
+            status=record.status.value,
+        )
+
+    @staticmethod
+    def _mark_worker_failed(
+        record: SessionRecord,
+        error: WorkerError,
+        operation: str,
+        request_id: Optional[str] = None,
+    ) -> PlatformError:
         record.worker.terminate()
         record.status = SessionStatus.FAILED
         code = (
@@ -364,13 +565,26 @@ class SessionManager:
             if isinstance(error, WorkerTimeoutError)
             else ErrorCode.WORKER_FAILED
         )
-        raise PlatformError(
+        emit_audit(
+            "worker_failed",
+            session_id=record.session_id,
+            episode_id=record.episode_id,
+            worker_pid=record.worker.pid,
+            suite=record.spec["suite"],
+            task_id=record.spec["task_id"],
+            request_id=request_id,
+            operation=operation,
+            error_code=code.value,
+            cause=str(error),
+            status=record.status.value,
+        )
+        return PlatformError(
             code,
             "The environment worker failed; the current episode cannot be resumed",
             status_code=500,
             request_id=request_id,
             details={"cause": str(error)},
-        ) from error
+        )
 
 
 async def _run_blocking(function: Any, *args: Any, **kwargs: Any) -> Any:
