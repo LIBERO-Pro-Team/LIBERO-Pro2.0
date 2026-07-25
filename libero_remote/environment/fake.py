@@ -34,6 +34,7 @@ class FakeEnvironmentAdapter(EnvironmentAdapter):
                     "low": [-1.0, -1.0],
                     "high": [1.0, 1.0],
                     "controller": "FAKE_DELTA",
+                    "control_mode": str(spec.get("control_mode", "relative")),
                     "control_freq": 20,
                     "action_repeat": 1,
                 },

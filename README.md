@@ -316,6 +316,7 @@ env.close()
   "init_state_id": 0,
   "seed": 42,
   "variant": "base",
+  "control_mode": "relative",
   "camera_names": ["agentview", "robot0_eye_in_hand"],
   "camera_height": 128,
   "camera_width": 128,
@@ -654,3 +655,53 @@ combined
 - 一份进入静态扰动阶段前的遗留问题清单。
 
 第一阶段的成功标准不是“功能很多”，而是用最小接口可靠打通远程 `reset/step/close`，证明 LIBERO-PRO 可以作为服务端评测环境运行。
+
+## 21. 本机 xVLA 远程评测 runner
+
+计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。
+
+本机默认路径：
+
+```text
+xVLA 模型: D:\models\xvla-libero
+BART tokenizer: D:\models\facebook-bart-large-tokenizer
+LeRobot: D:\lerobot
+WSL Python: /home/vla/venvs/lerobot-xvla312/bin/python
+```
+
+WSL 的 xVLA 环境需要远程客户端依赖：
+
+```powershell
+wsl.exe -d Ubuntu -- /home/vla/venvs/lerobot-xvla312/bin/python -m pip install "msgpack==1.0.8" "httpx==0.24.1"
+```
+
+从 PowerShell 一键启动：
+
+```powershell
+Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
+.\scripts\Start-XvlaRemoteEval.ps1 `
+  -Suite libero_goal `
+  -TaskId 0 `
+  -InitStateId 0 `
+  -Episodes 1 `
+  -MaxSteps 300
+```
+
+启动脚本先从 WSL 检查远程健康状态。若 `172.x.x.x:18082` 不可用，它会在 Windows 后台建立
+`WSL gateway:18082 -> server 127.0.0.1:8000` 的 SSH 隧道；只有由本次命令创建的隧道才会在评测结束后关闭。
+
+多 episode 运行时，第 `n` 个 episode 使用 `init_state_id + n` 和 `seed + n`。每个结果立即追加到
+`results/xvla_remote_eval.jsonl`，包含 task、seed、step 数、reward、success、结束原因和耗时。
+
+主要文件职责：
+
+| 文件 | 作用 |
+| --- | --- |
+| `libero_remote/runner/xvla.py` | observation 映射、LeRobot/xVLA 预处理与后处理、episode 循环、资源关闭、结果模型 |
+| `scripts/run_xvla_remote_eval.py` | WSL 中运行的命令行入口，加载一次模型并执行一个或多个 episode |
+| `scripts/Start-XvlaRemoteEval.ps1` | Windows 入口，检查/建立 SSH 隧道、转换 WSL 路径并启动 Python runner |
+| `libero_remote/protocol/models.py` | 声明并校验 `relative` / `absolute` 控制模式 |
+| `libero_remote/environment/libero.py` | 服务器端设置 `controller.use_delta`，并返回与控制模式匹配的 action schema |
+| `tests/test_xvla_runner.py` | 验证 observation 映射、处理顺序、动作校验、session 清理和 JSONL 输出 |
+
+xVLA 必须使用 `control_mode="absolute"`。runner 会检查服务端返回的 action schema；旧服务若静默忽略该参数，评测会立即失败，不会用错误的动作语义继续运行。因此首次端到端测试前，需要先把本次协议和 LIBERO adapter 更新部署到服务器并重启 `libero-remote.service`。

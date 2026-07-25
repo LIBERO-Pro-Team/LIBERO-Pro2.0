@@ -26,12 +26,14 @@ def test_client_can_reset_step_and_close_a_remote_environment() -> None:
             task_id=0,
             init_state_id=0,
             seed=42,
+            control_mode="absolute",
             camera_height=16,
             camera_width=16,
             max_steps=10,
         )
         assert observation["agentview_image"].shape == (16, 16, 3)
         assert info["language_instruction"] == "fake manipulation task"
+        assert info["action_schema"]["control_mode"] == "absolute"
 
         observation, reward, terminated, truncated, info = env.step(
             np.array([0.25, 0.0], dtype=np.float32)
@@ -66,6 +68,16 @@ def test_health_reports_backend_readiness_and_capacity() -> None:
         "available": 2,
         "by_status": {},
     }
+
+
+def test_task_catalog_advertises_supported_control_modes() -> None:
+    app = create_app(Settings(environment_backend="fake"))
+
+    with TestClient(app) as http_client:
+        response = http_client.get("/v1/tasks")
+
+    assert response.status_code == 200
+    assert response.json()["control_modes"] == ["relative", "absolute"]
 
 
 def test_lifespan_cleanup_expires_an_idle_session() -> None:

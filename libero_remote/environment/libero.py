@@ -3,7 +3,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -22,6 +22,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         self._camera_names: List[str] = []
         self._max_steps = 0
         self._step_index = 0
+        self._control_mode = "relative"
 
     def create(self, spec: Dict[str, Any]) -> Dict[str, Any]:
         self._configure_import_path()
@@ -44,6 +45,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         self._init_states = self._suite.get_task_init_states(task_id)
         self._camera_names = list(spec["camera_names"])
         self._max_steps = int(spec["max_steps"])
+        self._control_mode = str(spec.get("control_mode", "relative"))
 
         try:
             self._env = OffScreenRenderEnv(
@@ -60,8 +62,11 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
             raise
 
         low, high = self._env.env.action_spec
-        action_low = np.asarray(low, dtype=np.float32)
-        action_high = np.asarray(high, dtype=np.float32)
+        action_low, action_high = _controller_action_bounds(
+            np.asarray(low, dtype=np.float32),
+            np.asarray(high, dtype=np.float32),
+            self._control_mode,
+        )
         first.update(
             {
                 "language_instruction": self._task.language,
@@ -72,6 +77,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
                     "low": action_low.tolist(),
                     "high": action_high.tolist(),
                     "controller": "OSC_POSE",
+                    "control_mode": self._control_mode,
                     "control_freq": int(getattr(self._env.env, "control_freq", 20)),
                     "action_repeat": 1,
                 },
@@ -89,6 +95,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         self._env.seed(seed)
         self._env.reset()
         raw = self._env.set_init_state(self._init_states[init_state_id])
+        _set_controller_mode(self._env, self._control_mode)
         self._step_index = 0
         return {
             "observation": normalize_standard_observation(raw, self._camera_names),
@@ -138,6 +145,47 @@ def _scalar_info(info: Any) -> Dict[str, Any]:
         elif isinstance(value, (str, bool, int, float)) or value is None:
             result[str(key)] = value
     return result
+
+
+def _set_controller_mode(environment: Any, control_mode: str) -> None:
+    if control_mode not in {"relative", "absolute"}:
+        raise ValueError(f"Unsupported LIBERO control mode: {control_mode}")
+
+    robots = getattr(environment, "robots", None)
+    if robots is None:
+        robots = getattr(getattr(environment, "env", None), "robots", None)
+    if not robots:
+        raise RuntimeError("LIBERO environment does not expose robot controllers")
+
+    use_delta = control_mode == "relative"
+    for robot in robots:
+        controller = getattr(robot, "controller", None)
+        if controller is None or not hasattr(controller, "use_delta"):
+            raise RuntimeError("LIBERO robot controller does not expose use_delta")
+        controller.use_delta = use_delta
+
+
+def _controller_action_bounds(
+    low: np.ndarray, high: np.ndarray, control_mode: str
+) -> Tuple[np.ndarray, np.ndarray]:
+    if control_mode == "relative":
+        return low.copy(), high.copy()
+    if control_mode != "absolute":
+        raise ValueError(f"Unsupported LIBERO control mode: {control_mode}")
+    if low.shape != (7,) or high.shape != (7,):
+        raise RuntimeError("Absolute OSC_POSE control requires a 7-dimensional action")
+
+    position_limit = np.float32(2.0)
+    rotation_limit = np.float32(np.pi)
+    absolute_low = np.array(
+        [-position_limit] * 3 + [-rotation_limit] * 3 + [low[-1]],
+        dtype=np.float32,
+    )
+    absolute_high = np.array(
+        [position_limit] * 3 + [rotation_limit] * 3 + [high[-1]],
+        dtype=np.float32,
+    )
+    return absolute_low, absolute_high
 
 
 def _resolve_task_bddl_file(suite: Any, task: Any, task_id: int) -> str:

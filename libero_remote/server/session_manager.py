@@ -298,6 +298,7 @@ class SessionManager:
             "suites": ["libero_goal", "libero_spatial", "libero_object", "libero_10"],
             "observation_schema_versions": ["libero_standard_v1"],
             "variants": ["base"],
+            "control_modes": ["relative", "absolute"],
         }
 
     def _get_record(self, session_id: str) -> SessionRecord:

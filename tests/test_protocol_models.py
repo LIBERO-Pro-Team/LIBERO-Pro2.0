@@ -14,6 +14,13 @@ def test_phase_one_session_request_rejects_unsupported_options() -> None:
         CreateSessionRequest(variant="object")
 
 
+def test_session_request_validates_controller_mode() -> None:
+    assert CreateSessionRequest(control_mode="absolute").control_mode == "absolute"
+
+    with pytest.raises(ValidationError):
+        CreateSessionRequest(control_mode="velocity")
+
+
 @pytest.mark.parametrize("invalid_value", [math.nan, math.inf, -math.inf])
 def test_step_request_rejects_non_finite_actions(invalid_value: float) -> None:
     with pytest.raises(ValidationError):

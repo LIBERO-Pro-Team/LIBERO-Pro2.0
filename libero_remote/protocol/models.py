@@ -46,6 +46,7 @@ class CreateSessionRequest(BaseModel):
     init_state_id: int = Field(0, ge=0)
     seed: int = 42
     variant: Literal["base"] = "base"
+    control_mode: Literal["relative", "absolute"] = "relative"
     camera_names: List[str] = Field(default_factory=lambda: ["agentview", "robot0_eye_in_hand"])
     camera_height: int = Field(128, ge=16, le=1024)
     camera_width: int = Field(128, ge=16, le=1024)
@@ -100,6 +101,7 @@ class ActionSchema(BaseModel):
     low: List[float]
     high: List[float]
     controller: str
+    control_mode: Literal["relative", "absolute"]
     control_freq: int
     action_repeat: int = 1
 
