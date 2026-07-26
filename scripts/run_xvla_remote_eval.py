@@ -55,10 +55,10 @@ def main() -> None:
     if not lerobot_root.is_dir():
         raise SystemExit(f"LeRobot directory does not exist: {lerobot_root}")
 
-    health = read_health(args.base_url)
+    health = read_health(args.base_url, timeout=args.timeout)
     if health.get("status") != "ok":
         raise SystemExit(f"remote LIBERO service is not ready: {health}")
-    catalog = read_json(args.base_url, "/v1/tasks")
+    catalog = read_json(args.base_url, "/v1/tasks", timeout=args.timeout)
     if "absolute" not in catalog.get("control_modes", []):
         raise SystemExit(
             "remote LIBERO service does not advertise absolute control; "
@@ -118,12 +118,12 @@ def main() -> None:
     print(json.dumps(summary, indent=2, sort_keys=True))
 
 
-def read_health(base_url: str) -> Dict[str, Any]:
-    return read_json(base_url, "/v1/health")
+def read_health(base_url: str, timeout: float = 5.0) -> Dict[str, Any]:
+    return read_json(base_url, "/v1/health", timeout=timeout)
 
 
-def read_json(base_url: str, path: str) -> Dict[str, Any]:
-    with urlopen(f"{base_url.rstrip('/')}{path}", timeout=5.0) as response:
+def read_json(base_url: str, path: str, timeout: float = 5.0) -> Dict[str, Any]:
+    with urlopen(f"{base_url.rstrip('/')}{path}", timeout=timeout) as response:
         payload = json.load(response)
     if not isinstance(payload, dict):
         raise ValueError(f"{path} response must be a JSON object")
