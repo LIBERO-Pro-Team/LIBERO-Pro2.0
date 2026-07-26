@@ -106,6 +106,7 @@ class XVLAPolicyAdapter:
             raise RuntimeError("CUDA was requested but PyTorch cannot access a CUDA device")
 
         policy = XVLAPolicy.from_pretrained(model_path)
+        _normalize_declared_image_views(policy)
         policy.config.device = device
         policy.to(device)
         policy.eval()
@@ -335,3 +336,31 @@ def _resolve_tokenizer_path(model_path: str, tokenizer_path: str) -> str:
 
     sibling = Path(model_path).expanduser().resolve().parent / "facebook-bart-large-tokenizer"
     return str(sibling) if sibling.is_dir() else ""
+
+
+def _normalize_declared_image_views(policy: Any) -> None:
+    """Avoid double-counting checkpoint-declared empty camera features.
+
+    Some xVLA checkpoints already include ``empty_camera_*`` in ``image_features``
+    while also setting ``empty_cameras``.  Recent LeRobot config validation adds
+    that count again, padding the model input with an unintended extra zero view.
+    """
+
+    config = getattr(policy, "config", None)
+    if config is None:
+        return
+    image_features = getattr(config, "image_features", None)
+    empty_count = int(getattr(config, "empty_cameras", 0) or 0)
+    if not isinstance(image_features, dict) or empty_count <= 0:
+        return
+
+    empty_keys = {
+        f"observation.images.empty_camera_{index}" for index in range(empty_count)
+    }
+    if not empty_keys.issubset(image_features):
+        return
+
+    declared_views = getattr(config, "num_image_views", None)
+    feature_count = len(image_features)
+    if declared_views is not None and declared_views > feature_count:
+        config.num_image_views = feature_count

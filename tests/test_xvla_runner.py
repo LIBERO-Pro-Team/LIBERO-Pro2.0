@@ -1,6 +1,7 @@
 import json
 from contextlib import nullcontext
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,11 +12,45 @@ from libero_remote.runner.xvla import (
     EpisodeSpec,
     RunManifest,
     XVLAPolicyAdapter,
+    _normalize_declared_image_views,
     append_episode_result,
     append_run_manifest,
     run_remote_episode,
     to_lerobot_libero_observation,
 )
+
+
+def test_xvla_checkpoint_empty_camera_is_not_counted_twice() -> None:
+    config = SimpleNamespace(
+        image_features={
+            "observation.images.image": object(),
+            "observation.images.image2": object(),
+            "observation.images.empty_camera_0": object(),
+        },
+        empty_cameras=1,
+        num_image_views=4,
+    )
+    policy = SimpleNamespace(config=config)
+
+    _normalize_declared_image_views(policy)
+
+    assert config.num_image_views == 3
+
+
+def test_xvla_missing_empty_camera_keeps_declared_view_count() -> None:
+    config = SimpleNamespace(
+        image_features={
+            "observation.images.image": object(),
+            "observation.images.image2": object(),
+        },
+        empty_cameras=1,
+        num_image_views=3,
+    )
+    policy = SimpleNamespace(config=config)
+
+    _normalize_declared_image_views(policy)
+
+    assert config.num_image_views == 3
 
 
 def test_remote_observation_is_mapped_to_xvla_libero_input() -> None:

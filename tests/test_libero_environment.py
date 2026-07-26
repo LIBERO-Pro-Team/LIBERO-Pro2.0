@@ -7,6 +7,7 @@ from libero_remote.environment.libero import (
     _controller_action_bounds,
     _resolve_task_bddl_file,
     _set_controller_mode,
+    _settle_environment,
 )
 
 
@@ -97,3 +98,25 @@ def test_absolute_controller_bounds_accept_pose_and_axis_angle_targets() -> None
     assert np.all(model_action <= high)
     np.testing.assert_array_equal(low[-1:], raw_low[-1:])
     np.testing.assert_array_equal(high[-1:], raw_high[-1:])
+
+
+def test_environment_settles_with_official_libero_noop_action() -> None:
+    class Environment:
+        def __init__(self) -> None:
+            self.actions: list[np.ndarray] = []
+
+        def step(self, action: np.ndarray):
+            self.actions.append(action.copy())
+            return {"settling_step": len(self.actions)}, 0.0, False, {}
+
+    environment = Environment()
+
+    raw = _settle_environment(environment)
+
+    assert raw == {"settling_step": 10}
+    assert len(environment.actions) == 10
+    for action in environment.actions:
+        np.testing.assert_array_equal(
+            action,
+            np.array([0, 0, 0, 0, 0, 0, -1], dtype=np.float32),
+        )

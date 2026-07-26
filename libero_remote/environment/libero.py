@@ -11,6 +11,8 @@ from .base import EnvironmentAdapter
 from .observations import describe_observation, normalize_standard_observation
 
 SUPPORTED_SUITES = {"libero_goal", "libero_spatial", "libero_object", "libero_10"}
+LIBERO_SETTLING_STEPS = 10
+LIBERO_NOOP_ACTION = np.array([0, 0, 0, 0, 0, 0, -1], dtype=np.float32)
 
 
 class LiberoEnvironmentAdapter(EnvironmentAdapter):
@@ -99,6 +101,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         self._env.seed(seed)
         self._env.reset()
         raw = self._env.set_init_state(self._init_states[init_state_id])
+        raw = _settle_environment(self._env)
         _set_controller_mode(self._env, self._control_mode)
         self._step_index = 0
         return {
@@ -149,6 +152,13 @@ def _scalar_info(info: Any) -> Dict[str, Any]:
         elif isinstance(value, (str, bool, int, float)) or value is None:
             result[str(key)] = value
     return result
+
+
+def _settle_environment(environment: Any) -> Any:
+    raw: Any = None
+    for _ in range(LIBERO_SETTLING_STEPS):
+        raw, _, _, _ = environment.step(LIBERO_NOOP_ACTION.copy())
+    return raw
 
 
 def _set_controller_mode(environment: Any, control_mode: str) -> None:
