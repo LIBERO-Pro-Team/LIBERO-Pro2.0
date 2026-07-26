@@ -13,6 +13,7 @@ from libero_remote.runner.xvla import (
     RunManifest,
     XVLAPolicyAdapter,
     _normalize_declared_image_views,
+    _quat_xyzw_to_rotation_matrix,
     append_episode_result,
     append_run_manifest,
     run_remote_episode,
@@ -77,8 +78,33 @@ def test_remote_observation_is_mapped_to_xvla_libero_input() -> None:
         np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32),
     )
     np.testing.assert_array_equal(
+        mapped["robot_state"]["eef"]["mat"],
+        np.eye(3, dtype=np.float32)[None, ...],
+    )
+    np.testing.assert_array_equal(
         mapped["robot_state"]["gripper"]["qpos"],
         np.array([[-0.01, 0.01]], dtype=np.float32),
+    )
+
+
+def test_xvla_quaternion_uses_xyzw_rotation_convention() -> None:
+    half_sqrt_two = np.float32(np.sqrt(0.5))
+
+    matrix = _quat_xyzw_to_rotation_matrix(
+        np.array([0.0, 0.0, half_sqrt_two, half_sqrt_two], dtype=np.float32)
+    )
+
+    np.testing.assert_allclose(
+        matrix,
+        np.array(
+            [
+                [0.0, -1.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ],
+            dtype=np.float32,
+        ),
+        atol=1e-6,
     )
 
 

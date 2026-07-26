@@ -96,10 +96,12 @@ class XVLAPolicyAdapter:
         from lerobot.policies import make_pre_post_processors
         from lerobot.policies.xvla.modeling_xvla import XVLAPolicy
         from lerobot.policies.xvla.processor_xvla import (
+            LiberoProcessorStep as XVLALiberoProcessorStep,
+        )
+        from lerobot.policies.xvla.processor_xvla import (
             XVLARotation6DToAxisAngleProcessorStep,
         )
         from lerobot.processor import PolicyProcessorPipeline
-        from lerobot.processor.env_processor import LiberoProcessorStep
         from lerobot.utils.constants import ACTION
 
         if device.startswith("cuda") and not torch.cuda.is_available():
@@ -123,7 +125,7 @@ class XVLAPolicyAdapter:
             pretrained_path=model_path,
             preprocessor_overrides=preprocessor_overrides,
         )
-        env_preprocessor = PolicyProcessorPipeline(steps=[LiberoProcessorStep()])
+        env_preprocessor = PolicyProcessorPipeline(steps=[XVLALiberoProcessorStep()])
         env_postprocessor = PolicyProcessorPipeline(
             steps=[XVLARotation6DToAxisAngleProcessorStep()]
         )
@@ -292,6 +294,11 @@ def to_lerobot_libero_observation(
             "eef": {
                 "pos": _single_batch(observation["robot0_eef_pos"]),
                 "quat": _single_batch(observation["robot0_eef_quat_xyzw"]),
+                "mat": _single_batch(
+                    _quat_xyzw_to_rotation_matrix(
+                        observation["robot0_eef_quat_xyzw"]
+                    )
+                ),
             },
             "gripper": {
                 "qpos": _single_batch(observation["robot0_gripper_qpos"]),
@@ -303,6 +310,26 @@ def to_lerobot_libero_observation(
 def _single_batch(value: np.ndarray) -> np.ndarray:
     array = np.ascontiguousarray(value, dtype=np.float32)
     return array[np.newaxis, ...]
+
+
+def _quat_xyzw_to_rotation_matrix(value: np.ndarray) -> np.ndarray:
+    quaternion = np.asarray(value, dtype=np.float64)
+    if quaternion.shape != (4,):
+        raise ValueError(f"xVLA LIBERO quaternion must contain 4 values, got {quaternion.shape}")
+    norm = float(np.linalg.norm(quaternion))
+    if not np.isfinite(norm) or norm <= np.finfo(np.float64).eps:
+        raise ValueError("xVLA LIBERO quaternion must be finite and non-zero")
+
+    x, y, z, w = quaternion / norm
+    matrix = np.array(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ],
+        dtype=np.float32,
+    )
+    return np.ascontiguousarray(matrix)
 
 
 def _validate_libero_action(value: Any) -> np.ndarray:
