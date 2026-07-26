@@ -96,12 +96,8 @@ class XVLAPolicyAdapter:
         from lerobot.policies import make_pre_post_processors
         from lerobot.policies.xvla.modeling_xvla import XVLAPolicy
         from lerobot.policies.xvla.processor_xvla import (
-            LiberoProcessorStep as XVLALiberoProcessorStep,
+            make_xvla_libero_pre_post_processors,
         )
-        from lerobot.policies.xvla.processor_xvla import (
-            XVLARotation6DToAxisAngleProcessorStep,
-        )
-        from lerobot.processor import PolicyProcessorPipeline
         from lerobot.utils.constants import ACTION
 
         if device.startswith("cuda") and not torch.cuda.is_available():
@@ -125,10 +121,7 @@ class XVLAPolicyAdapter:
             pretrained_path=model_path,
             preprocessor_overrides=preprocessor_overrides,
         )
-        env_preprocessor = PolicyProcessorPipeline(steps=[XVLALiberoProcessorStep()])
-        env_postprocessor = PolicyProcessorPipeline(
-            steps=[XVLARotation6DToAxisAngleProcessorStep()]
-        )
+        env_preprocessor, env_postprocessor = make_xvla_libero_pre_post_processors()
 
         if device.startswith("cuda"):
             torch.backends.cudnn.benchmark = True
