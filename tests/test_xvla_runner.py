@@ -14,6 +14,7 @@ from libero_remote.runner.xvla import (
     XVLAPolicyAdapter,
     _normalize_declared_image_views,
     _quat_xyzw_to_rotation_matrix,
+    _xvla_eef_rotation_matrix,
     append_episode_result,
     append_run_manifest,
     run_remote_episode,
@@ -79,7 +80,16 @@ def test_remote_observation_is_mapped_to_xvla_libero_input() -> None:
     )
     np.testing.assert_array_equal(
         mapped["robot_state"]["eef"]["mat"],
-        np.eye(3, dtype=np.float32)[None, ...],
+        np.array(
+            [
+                [
+                    [0.0, 1.0, 0.0],
+                    [-1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            ],
+            dtype=np.float32,
+        ),
     )
     np.testing.assert_array_equal(
         mapped["robot_state"]["gripper"]["qpos"],
@@ -105,6 +115,28 @@ def test_xvla_quaternion_uses_xyzw_rotation_convention() -> None:
             dtype=np.float32,
         ),
         atol=1e-6,
+    )
+
+
+def test_xvla_eef_rotation_matches_libero_controller_frame() -> None:
+    matrix = _xvla_eef_rotation_matrix(
+        np.array(
+            [0.9996131094, -0.0004005159, -0.0278113365, 0.0000242169],
+            dtype=np.float32,
+        )
+    )
+
+    np.testing.assert_allclose(
+        matrix,
+        np.array(
+            [
+                [0.0007894140, 0.9984518243, -0.0556177260],
+                [0.9999996860, -0.0007920708, -0.0000257264],
+                [-0.0000697397, -0.0556176882, -0.9984521360],
+            ],
+            dtype=np.float32,
+        ),
+        atol=3e-4,
     )
 
 

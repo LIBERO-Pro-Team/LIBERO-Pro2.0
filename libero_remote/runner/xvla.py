@@ -11,6 +11,9 @@ from typing import Any, Callable, Dict, Iterator
 import numpy as np
 
 REPORT_SCHEMA_VERSION = "1.0"
+LIBERO_EEF_SITE_TO_CONTROLLER_ROTATION = np.array(
+    [[0, 1, 0], [-1, 0, 0], [0, 0, 1]], dtype=np.float32
+)
 
 
 @dataclass(frozen=True)
@@ -288,7 +291,7 @@ def to_lerobot_libero_observation(
                 "pos": _single_batch(observation["robot0_eef_pos"]),
                 "quat": _single_batch(observation["robot0_eef_quat_xyzw"]),
                 "mat": _single_batch(
-                    _quat_xyzw_to_rotation_matrix(
+                    _xvla_eef_rotation_matrix(
                         observation["robot0_eef_quat_xyzw"]
                     )
                 ),
@@ -323,6 +326,12 @@ def _quat_xyzw_to_rotation_matrix(value: np.ndarray) -> np.ndarray:
         dtype=np.float32,
     )
     return np.ascontiguousarray(matrix)
+
+
+def _xvla_eef_rotation_matrix(value: np.ndarray) -> np.ndarray:
+    site_rotation = _quat_xyzw_to_rotation_matrix(value)
+    controller_rotation = site_rotation @ LIBERO_EEF_SITE_TO_CONTROLLER_ROTATION
+    return np.ascontiguousarray(controller_rotation, dtype=np.float32)
 
 
 def _validate_libero_action(value: Any) -> np.ndarray:
