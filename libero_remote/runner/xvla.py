@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator
+from typing import Any, Callable, Dict, Iterator, Protocol
 
 import numpy as np
 
@@ -26,6 +26,7 @@ class EpisodeSpec:
     camera_height: int = 256
     camera_width: int = 256
     control_mode: str = "absolute"
+    variant: str = "base"
 
 
 @dataclass(frozen=True)
@@ -60,6 +61,11 @@ class RunManifest:
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
+
+
+class EpisodeReport(Protocol):
+    def to_dict(self) -> Dict[str, Any]:
+        """Return a JSON-serializable episode record."""
 
 
 class XVLAPolicyAdapter:
@@ -178,7 +184,7 @@ class XVLAPolicyAdapter:
         return _validate_libero_action(action_array[0])
 
 
-def append_episode_result(path: Path, result: EpisodeResult) -> None:
+def append_episode_result(path: Path, result: EpisodeReport) -> None:
     """Append one durable, independently parseable episode result."""
 
     _append_report_record(path, "episode_result", result.to_dict())
