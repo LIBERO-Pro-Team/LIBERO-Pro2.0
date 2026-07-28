@@ -63,7 +63,9 @@ class RemoteLiberoEnv:
             "request_id": request_id or f"req_{uuid.uuid4().hex}",
             "action": np.asarray(action, dtype=np.float32).tolist(),
         }
-        response = self._transport.post(f"/v1/sessions/{self.session_id}/step", body)
+        response = self._transport.post_idempotent(
+            f"/v1/sessions/{self.session_id}/step", body
+        )
         self.next_step_index = int(response["next_step_index"])
         info = dict(response.get("info", {}))
         info.update(

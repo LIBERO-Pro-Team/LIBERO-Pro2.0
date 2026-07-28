@@ -1,4 +1,4 @@
-"""HTTP transport with no implicit retries for state-changing requests."""
+"""HTTP transport with explicit retries for idempotent requests only."""
 
 from typing import Any, Dict, Optional
 
@@ -27,6 +27,21 @@ class HttpTransport:
 
     def post(self, path: str, body: Dict[str, Any]) -> Dict[str, Any]:
         return self._handle(self._client.post(path, json=body))
+
+    def post_idempotent(
+        self, path: str, body: Dict[str, Any], transport_retries: int = 2
+    ) -> Dict[str, Any]:
+        """Retry a request whose payload carries a server-side idempotency key."""
+
+        if transport_retries < 0:
+            raise ValueError("transport_retries cannot be negative")
+        for attempt in range(transport_retries + 1):
+            try:
+                return self.post(path, body)
+            except httpx.TransportError:
+                if attempt == transport_retries:
+                    raise
+        raise AssertionError("idempotent POST retry loop did not return or raise")
 
     def delete(self, path: str) -> None:
         response = self._client.delete(path)
