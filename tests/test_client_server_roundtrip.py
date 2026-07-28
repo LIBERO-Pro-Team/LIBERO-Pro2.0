@@ -108,6 +108,8 @@ def test_lifespan_cleanup_expires_an_idle_session() -> None:
             worker_timeout_seconds=5.0,
             session_idle_timeout_seconds=0.05,
             cleanup_interval_seconds=0.01,
+            heartbeat_interval_seconds=0.01,
+            lease_grace_period_seconds=0.02,
         )
     )
 

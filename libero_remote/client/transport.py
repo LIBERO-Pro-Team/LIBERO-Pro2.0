@@ -33,6 +33,9 @@ class HttpTransport:
         if response.status_code >= 400:
             self._raise_remote_error(response)
 
+    def delete_json(self, path: str) -> Dict[str, Any]:
+        return self._handle(self._client.delete(path))
+
     def close(self) -> None:
         if self._owns_client:
             self._client.close()

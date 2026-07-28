@@ -357,6 +357,40 @@ class SessionManager:
                 record.last_activity_at = self._clock()
             return record.snapshot()
 
+    async def episode_outcome(self, session_id: str) -> Dict[str, Any]:
+        record = self._get_record(session_id)
+        async with record.lock:
+            if record.status not in {SessionStatus.TERMINATED, SessionStatus.TRUNCATED}:
+                raise PlatformError(
+                    ErrorCode.EPISODE_NOT_FINISHED,
+                    "The episode must terminate or truncate before completion",
+                    status_code=409,
+                )
+            committed = record.last_committed
+            if committed is None:
+                raise PlatformError(
+                    ErrorCode.INTERNAL_ERROR,
+                    "The terminal episode has no committed server result",
+                    status_code=500,
+                )
+            return {
+                "session_id": record.session_id,
+                "episode_id": record.episode_id,
+                "status": record.status.value,
+                "success": bool(committed["success"]),
+                "terminated": bool(committed["terminated"]),
+                "truncated": bool(committed["truncated"]),
+                "reward": float(committed["reward"]),
+                "step_count": record.next_step_index,
+                "last_request_id": committed["request_id"],
+            }
+
+    async def keep_alive(self, session_id: str) -> None:
+        record = self._get_record(session_id)
+        async with record.lock:
+            self._require_usable(record)
+            record.last_activity_at = self._clock()
+
     async def close(self, session_id: str, reason: str = "client_request") -> None:
         record = self._get_record(session_id)
         async with record.lock:
