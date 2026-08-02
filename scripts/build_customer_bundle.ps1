@@ -53,9 +53,10 @@ New-Item -ItemType Directory -Force $staging | Out-Null
 $sourceRoot = Join-Path $staging "source"
 New-Item -ItemType Directory -Force $sourceRoot | Out-Null
 
-$serviceArchive = Join-Path $staging "service.tar"
-git -C $repoRoot archive --format=tar --output=$serviceArchive HEAD
-tar -xf $serviceArchive -C $sourceRoot
+$serviceArchive = Join-Path $staging "service.zip"
+git -C $repoRoot archive --format=zip --output=$serviceArchive HEAD
+if ($LASTEXITCODE -ne 0) { throw "Failed to export committed service source" }
+Expand-Archive -LiteralPath $serviceArchive -DestinationPath $sourceRoot
 Remove-Item -LiteralPath $serviceArchive
 
 $simDestination = Join-Path $sourceRoot "simulator-source"
