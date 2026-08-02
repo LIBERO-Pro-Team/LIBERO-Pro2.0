@@ -16,6 +16,10 @@ LIBERO-Pro2.0 远程评测平台不固定模型。xVLA 和 Pi0 是验证过的�
 服务端不接收 checkpoint，不导入模型框架，也不执行模型预处理。模型名称和版本只用于用户侧记录，
 不能改变服务端任务、调度、成功判定或重试规则。
 
+`libero_remote.runner` 公共入口只导出模型无关的 adapter 契约和运行函数。参考实现必须从
+`libero_remote.runner.xvla` 或 `libero_remote.runner.pi0` 显式导入；接入其他模型不需要安装、
+导入或继承这两个参考实现。
+
 ## 最小接口
 
 ```python

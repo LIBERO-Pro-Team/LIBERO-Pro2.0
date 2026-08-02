@@ -8,12 +8,12 @@ from typing import Any, Dict
 from urllib.request import urlopen
 
 from libero_remote import RemoteLiberoEnv
-from libero_remote.runner import (
+from libero_remote.runner.report import build_run_manifest
+from libero_remote.runner.xvla import (
     EpisodeSpec,
     XVLAPolicyAdapter,
     append_episode_result,
     append_run_manifest,
-    build_run_manifest,
     run_remote_episode,
 )
 

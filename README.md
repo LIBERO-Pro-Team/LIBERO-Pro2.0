@@ -663,6 +663,8 @@ combined
 隔离、确定性初态和权威结果。完整契约见 `docs/model-adapter-contract.md`。
 
 xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端协议，不是模型白名单，服务端也不加载其依赖。
+通用 `libero_remote.runner` 入口不导入任何参考模型；需要示例实现时再从对应的 `runner.xvla` 或
+`runner.pi0` 子模块显式导入。
 
 ### 21.1 本机 xVLA 参考 runner
 

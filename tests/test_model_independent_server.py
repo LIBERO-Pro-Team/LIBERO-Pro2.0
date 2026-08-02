@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from pathlib import Path
 
 SERVER_SIDE_PACKAGES = (
@@ -22,3 +24,28 @@ def test_server_side_packages_do_not_import_model_adapters() -> None:
                     violations.append(f"{path.relative_to(package_root)} imports {model_name}")
 
     assert violations == []
+
+
+def test_generic_runner_import_does_not_load_reference_model_adapters() -> None:
+    script = """
+import sys
+import libero_remote.runner
+
+loaded = sorted(
+    name
+    for name in sys.modules
+    if name in {"libero_remote.runner.xvla", "libero_remote.runner.pi0"}
+)
+if loaded:
+    raise SystemExit(f"generic runner loaded reference adapters: {loaded}")
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr

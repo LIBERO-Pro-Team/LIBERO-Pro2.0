@@ -27,7 +27,7 @@ class AgentAdapter(Protocol):
     def reset(self, context: AgentContext) -> None:
         """Prepare model state for one independently reset episode."""
 
-    def act(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+    def act(self, observation: Dict[str, Any]) -> np.ndarray:
         """Convert one platform observation into one platform action."""
 
     def close(self) -> None:
@@ -107,7 +107,7 @@ def run_leased_episode(
         step_index = 0
         while True:
             heartbeat.raise_if_failed()
-            adapter_observation = dict(observation)
+            adapter_observation: Dict[str, Any] = dict(observation)
             adapter_observation["instruction"] = instruction
             adapter_observation["step_index"] = step_index
             action = validate_action(
