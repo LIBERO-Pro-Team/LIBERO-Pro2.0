@@ -14,6 +14,17 @@ $bundleRoot = Join-Path $output $bundleName
 $archive = Join-Path $output "$bundleName.tar.gz"
 $staging = Join-Path $output ".staging-$bundleName"
 
+function Convert-ToWslPath([string]$WindowsPath) {
+    $fullPath = [IO.Path]::GetFullPath($WindowsPath)
+    $root = [IO.Path]::GetPathRoot($fullPath)
+    if ($root.Length -lt 2 -or $root[1] -ne ':') {
+        throw "Only drive-letter paths can be mapped into WSL: $fullPath"
+    }
+    $drive = [char]::ToLowerInvariant($root[0])
+    $relative = $fullPath.Substring($root.Length).Replace('\', '/')
+    return "/mnt/$drive/$relative"
+}
+
 if (-not $output.StartsWith([IO.Path]::GetPathRoot($output), [StringComparison]::OrdinalIgnoreCase)) {
     throw "OutputRoot must resolve to an absolute path"
 }
@@ -85,7 +96,9 @@ $imageRoot = Join-Path $staging "images"
 New-Item -ItemType Directory -Force $imageRoot | Out-Null
 $imageTar = Join-Path $imageRoot "libero-pro-server-$Version.tar"
 if ($BuildImage) {
-    $wslSource = (wsl.exe -d Ubuntu -- wslpath -a -u $sourceRoot).Trim()
+    $wslSource = Convert-ToWslPath $sourceRoot
+    & wsl.exe -d Ubuntu -- test -f "$wslSource/Dockerfile"
+    if ($LASTEXITCODE -ne 0) { throw "WSL cannot access Docker build context: $wslSource" }
     $buildArguments = @(
         "-u", "root", "-d", "Ubuntu", "--", "docker", "build",
         "--build-arg", "LIBERO_PRO_SOURCE=local",
@@ -95,7 +108,7 @@ if ($BuildImage) {
     )
     & wsl.exe @buildArguments
     if ($LASTEXITCODE -ne 0) { throw "Docker image build failed" }
-    $wslImageTar = (wsl.exe -d Ubuntu -- wslpath -a -u $imageTar).Trim()
+    $wslImageTar = Convert-ToWslPath $imageTar
     & wsl.exe -u root -d Ubuntu -- docker save --output $wslImageTar "libero-pro-server:$Version"
     if ($LASTEXITCODE -ne 0) { throw "Docker image export failed" }
     Remove-Item -LiteralPath $sourceRoot -Recurse -Force
