@@ -7,8 +7,14 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
+from libero_remote.reproducibility import (
+    canonical_fingerprint,
+    numerical_state_fingerprint,
+)
+
 from .base import EnvironmentAdapter
 from .observations import describe_observation, normalize_standard_observation
+from .task_manifest import TaskManifest
 
 SUPPORTED_SUITES = {"libero_goal", "libero_spatial", "libero_object", "libero_10"}
 LIBERO_SETTLING_STEPS = 10
@@ -52,7 +58,12 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         try:
             self._env = OffScreenRenderEnv(
                 bddl_file_name=_resolve_task_bddl_file(
-                    self._suite, self._task, task_id
+                    self._suite,
+                    self._task,
+                    task_id,
+                    suite_name=suite_name,
+                    variant=str(spec.get("variant", "base")),
+                    explicit_path=spec.get("_bddl_path"),
                 ),
                 camera_names=self._camera_names,
                 camera_heights=int(spec["camera_height"]),
@@ -71,7 +82,7 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         )
         first.update(
             {
-                "language_instruction": self._task.language,
+                "language_instruction": str(self._env.language_instruction),
                 "action_schema": {
                     "version": "libero_action_v1",
                     "shape": list(action_low.shape),
@@ -99,14 +110,25 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         if init_state_id < 0 or init_state_id >= len(self._init_states):
             raise ValueError("init_state_id is outside the selected task")
         self._env.seed(seed)
+        _set_perturbation_seed(self._env, seed)
         self._env.reset()
         raw = self._env.set_init_state(self._init_states[init_state_id])
         raw = _settle_environment(self._env)
+        _set_perturbation_seed(self._env, seed)
+        raw = _begin_perturbation_rollout(self._env)
         _set_controller_mode(self._env, self._control_mode)
         self._step_index = 0
+        plan = _perturbation_plan(self._env)
         return {
             "observation": normalize_standard_observation(raw, self._camera_names),
             "worker_step_index": 0,
+            "environment_reproducibility": {
+                "initial_state_fingerprint": numerical_state_fingerprint(
+                    self._env.get_sim_state()
+                ),
+                "perturbation_plan_fingerprint": canonical_fingerprint(plan),
+                "perturbation_plan": plan,
+            },
         }
 
     def step(self, action: np.ndarray) -> Dict[str, Any]:
@@ -115,13 +137,15 @@ class LiberoEnvironmentAdapter(EnvironmentAdapter):
         success = bool(self._env.check_success())
         terminated = bool(done or success)
         truncated = self._step_index >= self._max_steps and not terminated
+        scalar_info = _scalar_info(info)
+        scalar_info["language_instruction"] = str(self._env.language_instruction)
         return {
             "observation": normalize_standard_observation(raw, self._camera_names),
             "reward": float(reward),
             "terminated": terminated,
             "truncated": truncated,
             "success": success,
-            "info": _scalar_info(info),
+            "info": scalar_info,
             "worker_step_index": self._step_index,
         }
 
@@ -159,6 +183,36 @@ def _settle_environment(environment: Any) -> Any:
     for _ in range(LIBERO_SETTLING_STEPS):
         raw, _, _, _ = environment.step(LIBERO_NOOP_ACTION.copy())
     return raw
+
+
+def _set_perturbation_seed(environment: Any, seed: int) -> None:
+    setter = getattr(environment, "set_perturbation_seed", None)
+    if not callable(setter):
+        raise RuntimeError(
+            "LIBERO-PRO does not expose set_perturbation_seed; use the pinned runtime"
+        )
+    setter(seed)
+
+
+def _begin_perturbation_rollout(environment: Any) -> Any:
+    begin = getattr(environment, "begin_perturbation_rollout", None)
+    if not callable(begin):
+        raise RuntimeError(
+            "LIBERO-PRO does not expose begin_perturbation_rollout; use the pinned runtime"
+        )
+    return begin()
+
+
+def _perturbation_plan(environment: Any) -> Dict[str, Any]:
+    describe = getattr(environment, "get_perturbation_plan", None)
+    if not callable(describe):
+        raise RuntimeError(
+            "LIBERO-PRO does not expose get_perturbation_plan; use the pinned runtime"
+        )
+    plan = describe()
+    if not isinstance(plan, dict):
+        raise RuntimeError("LIBERO-PRO returned an invalid perturbation plan")
+    return plan
 
 
 def _set_controller_mode(environment: Any, control_mode: str) -> None:
@@ -202,7 +256,30 @@ def _controller_action_bounds(
     return absolute_low, absolute_high
 
 
-def _resolve_task_bddl_file(suite: Any, task: Any, task_id: int) -> str:
+def _resolve_task_bddl_file(
+    suite: Any,
+    task: Any,
+    task_id: int,
+    suite_name: Optional[str] = None,
+    variant: str = "base",
+    explicit_path: Optional[str] = None,
+) -> str:
+    if explicit_path:
+        path = Path(explicit_path).resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"Manifest BDDL does not exist: {path}")
+        return str(path)
+
+    manifest_path = os.environ.get("LIBERO_REMOTE_TASK_MANIFEST")
+    if manifest_path:
+        if suite_name is None:
+            raise ValueError("suite_name is required when using the task manifest")
+        return str(
+            TaskManifest.load(manifest_path).resolve_bddl(
+                suite_name, task_id, variant
+            )
+        )
+
     configured_root = os.environ.get("LIBERO_REMOTE_BDDL_ROOT")
     if not configured_root:
         return str(suite.get_task_bddl_file_path(task_id))

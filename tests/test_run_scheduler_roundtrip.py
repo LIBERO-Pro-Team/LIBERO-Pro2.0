@@ -603,10 +603,18 @@ def test_remote_run_client_executes_a_leased_episode_without_protocol_code(
                 "camera_width": 16,
                 "max_steps": 10,
                 "observation_schema_version": "libero_standard_v1",
-            },
-            "result": completed["result"],
-        }
-    ]
+                },
+                "result": completed["result"],
+                "reproducibility": episode.reproducibility,
+                "perturbation_plan": {
+                    "case_id": "BASE",
+                    "seed": 42,
+                    "suite": "libero_goal",
+                    "task_id": 0,
+                    "version": "fake_plan_v1",
+                },
+            }
+        ]
 
 
 def test_disabling_direct_sessions_prevents_bypassing_the_scheduler(

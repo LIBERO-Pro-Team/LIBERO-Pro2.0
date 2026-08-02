@@ -4,6 +4,11 @@ from typing import Any, Dict, List
 
 import numpy as np
 
+from libero_remote.reproducibility import (
+    canonical_fingerprint,
+    numerical_state_fingerprint,
+)
+
 from .base import EnvironmentAdapter
 from .observations import describe_observation
 
@@ -17,8 +22,10 @@ class FakeEnvironmentAdapter(EnvironmentAdapter):
         self._height = 0
         self._width = 0
         self._closed = False
+        self._spec: Dict[str, Any] = {}
 
     def create(self, spec: Dict[str, Any]) -> Dict[str, Any]:
+        self._spec = dict(spec)
         self._camera_names = list(spec["camera_names"])
         self._height = int(spec["camera_height"])
         self._width = int(spec["camera_width"])
@@ -49,10 +56,24 @@ class FakeEnvironmentAdapter(EnvironmentAdapter):
         return initial
 
     def reset(self, init_state_id: int, seed: int) -> Dict[str, Any]:
-        del seed
         self._state = np.array([float(init_state_id), 0.0], dtype=np.float32)
         self._step_index = 0
-        return {"observation": self._observation(), "worker_step_index": 0}
+        plan = {
+            "version": "fake_plan_v1",
+            "suite": self._spec.get("suite"),
+            "task_id": self._spec.get("task_id"),
+            "case_id": str(self._spec.get("variant", "base")).upper(),
+            "seed": int(seed),
+        }
+        return {
+            "observation": self._observation(),
+            "worker_step_index": 0,
+            "environment_reproducibility": {
+                "initial_state_fingerprint": numerical_state_fingerprint(self._state),
+                "perturbation_plan_fingerprint": canonical_fingerprint(plan),
+                "perturbation_plan": plan,
+            },
+        }
 
     def step(self, action: np.ndarray) -> Dict[str, Any]:
         if self._closed:

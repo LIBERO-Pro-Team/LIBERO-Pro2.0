@@ -14,8 +14,9 @@ class RemoteLiberoEnv:
         base_url: str,
         timeout: float = 60.0,
         http_client: Optional[Any] = None,
+        api_key: Optional[str] = None,
     ) -> None:
-        self._transport = HttpTransport(base_url, timeout, http_client)
+        self._transport = HttpTransport(base_url, timeout, http_client, api_key)
         self.session_id: Optional[str] = None
         self.episode_id: Optional[str] = None
         self.next_step_index = 0

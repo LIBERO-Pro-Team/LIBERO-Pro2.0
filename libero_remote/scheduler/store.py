@@ -36,8 +36,11 @@ class SQLiteRunStore:
                 """
                 INSERT INTO jobs(
                     job_id, run_id, ordinal, status, spec_json, attempt,
-                    result_json, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, 0, NULL, ?, ?)
+                    result_json, job_fingerprint, runtime_fingerprint,
+                    initial_state_fingerprint, initial_observation_fingerprint,
+                    perturbation_plan_fingerprint, perturbation_plan_json,
+                    result_receipt, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, 0, NULL, ?, ?, NULL, NULL, NULL, NULL, NULL, ?, ?)
                 """,
                 [
                     (
@@ -46,6 +49,8 @@ class SQLiteRunStore:
                         job["ordinal"],
                         job["status"],
                         json.dumps(job["spec"], sort_keys=True, separators=(",", ":")),
+                        job["job_fingerprint"],
+                        job["runtime_fingerprint"],
                         created_at,
                         created_at,
                     )
@@ -69,6 +74,10 @@ class SQLiteRunStore:
             job["spec"] = json.loads(job.pop("spec_json"))
             result_json = job.pop("result_json")
             job["result"] = json.loads(result_json) if result_json is not None else None
+            plan_json = job.pop("perturbation_plan_json")
+            job["perturbation_plan"] = (
+                json.loads(plan_json) if plan_json is not None else None
+            )
             jobs.append(job)
         return jobs
 
@@ -82,6 +91,10 @@ class SQLiteRunStore:
         job["spec"] = json.loads(job.pop("spec_json"))
         result_json = job.pop("result_json")
         job["result"] = json.loads(result_json) if result_json is not None else None
+        plan_json = job.pop("perturbation_plan_json")
+        job["perturbation_plan"] = (
+            json.loads(plan_json) if plan_json is not None else None
+        )
         return job
 
     def next_queued_job(self, run_id: str) -> Optional[Dict[str, Any]]:
@@ -110,7 +123,13 @@ class SQLiteRunStore:
 
     def get_lease(self, lease_id: str) -> Optional[Dict[str, Any]]:
         row = self._connection.execute(
-            "SELECT * FROM leases WHERE lease_id = ?", (lease_id,)
+            """
+            SELECT leases.*, jobs.run_id, runs.owner_id FROM leases
+            JOIN jobs ON jobs.job_id = leases.job_id
+            JOIN runs ON runs.run_id = jobs.run_id
+            WHERE leases.lease_id = ?
+            """,
+            (lease_id,),
         ).fetchone()
         return dict(row) if row is not None else None
 
@@ -132,6 +151,7 @@ class SQLiteRunStore:
         job_id: str,
         lease_id: str,
         runner_id: str,
+        generation: int,
         session_id: str,
         expires_at: float,
         initial_payload: bytes,
@@ -146,14 +166,15 @@ class SQLiteRunStore:
             self._connection.execute(
                 """
                 INSERT INTO leases(
-                    lease_id, job_id, runner_id, session_id, status, expires_at,
+                    lease_id, job_id, runner_id, generation, session_id, status, expires_at,
                     initial_payload, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, 'active', ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)
                 """,
                 (
                     lease_id,
                     job_id,
                     runner_id,
+                    generation,
                     session_id,
                     expires_at,
                     initial_payload,
@@ -188,6 +209,85 @@ class SQLiteRunStore:
                 """,
                 (updated_at, job_id),
             )
+
+    def bind_reproducibility(
+        self, job_id: str, identity: Dict[str, Any], updated_at: float
+    ) -> bool:
+        """Persist the first reset identity and reject different later attempts."""
+
+        state = str(identity["initial_state_fingerprint"])
+        observation = str(identity["initial_observation_fingerprint"])
+        plan = str(identity["perturbation_plan_fingerprint"])
+        plan_json = json.dumps(
+            identity["perturbation_plan"], sort_keys=True, separators=(",", ":")
+        )
+
+        with self._connection:
+            job = self._connection.execute(
+                """
+                SELECT initial_state_fingerprint, initial_observation_fingerprint,
+                       perturbation_plan_fingerprint, perturbation_plan_json
+                FROM jobs WHERE job_id = ?
+                """,
+                (job_id,),
+            ).fetchone()
+            if job is None:
+                raise RuntimeError("Episode job disappeared during reproducibility check")
+            expected = (
+                job["initial_state_fingerprint"],
+                job["initial_observation_fingerprint"],
+                job["perturbation_plan_fingerprint"],
+                job["perturbation_plan_json"],
+            )
+            if any(value is not None for value in expected):
+                return expected == (state, observation, plan, plan_json)
+            changed = self._connection.execute(
+                """
+                UPDATE jobs
+                SET initial_state_fingerprint = ?, initial_observation_fingerprint = ?,
+                    perturbation_plan_fingerprint = ?, perturbation_plan_json = ?,
+                    updated_at = ?
+                WHERE job_id = ? AND initial_state_fingerprint IS NULL
+                  AND initial_observation_fingerprint IS NULL
+                  AND perturbation_plan_fingerprint IS NULL
+                  AND perturbation_plan_json IS NULL
+                """,
+                (state, observation, plan, plan_json, updated_at, job_id),
+            ).rowcount
+        return changed == 1
+
+    def fail_allocation(
+        self, job_id: str, error_code: str, message: str, updated_at: float
+    ) -> None:
+        result_json = json.dumps(
+            {"success": False, "error_code": error_code, "message": message},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        with self._connection:
+            self._connection.execute(
+                """
+                UPDATE jobs SET status = 'failed', result_json = ?, updated_at = ?
+                WHERE job_id = ? AND status = 'allocating'
+                """,
+                (result_json, updated_at, job_id),
+            )
+            run = self._connection.execute(
+                "SELECT run_id FROM jobs WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if run is not None:
+                unfinished = self._connection.execute(
+                    """
+                    SELECT COUNT(*) AS count FROM jobs
+                    WHERE run_id = ? AND status IN ('queued','allocating','leased','completing')
+                    """,
+                    (run["run_id"],),
+                ).fetchone()
+                if int(unfinished["count"]) == 0:
+                    self._connection.execute(
+                        "UPDATE runs SET status = 'failed', updated_at = ? WHERE run_id = ?",
+                        (updated_at, run["run_id"]),
+                    )
 
     def mark_lease_completing(self, lease_id: str, updated_at: float) -> None:
         with self._connection:
@@ -237,7 +337,12 @@ class SQLiteRunStore:
                 (updated_at, lease_id),
             )
 
-    def abandon_lease(self, lease_id: str, updated_at: float) -> bool:
+    def abandon_lease(
+        self,
+        lease_id: str,
+        updated_at: float,
+        failure_class: str,
+    ) -> bool:
         lease = self._connection.execute(
             "SELECT job_id FROM leases WHERE lease_id = ?", (lease_id,)
         ).fetchone()
@@ -254,13 +359,23 @@ class SQLiteRunStore:
             ).rowcount
             if changed != 1:
                 return False
+            result_json = json.dumps(
+                {
+                    "success": False,
+                    "failure_class": failure_class,
+                    "message": "The user-side adapter failed; automatic retry is disabled",
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            )
             self._connection.execute(
                 """
                 UPDATE jobs
-                SET status = 'queued', lease_id = NULL, session_id = NULL, updated_at = ?
+                SET status = ?, result_json = ?, lease_id = NULL, session_id = NULL,
+                    updated_at = ?
                 WHERE job_id = ? AND status = 'leased'
                 """,
-                (updated_at, job_id),
+                ("failed", result_json, updated_at, job_id),
             )
             run = self._connection.execute(
                 "SELECT run_id FROM jobs WHERE job_id = ?", (job_id,)
@@ -273,7 +388,18 @@ class SQLiteRunStore:
                 """,
                 (run_id,),
             ).fetchone()
-            status = "running" if int(active["count"]) else "queued"
+            pending = self._connection.execute(
+                """
+                SELECT COUNT(*) AS count FROM jobs
+                WHERE run_id = ? AND status IN ('queued','allocating','leased','completing')
+                """,
+                (run_id,),
+            ).fetchone()
+            status = (
+                "running"
+                if int(active["count"])
+                else ("queued" if int(pending["count"]) else "failed")
+            )
             self._connection.execute(
                 "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
                 (status, updated_at, run_id),
@@ -281,7 +407,11 @@ class SQLiteRunStore:
         return True
 
     def complete_lease(
-        self, lease_id: str, result: Dict[str, Any], updated_at: float
+        self,
+        lease_id: str,
+        result: Dict[str, Any],
+        updated_at: float,
+        result_receipt: str,
     ) -> bool:
         result_json = json.dumps(result, sort_keys=True, separators=(",", ":"))
         with self._connection:
@@ -300,10 +430,11 @@ class SQLiteRunStore:
             ).rowcount
             job_changed = self._connection.execute(
                 """
-                UPDATE jobs SET status = 'completed', result_json = ?, updated_at = ?
+                UPDATE jobs SET status = 'completed', result_json = ?,
+                    result_receipt = ?, updated_at = ?
                 WHERE job_id = ? AND status = 'completing'
                 """,
-                (result_json, updated_at, job_id),
+                (result_json, result_receipt, updated_at, job_id),
             ).rowcount
             if lease_changed != 1 or job_changed != 1:
                 return False
@@ -322,7 +453,9 @@ class SQLiteRunStore:
                 )
         return True
 
-    def expire_due_leases(self, now: float) -> List[Dict[str, Any]]:
+    def expire_due_leases(
+        self, now: float, max_attempts: int
+    ) -> List[Dict[str, Any]]:
         rows = self._connection.execute(
             """
             SELECT leases.*, jobs.run_id FROM leases
@@ -345,13 +478,36 @@ class SQLiteRunStore:
                 ).rowcount
                 if changed != 1:
                     continue
+                job = self._connection.execute(
+                    "SELECT attempt FROM jobs WHERE job_id = ?", (lease["job_id"],)
+                ).fetchone()
+                exhausted = int(job["attempt"]) >= max_attempts
+                result_json = (
+                    json.dumps(
+                        {
+                            "success": False,
+                            "failure_class": "LEASE_EXPIRED",
+                            "message": "The retry limit was reached",
+                        },
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                    if exhausted
+                    else None
+                )
                 self._connection.execute(
                     """
                     UPDATE jobs
-                    SET status = 'queued', lease_id = NULL, session_id = NULL, updated_at = ?
+                    SET status = ?, result_json = ?, lease_id = NULL,
+                        session_id = NULL, updated_at = ?
                     WHERE job_id = ? AND status = 'leased'
                     """,
-                    (now, lease["job_id"]),
+                    (
+                        "failed" if exhausted else "queued",
+                        result_json,
+                        now,
+                        lease["job_id"],
+                    ),
                 )
                 expired.append(lease)
 
@@ -363,7 +519,18 @@ class SQLiteRunStore:
                     """,
                     (run_id,),
                 ).fetchone()
-                status = "running" if int(active["count"]) else "queued"
+                pending = self._connection.execute(
+                    """
+                    SELECT COUNT(*) AS count FROM jobs
+                    WHERE run_id = ? AND status IN ('queued','allocating','leased','completing')
+                    """,
+                    (run_id,),
+                ).fetchone()
+                status = (
+                    "running"
+                    if int(active["count"])
+                    else ("queued" if int(pending["count"]) else "failed")
+                )
                 self._connection.execute(
                     "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
                     (status, now, run_id),
@@ -433,16 +600,24 @@ class SQLiteRunStore:
         ).fetchone()
         return int(row["count"])
 
-    def recover_interrupted(self, updated_at: float) -> int:
-        interrupted_row = self._connection.execute(
+    def recover_interrupted(self, updated_at: float, max_attempts: int) -> int:
+        interrupted_rows = self._connection.execute(
             """
-            SELECT COUNT(*) AS count FROM jobs
+            SELECT job_id, run_id, attempt FROM jobs
             WHERE status IN ('allocating', 'leased', 'completing')
             """
-        ).fetchone()
-        interrupted = int(interrupted_row["count"])
-        if interrupted == 0:
+        ).fetchall()
+        if not interrupted_rows:
             return 0
+        exhausted_result = json.dumps(
+            {
+                "success": False,
+                "failure_class": "SERVER_RESTART",
+                "message": "The retry limit was reached after a server interruption",
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
         with self._connection:
             self._connection.execute(
                 """
@@ -451,26 +626,34 @@ class SQLiteRunStore:
                 """,
                 (updated_at,),
             )
-            self._connection.execute(
-                """
-                UPDATE jobs
-                SET status = 'queued', lease_id = NULL, session_id = NULL, updated_at = ?
-                WHERE status IN ('allocating', 'leased', 'completing')
-                """,
-                (updated_at,),
-            )
-            self._connection.execute(
-                """
-                UPDATE runs SET status = 'queued', updated_at = ?
-                WHERE status IN ('queued', 'running')
-                  AND EXISTS (
-                      SELECT 1 FROM jobs
-                      WHERE jobs.run_id = runs.run_id AND jobs.status = 'queued'
-                  )
-                """,
-                (updated_at,),
-            )
-        return interrupted
+            for row in interrupted_rows:
+                exhausted = int(row["attempt"]) >= max_attempts
+                self._connection.execute(
+                    """
+                    UPDATE jobs
+                    SET status = ?, result_json = ?, lease_id = NULL,
+                        session_id = NULL, updated_at = ?
+                    WHERE job_id = ?
+                      AND status IN ('allocating', 'leased', 'completing')
+                    """,
+                    (
+                        "failed" if exhausted else "queued",
+                        exhausted_result if exhausted else None,
+                        updated_at,
+                        row["job_id"],
+                    ),
+                )
+            for run_id in {str(row["run_id"]) for row in interrupted_rows}:
+                pending = self._connection.execute(
+                    "SELECT COUNT(*) AS count FROM jobs WHERE run_id = ? AND status = 'queued'",
+                    (run_id,),
+                ).fetchone()
+                status = "queued" if int(pending["count"]) else "failed"
+                self._connection.execute(
+                    "UPDATE runs SET status = ?, updated_at = ? WHERE run_id = ?",
+                    (status, updated_at, run_id),
+                )
+        return len(interrupted_rows)
 
     def close(self) -> None:
         self._connection.close()
@@ -495,6 +678,13 @@ class SQLiteRunStore:
                     spec_json TEXT NOT NULL,
                     attempt INTEGER NOT NULL,
                     result_json TEXT,
+                    job_fingerprint TEXT,
+                    runtime_fingerprint TEXT,
+                    initial_state_fingerprint TEXT,
+                    initial_observation_fingerprint TEXT,
+                    perturbation_plan_fingerprint TEXT,
+                    perturbation_plan_json TEXT,
+                    result_receipt TEXT,
                     lease_id TEXT,
                     session_id TEXT,
                     created_at REAL NOT NULL,
@@ -509,6 +699,7 @@ class SQLiteRunStore:
                     lease_id TEXT PRIMARY KEY,
                     job_id TEXT NOT NULL REFERENCES jobs(job_id),
                     runner_id TEXT NOT NULL,
+                    generation INTEGER NOT NULL DEFAULT 1,
                     session_id TEXT NOT NULL,
                     status TEXT NOT NULL,
                     expires_at REAL NOT NULL,
@@ -523,6 +714,14 @@ class SQLiteRunStore:
             )
         self._ensure_column("jobs", "lease_id", "TEXT")
         self._ensure_column("jobs", "session_id", "TEXT")
+        self._ensure_column("jobs", "job_fingerprint", "TEXT")
+        self._ensure_column("jobs", "runtime_fingerprint", "TEXT")
+        self._ensure_column("jobs", "initial_state_fingerprint", "TEXT")
+        self._ensure_column("jobs", "initial_observation_fingerprint", "TEXT")
+        self._ensure_column("jobs", "perturbation_plan_fingerprint", "TEXT")
+        self._ensure_column("jobs", "perturbation_plan_json", "TEXT")
+        self._ensure_column("jobs", "result_receipt", "TEXT")
+        self._ensure_column("leases", "generation", "INTEGER NOT NULL DEFAULT 1")
 
     def _ensure_column(self, table: str, column: str, declaration: str) -> None:
         columns = {

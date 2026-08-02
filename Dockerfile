@@ -2,14 +2,15 @@ FROM nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG LIBERO_PRO_REPOSITORY=https://github.com/Zxy-MLlab/LIBERO-PRO.git
-ARG LIBERO_PRO_COMMIT=eafdb809426b13153aa1e4c42d6601844217dfec
+ARG LIBERO_PRO_COMMIT=c02ee2c8255db1c36664fad978197c47e495f178
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     LIBERO_PRO_ROOT=/opt/libero-pro \
-    LIBERO_REMOTE_BDDL_ROOT=/opt/libero-remote/assets/bddl/00_original/bddl \
+    LIBERO_REMOTE_TASK_MANIFEST=/opt/libero-remote/assets/task_manifest.json \
+    LIBERO_REMOTE_BDDL_ROOT=/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1 \
     LIBERO_CONFIG_PATH=/root/.libero \
     MUJOCO_GL=egl \
     PYOPENGL_PLATFORM=egl \

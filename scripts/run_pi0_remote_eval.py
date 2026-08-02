@@ -7,14 +7,10 @@ from typing import Any, Dict
 from urllib.request import urlopen
 
 from libero_remote import RemoteLiberoEnv
-from libero_remote.runner.agent import run_remote_agent_episode
+from libero_remote.runner.agent import AgentEpisodeSpec, run_remote_agent_episode
 from libero_remote.runner.pi0 import Pi0PolicyAdapter
 from libero_remote.runner.report import build_run_manifest
-from libero_remote.runner.xvla import (
-    EpisodeSpec,
-    append_episode_result,
-    append_run_manifest,
-)
+from libero_remote.runner.xvla import append_episode_result, append_run_manifest
 
 
 def parse_args() -> argparse.Namespace:
@@ -97,7 +93,7 @@ def main() -> None:
     results = []
     for episode_index in range(args.episodes):
         env = RemoteLiberoEnv(args.base_url, timeout=args.timeout)
-        spec = EpisodeSpec(
+        spec = AgentEpisodeSpec(
             suite=args.suite,
             task_id=args.task_id,
             init_state_id=args.init_state_id + episode_index,

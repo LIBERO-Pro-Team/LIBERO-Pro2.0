@@ -43,7 +43,11 @@ class ErrorCode(str, Enum):
     LEASE_NOT_FOUND = "LEASE_NOT_FOUND"
     LEASE_NOT_ACTIVE = "LEASE_NOT_ACTIVE"
     LEASE_RUNNER_MISMATCH = "LEASE_RUNNER_MISMATCH"
+    STALE_LEASE = "STALE_LEASE"
     DIRECT_SESSIONS_DISABLED = "DIRECT_SESSIONS_DISABLED"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
+    REPRODUCIBILITY_MISMATCH = "REPRODUCIBILITY_MISMATCH"
     INTERNAL_ERROR = "INTERNAL_ERROR"
 
 
@@ -53,7 +57,7 @@ class CreateSessionRequest(BaseModel):
     task_id: int = Field(0, ge=0)
     init_state_id: int = Field(0, ge=0)
     seed: int = 42
-    variant: Literal["base"] = "base"
+    variant: str = Field("base", min_length=1, max_length=16)
     control_mode: Literal["relative", "absolute"] = "relative"
     camera_names: List[str] = Field(default_factory=lambda: ["agentview", "robot0_eye_in_hand"])
     camera_height: int = Field(128, ge=16, le=1024)
@@ -67,6 +71,22 @@ class CreateSessionRequest(BaseModel):
         if not value:
             raise ValueError("suite must not be empty")
         return value
+
+    @validator("variant")
+    def validate_variant(cls, value: str) -> str:
+        normalized = value.strip()
+        if normalized.lower() == "base":
+            return "base"
+        normalized = normalized.upper()
+        if len(normalized) != 3 or normalized[0] not in {"S", "D"}:
+            raise ValueError("variant must be base, S01-S21, or D01-D21")
+        try:
+            index = int(normalized[1:])
+        except ValueError as exc:
+            raise ValueError("variant must be base, S01-S21, or D01-D21") from exc
+        if index < 1 or index > 21:
+            raise ValueError("variant must be base, S01-S21, or D01-D21")
+        return normalized
 
     @validator("camera_names")
     def validate_camera_names(cls, value: List[str]) -> List[str]:
@@ -86,6 +106,8 @@ class StepRequest(BaseModel):
     episode_id: str = Field(..., min_length=1, max_length=128)
     expected_step_index: int = Field(..., ge=0)
     request_id: str = Field(..., min_length=1, max_length=128)
+    lease_id: Optional[str] = Field(None, min_length=1, max_length=128)
+    lease_generation: Optional[int] = Field(None, ge=1)
     action: List[float] = Field(..., min_items=1, max_items=128)
 
     @validator("action")

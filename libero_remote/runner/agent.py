@@ -47,8 +47,22 @@ class EpisodeContext:
     episode_id: str
 
 
+@dataclass(frozen=True)
+class AgentEpisodeSpec:
+    """Model-neutral specification for one direct remote episode."""
+
+    suite: str
+    task_id: int
+    init_state_id: int
+    seed: int
+    max_steps: int
+    camera_height: int = 256
+    camera_width: int = 256
+    control_mode: str = "relative"
+    variant: str = "base"
+
+
 CanonicalObservation = Dict[str, Any]
-CanonicalAction = np.ndarray
 
 
 class LiberoProAgent(Protocol):
@@ -60,7 +74,7 @@ class LiberoProAgent(Protocol):
     def reset(self, episode: EpisodeContext) -> None:
         """Clear model state before a new episode starts."""
 
-    def act(self, observation: CanonicalObservation) -> CanonicalAction:
+    def act(self, observation: CanonicalObservation) -> np.ndarray:
         """Map one canonical observation to one canonical action."""
 
 
@@ -157,14 +171,26 @@ def validate_action_schema(
 def validate_action(action: Any, action_schema: Mapping[str, Any]) -> np.ndarray:
     """Validate and normalize a user adapter's canonical action."""
 
+    required_fields = {"shape", "low", "high"}
+    missing_fields = sorted(required_fields.difference(action_schema))
+    if missing_fields:
+        raise RuntimeError(
+            "Remote action schema is incomplete; missing fields: "
+            f"{missing_fields}"
+        )
     array = np.ascontiguousarray(action, dtype=np.float32)
-    shape = tuple(int(value) for value in action_schema.get("shape", [7]))
+    shape = tuple(int(value) for value in action_schema["shape"])
     if array.shape != shape:
         raise ValueError(f"Agent must return action shape {shape}, got {array.shape}")
     if not np.isfinite(array).all():
         raise ValueError("Agent action must contain only finite values")
-    low = np.asarray(action_schema.get("low", [-np.inf] * len(array)), dtype=np.float32)
-    high = np.asarray(action_schema.get("high", [np.inf] * len(array)), dtype=np.float32)
+    low = np.asarray(action_schema["low"], dtype=np.float32)
+    high = np.asarray(action_schema["high"], dtype=np.float32)
+    if low.shape != shape or high.shape != shape:
+        raise RuntimeError(
+            "Remote action schema bounds do not match its shape: "
+            f"shape={shape}, low={low.shape}, high={high.shape}"
+        )
     if np.any(array < low) or np.any(array > high):
         raise ValueError(
             f"Agent action is outside server bounds: action={array}, low={low}, high={high}"
@@ -221,6 +247,7 @@ def run_remote_agent_episode(env: Any, agent: LiberoProAgent, spec: Any) -> Agen
             validate_observation(canonical_observation, capabilities)
             action = validate_action(agent.act(canonical_observation), action_schema)
             observation, reward, terminated, truncated, step_info = env.step(action)
+            instruction = str(step_info.get("language_instruction", instruction))
             steps += 1
             total_reward += float(reward)
             success = success or bool(step_info.get("success", False))

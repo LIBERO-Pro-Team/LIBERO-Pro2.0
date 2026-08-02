@@ -6,12 +6,13 @@ from pydantic import ValidationError
 from libero_remote.protocol.models import ActionSchema, CreateSessionRequest, StepRequest
 
 
-def test_phase_one_session_request_rejects_unsupported_options() -> None:
+def test_session_request_rejects_unsupported_options() -> None:
     with pytest.raises(ValidationError):
         CreateSessionRequest(protocol_version="2.0")
 
+    assert CreateSessionRequest(variant="s01").variant == "S01"
     with pytest.raises(ValidationError):
-        CreateSessionRequest(variant="object")
+        CreateSessionRequest(variant="S22")
 
 
 def test_session_request_validates_controller_mode() -> None:

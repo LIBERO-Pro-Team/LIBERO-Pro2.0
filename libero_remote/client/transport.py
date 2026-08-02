@@ -15,18 +15,32 @@ class HttpTransport:
         base_url: str,
         timeout: float,
         http_client: Optional[Any] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         self._owns_client = http_client is None
+        self._headers = (
+            {"Authorization": f"Bearer {api_key}"} if api_key is not None else {}
+        )
         self._client = http_client or httpx.Client(
             base_url=base_url.rstrip("/"),
             timeout=httpx.Timeout(timeout),
         )
 
     def get_json(self, path: str) -> Dict[str, Any]:
-        return self._handle(self._client.get(path))
+        response = (
+            self._client.get(path, headers=self._headers)
+            if self._headers
+            else self._client.get(path)
+        )
+        return self._handle(response)
 
     def post(self, path: str, body: Dict[str, Any]) -> Dict[str, Any]:
-        return self._handle(self._client.post(path, json=body))
+        response = (
+            self._client.post(path, json=body, headers=self._headers)
+            if self._headers
+            else self._client.post(path, json=body)
+        )
+        return self._handle(response)
 
     def post_idempotent(
         self, path: str, body: Dict[str, Any], transport_retries: int = 2
@@ -44,12 +58,21 @@ class HttpTransport:
         raise AssertionError("idempotent POST retry loop did not return or raise")
 
     def delete(self, path: str) -> None:
-        response = self._client.delete(path)
+        response = (
+            self._client.delete(path, headers=self._headers)
+            if self._headers
+            else self._client.delete(path)
+        )
         if response.status_code >= 400:
             self._raise_remote_error(response)
 
     def delete_json(self, path: str) -> Dict[str, Any]:
-        return self._handle(self._client.delete(path))
+        response = (
+            self._client.delete(path, headers=self._headers)
+            if self._headers
+            else self._client.delete(path)
+        )
+        return self._handle(response)
 
     def close(self) -> None:
         if self._owns_client:

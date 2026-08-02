@@ -1,7 +1,7 @@
 """Public requests and internal state names for scheduled evaluation runs."""
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -37,11 +37,15 @@ class LeaseStatus(str, Enum):
 
 
 class SubmitRunRequest(BaseModel):
-    owner_id: str = Field(..., min_length=1, max_length=128)
+    # Deprecated for unauthenticated development mode. Authenticated deployments
+    # always replace this value with the server-resolved account identity.
+    owner_id: Optional[str] = Field(None, min_length=1, max_length=128)
     episodes: List[CreateSessionRequest] = Field(..., min_items=1)
 
     @validator("owner_id")
-    def normalize_owner_id(cls, value: str) -> str:
+    def normalize_owner_id(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
         normalized = value.strip()
         if not normalized:
             raise ValueError("owner_id must not be empty")
@@ -60,4 +64,4 @@ class ClaimRequest(BaseModel):
 
 
 class LeaseCommandRequest(ClaimRequest):
-    pass
+    lease_generation: Optional[int] = Field(None, ge=1)

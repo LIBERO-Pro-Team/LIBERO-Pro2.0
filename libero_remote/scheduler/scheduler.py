@@ -1,6 +1,8 @@
 """Deep scheduling module for persistent evaluation runs."""
 
 import asyncio
+import hashlib
+import hmac
 import time
 import uuid
 from collections import Counter, deque
@@ -13,6 +15,10 @@ from libero_remote.server.audit import emit_audit
 from libero_remote.server.errors import PlatformError
 from libero_remote.server.session_manager import SessionManager
 
+from .fingerprints import (
+    canonical_fingerprint,
+    initial_environment_reproducibility,
+)
 from .models import (
     ClaimRequest,
     JobStatus,
@@ -38,22 +44,28 @@ class RunScheduler:
         self,
         db_path: str,
         queue_capacity: int,
+        max_attempts: int,
         session_manager: SessionManager,
         heartbeat_interval_seconds: float,
         lease_grace_period_seconds: float,
         max_active_sessions_per_owner: int,
         claim_intent_ttl_seconds: float,
         allow_direct_sessions: bool,
+        runtime_identity: Optional[Dict[str, Any]] = None,
+        result_signing_key: str = "",
         clock: Callable[[], float] = time.time,
     ) -> None:
         self._db_path = db_path
         self._queue_capacity = queue_capacity
+        self._max_attempts = max_attempts
         self._session_manager = session_manager
         self._heartbeat_interval_seconds = heartbeat_interval_seconds
         self._lease_grace_period_seconds = lease_grace_period_seconds
         self._max_active_sessions_per_owner = max_active_sessions_per_owner
         self._claim_intent_ttl_seconds = claim_intent_ttl_seconds
         self._allow_direct_sessions = allow_direct_sessions
+        self._runtime_fingerprint = canonical_fingerprint(runtime_identity or {})
+        self._result_signing_key = result_signing_key.encode("utf-8")
         self._clock = clock
         self._store: Optional[SQLiteRunStore] = None
         self._lock = asyncio.Lock()
@@ -63,13 +75,18 @@ class RunScheduler:
     async def start(self) -> None:
         if self._store is None:
             self._store = SQLiteRunStore(self._db_path)
-            recovered = self._store.recover_interrupted(self._clock())
+            recovered = self._store.recover_interrupted(
+                self._clock(), self._max_attempts
+            )
             if recovered:
                 emit_audit("scheduler_recovered", requeued_episodes=recovered)
 
-    async def submit(self, request: SubmitRunRequest) -> Dict[str, Any]:
+    async def submit(
+        self, request: SubmitRunRequest, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
+            resolved_owner = owner_id or request.owner_id or "anonymous"
             if store.count_pending_jobs() + len(request.episodes) > self._queue_capacity:
                 raise PlatformError(
                     ErrorCode.RUN_QUEUE_FULL,
@@ -84,12 +101,14 @@ class RunScheduler:
                     "ordinal": ordinal,
                     "status": JobStatus.QUEUED.value,
                     "spec": episode.dict(),
+                    "job_fingerprint": canonical_fingerprint(episode.dict()),
+                    "runtime_fingerprint": self._runtime_fingerprint,
                 }
                 for ordinal, episode in enumerate(request.episodes)
             ]
             store.create_run(
                 run_id,
-                request.owner_id,
+                resolved_owner,
                 RunStatus.QUEUED.value,
                 created_at,
                 jobs,
@@ -97,20 +116,24 @@ class RunScheduler:
             emit_audit(
                 "run_submitted",
                 run_id=run_id,
-                owner_id=request.owner_id,
+                owner_id=resolved_owner,
                 episode_count=len(jobs),
                 status=RunStatus.QUEUED.value,
             )
             return self._snapshot(run_id)
 
-    async def get(self, run_id: str) -> Dict[str, Any]:
+    async def get(
+        self, run_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         async with self._lock:
-            return self._snapshot(run_id)
+            return self._snapshot(run_id, owner_id)
 
-    async def list_episodes(self, run_id: str) -> Dict[str, Any]:
+    async def list_episodes(
+        self, run_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            self._require_run(store, run_id)
+            self._require_run(store, run_id, owner_id)
             jobs = store.list_jobs(run_id)
             return {
                 "protocol_version": PROTOCOL_VERSION,
@@ -123,6 +146,8 @@ class RunScheduler:
                         "attempt": job["attempt"],
                         "spec": job["spec"],
                         "result": job["result"],
+                        "reproducibility": self._job_reproducibility(job),
+                        "perturbation_plan": job["perturbation_plan"],
                     }
                     for job in jobs
                 ],
@@ -146,10 +171,15 @@ class RunScheduler:
                 "persistence": "sqlite",
             }
 
-    async def claim(self, run_id: str, request: ClaimRequest) -> Dict[str, Any]:
+    async def claim(
+        self,
+        run_id: str,
+        request: ClaimRequest,
+        owner_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            run = self._require_run(store, run_id)
+            run = self._require_run(store, run_id, owner_id)
             self._require_active_run(run)
             active = store.find_active_lease(run_id, request.runner_id)
             if active is not None:
@@ -179,8 +209,34 @@ class RunScheduler:
             intent, job = selected
             store.mark_allocating(job["job_id"], now)
 
+        mismatch = self._allocation_identity_mismatch(job)
+        if mismatch is not None:
+            async with self._lock:
+                self._require_store().fail_allocation(
+                    job["job_id"],
+                    ErrorCode.REPRODUCIBILITY_MISMATCH.value,
+                    mismatch,
+                    self._clock(),
+                )
+            emit_audit(
+                "reproducibility_mismatch",
+                run_id=intent.run_id,
+                owner_id=intent.owner_id,
+                job_id=job["job_id"],
+                job_index=job["ordinal"],
+                error_code=ErrorCode.REPRODUCIBILITY_MISMATCH.value,
+                cause=mismatch,
+            )
+            raise PlatformError(
+                ErrorCode.REPRODUCIBILITY_MISMATCH,
+                mismatch,
+                status_code=409,
+            )
+
         try:
-            session = await self._session_manager.create(CreateSessionRequest(**job["spec"]))
+            session = await self._session_manager.create(
+                CreateSessionRequest(**job["spec"]), owner_id=intent.owner_id
+            )
         except PlatformError as error:
             async with self._lock:
                 now = self._clock()
@@ -200,6 +256,71 @@ class RunScheduler:
 
         lease_id = f"lease_{uuid.uuid4().hex}"
         now = self._clock()
+        try:
+            environment_identity = initial_environment_reproducibility(session)
+        except ValueError as error:
+            await self._session_manager.close(
+                str(session["session_id"]),
+                reason="reproducibility_metadata_invalid",
+                owner_id=intent.owner_id,
+            )
+            message = str(error)
+            async with self._lock:
+                self._require_store().fail_allocation(
+                    job["job_id"],
+                    ErrorCode.REPRODUCIBILITY_MISMATCH.value,
+                    message,
+                    self._clock(),
+                )
+            raise PlatformError(
+                ErrorCode.REPRODUCIBILITY_MISMATCH,
+                message,
+                status_code=409,
+            ) from error
+        async with self._lock:
+            state_matches = self._require_store().bind_reproducibility(
+                job["job_id"], environment_identity, now
+            )
+        if not state_matches:
+            await self._session_manager.close(
+                str(session["session_id"]),
+                reason="reproducibility_mismatch",
+                owner_id=intent.owner_id,
+            )
+            message = "The recreated environment does not match the job's first reset"
+            async with self._lock:
+                self._require_store().fail_allocation(
+                    job["job_id"],
+                    ErrorCode.REPRODUCIBILITY_MISMATCH.value,
+                    message,
+                    self._clock(),
+                )
+            emit_audit(
+                "reproducibility_mismatch",
+                run_id=intent.run_id,
+                owner_id=intent.owner_id,
+                job_id=job["job_id"],
+                job_index=job["ordinal"],
+                error_code=ErrorCode.REPRODUCIBILITY_MISMATCH.value,
+                cause="environment_reproducibility",
+            )
+            raise PlatformError(
+                ErrorCode.REPRODUCIBILITY_MISMATCH,
+                message,
+                status_code=409,
+            )
+        reproducibility = {
+            "job_fingerprint": str(job["job_fingerprint"]),
+            "runtime_fingerprint": str(job["runtime_fingerprint"]),
+            **{
+                key: str(environment_identity[key])
+                for key in (
+                    "initial_state_fingerprint",
+                    "initial_observation_fingerprint",
+                    "perturbation_plan_fingerprint",
+                )
+            },
+        }
         response = {
             "protocol_version": PROTOCOL_VERSION,
             "status": "leased",
@@ -207,9 +328,12 @@ class RunScheduler:
             "job_id": job["job_id"],
             "job_index": job["ordinal"],
             "attempt": int(job["attempt"]) + 1,
+            "lease_generation": int(job["attempt"]) + 1,
             "lease_id": lease_id,
             "lease_expires_at": now + self._lease_grace_period_seconds,
             "heartbeat_interval_seconds": self._heartbeat_interval_seconds,
+            "episode_spec": dict(job["spec"]),
+            "reproducibility": reproducibility,
             "session": session,
         }
         async with self._lock:
@@ -217,6 +341,7 @@ class RunScheduler:
                 job_id=job["job_id"],
                 lease_id=lease_id,
                 runner_id=intent.runner_id,
+                generation=response["lease_generation"],
                 session_id=str(session["session_id"]),
                 expires_at=response["lease_expires_at"],
                 initial_payload=pack_message(response),
@@ -231,6 +356,13 @@ class RunScheduler:
                 "The evaluation run was cancelled during environment allocation",
                 status_code=409,
             )
+        await self._session_manager.bind_lease(
+            str(session["session_id"]),
+            intent.owner_id,
+            lease_id,
+            response["lease_generation"],
+            response["lease_expires_at"],
+        )
         emit_audit(
             "episode_leased",
             run_id=intent.run_id,
@@ -240,17 +372,21 @@ class RunScheduler:
             job_index=job["ordinal"],
             attempt=response["attempt"],
             lease_id=lease_id,
+            lease_generation=response["lease_generation"],
             session_id=session["session_id"],
             status=LeaseStatus.ACTIVE.value,
+            **reproducibility,
         )
         if intent.run_id == run_id and intent.runner_id == request.runner_id:
             return response
         return self._queued_claim(run_id, request.runner_id)
 
-    async def cancel(self, run_id: str) -> Dict[str, Any]:
+    async def cancel(
+        self, run_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            run = self._require_run(store, run_id)
+            run = self._require_run(store, run_id, owner_id)
             if run["status"] == RunStatus.CANCELLED.value:
                 return self._snapshot(run_id)
             if run["status"] in {RunStatus.COMPLETED.value, RunStatus.FAILED.value}:
@@ -278,14 +414,18 @@ class RunScheduler:
             active_lease_count=len(leases),
             status=RunStatus.CANCELLED.value,
         )
-        return await self.get(run_id)
+        return await self.get(run_id, owner_id)
 
     async def complete(
-        self, lease_id: str, request: LeaseCommandRequest
+        self,
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            lease = self._require_lease(store, lease_id)
+            lease = self._require_lease(store, lease_id, owner_id)
+            self._require_generation(lease, request, owner_id)
             self._require_runner(lease, request.runner_id)
             if lease["status"] == LeaseStatus.COMPLETED.value:
                 return self._completion_response(store, lease)
@@ -298,16 +438,34 @@ class RunScheduler:
             store.mark_lease_completing(lease_id, self._clock())
 
         try:
-            result = await self._session_manager.episode_outcome(str(lease["session_id"]))
+            result = await self._session_manager.episode_outcome(
+                str(lease["session_id"]), owner_id=owner_id
+            )
         except Exception:
             async with self._lock:
                 self._require_store().restore_active_lease(lease_id, self._clock())
             raise
 
-        await self._session_manager.close(str(lease["session_id"]), reason="lease_completed")
+        async with self._lock:
+            job = self._require_store().get_job(str(lease["job_id"]))
+        if job is None:
+            raise RuntimeError("The completed lease has no episode job")
+        result.update(
+            {
+                "account_id": str(lease["owner_id"]),
+                "run_id": str(lease["run_id"]),
+                "job_id": str(lease["job_id"]),
+                "attempt": int(lease["generation"]),
+                "lease_generation": int(lease["generation"]),
+                **self._job_reproducibility(job),
+            }
+        )
+        result_receipt = self._sign_result(result)
         async with self._lock:
             store = self._require_store()
-            if not store.complete_lease(lease_id, result, self._clock()):
+            if not store.complete_lease(
+                lease_id, result, self._clock(), result_receipt
+            ):
                 raise PlatformError(
                     ErrorCode.LEASE_NOT_ACTIVE,
                     "The lease changed state before completion was committed",
@@ -315,6 +473,20 @@ class RunScheduler:
                 )
             completed_lease = self._require_lease(store, lease_id)
             response = self._completion_response(store, completed_lease)
+        try:
+            await self._session_manager.close(
+                str(lease["session_id"]), reason="lease_completed"
+            )
+        except Exception as error:
+            emit_audit(
+                "completed_session_cleanup_failed",
+                run_id=response["run_id"],
+                job_id=response["job_id"],
+                lease_id=lease_id,
+                session_id=lease["session_id"],
+                error_type=type(error).__name__,
+                error_message=str(error),
+            )
         emit_audit(
             "episode_completed",
             run_id=response["run_id"],
@@ -324,16 +496,21 @@ class RunScheduler:
             session_id=result["session_id"],
             success=result["success"],
             step_count=result["step_count"],
+            result_receipt=result_receipt,
             status=LeaseStatus.COMPLETED.value,
         )
         return response
 
     async def heartbeat(
-        self, lease_id: str, request: LeaseCommandRequest
+        self,
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            lease = self._require_lease(store, lease_id)
+            lease = self._require_lease(store, lease_id, owner_id)
+            self._require_generation(lease, request, owner_id)
             self._require_runner(lease, request.runner_id)
             if lease["status"] != LeaseStatus.ACTIVE.value:
                 raise PlatformError(
@@ -341,24 +518,41 @@ class RunScheduler:
                     "The lease can no longer be renewed",
                     status_code=409,
                 )
-            await self._session_manager.keep_alive(str(lease["session_id"]))
             now = self._clock()
+            if float(lease["expires_at"]) <= now:
+                raise PlatformError(
+                    ErrorCode.STALE_LEASE,
+                    "The episode lease has expired",
+                    status_code=409,
+                )
             expires_at = now + self._lease_grace_period_seconds
+            await self._session_manager.extend_lease(
+                str(lease["session_id"]),
+                str(lease["owner_id"]),
+                lease_id,
+                int(lease["generation"]),
+                expires_at,
+            )
             store.extend_lease(lease_id, expires_at, now)
             return {
                 "protocol_version": PROTOCOL_VERSION,
                 "status": "active",
                 "lease_id": lease_id,
+                "lease_generation": int(lease["generation"]),
                 "lease_expires_at": expires_at,
                 "heartbeat_interval_seconds": self._heartbeat_interval_seconds,
             }
 
     async def abandon(
-        self, lease_id: str, request: LeaseCommandRequest
+        self,
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         async with self._lock:
             store = self._require_store()
-            lease = self._require_lease(store, lease_id)
+            lease = self._require_lease(store, lease_id, owner_id)
+            self._require_generation(lease, request, owner_id)
             self._require_runner(lease, request.runner_id)
             if lease["status"] == LeaseStatus.ABANDONED.value:
                 return self._abandon_response(store, lease)
@@ -368,7 +562,9 @@ class RunScheduler:
                     "The lease can no longer be abandoned",
                     status_code=409,
                 )
-            if not store.abandon_lease(lease_id, self._clock()):
+            if not store.abandon_lease(
+                lease_id, self._clock(), "AGENT_FAILURE"
+            ):
                 raise PlatformError(
                     ErrorCode.LEASE_NOT_ACTIVE,
                     "The lease changed state before it could be abandoned",
@@ -394,7 +590,9 @@ class RunScheduler:
 
     async def expire_leases(self) -> int:
         async with self._lock:
-            expired = self._require_store().expire_due_leases(self._clock())
+            expired = self._require_store().expire_due_leases(
+                self._clock(), self._max_attempts
+            )
         for lease in expired:
             try:
                 await self._session_manager.close(
@@ -420,9 +618,11 @@ class RunScheduler:
                 self._store.close()
                 self._store = None
 
-    def _snapshot(self, run_id: str) -> Dict[str, Any]:
+    def _snapshot(
+        self, run_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         store = self._require_store()
-        run = self._require_run(store, run_id)
+        run = self._require_run(store, run_id, owner_id)
         jobs = store.list_jobs(run_id)
         counts = Counter(job["status"] for job in jobs)
         completed = counts[JobStatus.COMPLETED.value]
@@ -475,9 +675,11 @@ class RunScheduler:
         }
 
     @staticmethod
-    def _require_run(store: SQLiteRunStore, run_id: str) -> Dict[str, Any]:
+    def _require_run(
+        store: SQLiteRunStore, run_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         run = store.get_run(run_id)
-        if run is None:
+        if run is None or (owner_id is not None and run["owner_id"] != owner_id):
             raise PlatformError(
                 ErrorCode.RUN_NOT_FOUND,
                 "The requested evaluation run does not exist",
@@ -505,9 +707,11 @@ class RunScheduler:
         }
 
     @staticmethod
-    def _require_lease(store: SQLiteRunStore, lease_id: str) -> Dict[str, Any]:
+    def _require_lease(
+        store: SQLiteRunStore, lease_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         lease = store.get_lease(lease_id)
-        if lease is None:
+        if lease is None or (owner_id is not None and lease["owner_id"] != owner_id):
             raise PlatformError(
                 ErrorCode.LEASE_NOT_FOUND,
                 "The requested episode lease does not exist",
@@ -539,6 +743,7 @@ class RunScheduler:
             "job_index": job["ordinal"],
             "lease_id": lease["lease_id"],
             "result": job["result"],
+            "result_receipt": job["result_receipt"],
         }
 
     @staticmethod
@@ -561,6 +766,49 @@ class RunScheduler:
         if self._store is None:
             raise RuntimeError("RunScheduler.start() must be called before use")
         return self._store
+
+    def _sign_result(self, result: Dict[str, Any]) -> str:
+        payload = canonical_fingerprint(result).encode("ascii")
+        return hmac.new(self._result_signing_key, payload, hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def _require_generation(
+        lease: Dict[str, Any],
+        request: LeaseCommandRequest,
+        authenticated_owner: Optional[str],
+    ) -> None:
+        generation = request.lease_generation
+        if generation is None and authenticated_owner is None:
+            return
+        if generation != int(lease["generation"]):
+            raise PlatformError(
+                ErrorCode.STALE_LEASE,
+                "The episode lease generation is no longer current",
+                status_code=409,
+            )
+
+    def _allocation_identity_mismatch(
+        self, job: Dict[str, Any]
+    ) -> Optional[str]:
+        if job.get("job_fingerprint") != canonical_fingerprint(job["spec"]):
+            return "The stored episode specification no longer matches its fingerprint"
+        if job.get("runtime_fingerprint") != self._runtime_fingerprint:
+            return "The server runtime changed after this evaluation run was created"
+        return None
+
+    @staticmethod
+    def _job_reproducibility(job: Dict[str, Any]) -> Dict[str, Optional[str]]:
+        return {
+            "job_fingerprint": job.get("job_fingerprint"),
+            "runtime_fingerprint": job.get("runtime_fingerprint"),
+            "initial_state_fingerprint": job.get("initial_state_fingerprint"),
+            "initial_observation_fingerprint": job.get(
+                "initial_observation_fingerprint"
+            ),
+            "perturbation_plan_fingerprint": job.get(
+                "perturbation_plan_fingerprint"
+            ),
+        }
 
     def _register_intent(self, intent: _ClaimIntent) -> None:
         key = (intent.run_id, intent.runner_id)

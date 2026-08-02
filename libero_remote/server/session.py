@@ -1,6 +1,7 @@
 """Mutable session record protected by a per-session lock."""
 
 import asyncio
+import hashlib
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -59,6 +60,7 @@ class CachedStep:
 @dataclass
 class SessionRecord:
     session_id: str
+    owner_id: Optional[str]
     worker: EnvWorker
     spec: Dict[str, Any]
     episode_id: str
@@ -68,6 +70,12 @@ class SessionRecord:
     last_committed: Optional[Dict[str, Any]] = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     cache: "OrderedDict[str, CachedStep]" = field(default_factory=OrderedDict)
+    lease_id: Optional[str] = None
+    lease_generation: Optional[int] = None
+    lease_expires_at: Optional[float] = None
+    action_chain_hash: str = field(
+        default_factory=lambda: hashlib.sha256(b"libero-action-chain-v1").hexdigest()
+    )
 
     def snapshot(self) -> Dict[str, Any]:
         return {

@@ -26,6 +26,8 @@ class SlowPrivateAgent:
 
     def act(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
         assert observation["agentview_image"].shape == (16, 16, 3)
+        assert observation["instruction"] == "fake manipulation task"
+        assert observation["step_index"] == 0
         time.sleep(0.12)
         return np.array([1.0, 0.0], dtype=np.float32)
 
@@ -59,6 +61,18 @@ class FakeLeasedEpisode:
     job_index = 0
     lease_id = "lease-test"
     heartbeat_interval_seconds = 0.02
+    episode_spec = {
+        "suite": "libero_goal",
+        "task_id": 0,
+        "init_state_id": 0,
+        "seed": 142,
+        "control_mode": "relative",
+    }
+    reproducibility = {
+        "job_fingerprint": "job-hash",
+        "runtime_fingerprint": "runtime-hash",
+        "initial_state_fingerprint": "state-hash",
+    }
 
     def __init__(self) -> None:
         self.heartbeat_count = 0
@@ -68,7 +82,11 @@ class FakeLeasedEpisode:
             "agentview_image": np.zeros((16, 16, 3), dtype=np.uint8)
         }, {
             "language_instruction": "fake manipulation task",
-            "action_schema": {"shape": [2]},
+            "action_schema": {
+                "shape": [2],
+                "low": [-1.0, -1.0],
+                "high": [1.0, 1.0],
+            },
             "observation_schema_version": "libero_standard_v1",
         }
 
@@ -99,10 +117,12 @@ def test_generic_runner_heartbeats_while_private_model_inference_is_blocked(
     assert result["result"]["success"] is True
     assert episode.heartbeat_count >= 3
     assert agent.context.language_instruction == "fake manipulation task"
+    assert agent.context.episode_spec["seed"] == 142
+    assert agent.context.reproducibility["job_fingerprint"] == "job-hash"
     assert agent.closed is True
 
 
-def test_generic_runner_abandons_and_requeues_lease_when_adapter_fails(
+def test_generic_runner_fails_job_without_retry_when_adapter_fails(
     tmp_path: Path,
 ) -> None:
     app = create_app(
@@ -129,10 +149,42 @@ def test_generic_runner_abandons_and_requeues_lease_when_adapter_fails(
         health = http_client.get("/v1/health").json()
         client.close()
 
-    assert snapshot["status"] == "queued"
-    assert snapshot["summary"]["queued"] == 1
+    assert snapshot["status"] == "failed"
+    assert snapshot["summary"]["failed"] == 1
     assert snapshot["summary"]["active"] == 0
     assert health["sessions"]["active"] == 0
+    assert agent.closed is True
+
+
+def test_generic_runner_rejects_adapter_action_outside_server_schema() -> None:
+    class InvalidActionAgent(SlowPrivateAgent):
+        def act(self, observation: Dict[str, np.ndarray]) -> np.ndarray:
+            del observation
+            return np.array([2.0, 0.0], dtype=np.float32)
+
+    agent = InvalidActionAgent()
+    episode = FakeLeasedEpisode()
+
+    with pytest.raises(ValueError, match="outside server bounds"):
+        run_leased_episode(episode, agent)
+
+    assert agent.closed is True
+
+
+def test_generic_runner_rejects_incomplete_server_action_schema() -> None:
+    class IncompleteSchemaEpisode(FakeLeasedEpisode):
+        def initial_observation(
+            self,
+        ) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
+            observation, info = super().initial_observation()
+            info["action_schema"] = {"shape": [2]}
+            return observation, info
+
+    agent = SlowPrivateAgent()
+
+    with pytest.raises(RuntimeError, match="missing fields"):
+        run_leased_episode(IncompleteSchemaEpisode(), agent)
+
     assert agent.closed is True
 
 

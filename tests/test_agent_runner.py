@@ -3,10 +3,10 @@ import pytest
 
 from libero_remote.runner.agent import (
     AgentCapabilities,
+    AgentEpisodeSpec,
     EpisodeContext,
     run_remote_agent_episode,
 )
-from libero_remote.runner.xvla import EpisodeSpec
 
 ACTION_SCHEMA = {
     "control_mode": "relative",
@@ -72,7 +72,7 @@ class _RemoteEnv:
 def test_agent_episode_uses_declared_relative_schema_and_closes_session() -> None:
     env = _RemoteEnv()
     agent = _Agent()
-    spec = EpisodeSpec("libero_spatial", 8, 0, 142, 500)
+    spec = AgentEpisodeSpec("libero_spatial", 8, 0, 142, 500)
 
     result = run_remote_agent_episode(env, agent, spec)
 
@@ -102,7 +102,7 @@ def test_agent_episode_rejects_missing_canonical_field_and_closes_session() -> N
         run_remote_agent_episode(
             env,
             agent,
-            EpisodeSpec("libero_spatial", 8, 0, 142, 500),
+            AgentEpisodeSpec("libero_spatial", 8, 0, 142, 500),
         )
 
     assert agent.observations == []
@@ -131,7 +131,7 @@ def test_agent_episode_rejects_invalid_action_and_closes_session(
         run_remote_agent_episode(
             env,
             InvalidActionAgent(),
-            EpisodeSpec("libero_spatial", 8, 0, 142, 500),
+            AgentEpisodeSpec("libero_spatial", 8, 0, 142, 500),
         )
 
     assert env.actions == []

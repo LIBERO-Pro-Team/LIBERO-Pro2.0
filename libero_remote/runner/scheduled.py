@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, Protocol, Tuple
 import numpy as np
 
 from libero_remote.client.run_client import RemoteRunClient
+from libero_remote.runner.agent import validate_action
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,8 @@ class AgentContext:
     run_id: str
     job_id: str
     job_index: int
+    episode_spec: Dict[str, Any]
+    reproducibility: Dict[str, str]
     language_instruction: str
     action_schema: Dict[str, Any]
     observation_schema_version: str
@@ -52,6 +55,14 @@ class LeasedEpisode(Protocol):
     def heartbeat_interval_seconds(self) -> float:
         ...
 
+    @property
+    def episode_spec(self) -> Dict[str, Any]:
+        ...
+
+    @property
+    def reproducibility(self) -> Dict[str, str]:
+        ...
+
     def initial_observation(self) -> Tuple[Dict[str, np.ndarray], Dict[str, Any]]:
         ...
 
@@ -78,11 +89,14 @@ def run_leased_episode(
     """Run one lease while heartbeat traffic is independent of model latency."""
 
     observation, info = episode.initial_observation()
+    instruction = str(info["language_instruction"])
     context = AgentContext(
         run_id=episode.run_id,
         job_id=episode.job_id,
         job_index=episode.job_index,
-        language_instruction=str(info["language_instruction"]),
+        episode_spec=episode.episode_spec,
+        reproducibility=episode.reproducibility,
+        language_instruction=instruction,
         action_schema=dict(info["action_schema"]),
         observation_schema_version=str(info["observation_schema_version"]),
     )
@@ -90,11 +104,21 @@ def run_leased_episode(
     heartbeat.start()
     try:
         adapter.reset(context)
+        step_index = 0
         while True:
             heartbeat.raise_if_failed()
-            action = adapter.act(observation)
+            adapter_observation = dict(observation)
+            adapter_observation["instruction"] = instruction
+            adapter_observation["step_index"] = step_index
+            action = validate_action(
+                adapter.act(adapter_observation), context.action_schema
+            )
             heartbeat.raise_if_failed()
-            observation, _, terminated, truncated, _ = episode.step(action)
+            observation, _, terminated, truncated, step_info = episode.step(action)
+            instruction = str(
+                step_info.get("language_instruction", instruction)
+            )
+            step_index += 1
             if terminated or truncated:
                 break
         heartbeat.stop()

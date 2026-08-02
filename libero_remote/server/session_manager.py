@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 
+from libero_remote.environment.task_manifest import TaskManifest
 from libero_remote.protocol.models import (
     PROTOCOL_VERSION,
     CreateSessionRequest,
@@ -50,6 +51,7 @@ class SessionManager:
         worker_timeout_seconds: float = 60.0,
         request_cache_size: int = 16,
         session_idle_timeout_seconds: float = 900.0,
+        task_manifest: Optional[TaskManifest] = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._backend = backend
@@ -57,11 +59,21 @@ class SessionManager:
         self._worker_timeout_seconds = worker_timeout_seconds
         self._request_cache_size = request_cache_size
         self._session_idle_timeout_seconds = session_idle_timeout_seconds
+        self._task_manifest = task_manifest
         self._clock = clock
         self._sessions: Dict[str, SessionRecord] = {}
         self._registry_lock = asyncio.Lock()
 
-    async def create(self, request: CreateSessionRequest) -> Dict[str, Any]:
+    async def create(
+        self, request: CreateSessionRequest, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        worker_spec = request.dict()
+        if self._task_manifest is not None:
+            worker_spec["_bddl_path"] = str(
+                self._task_manifest.resolve_bddl(
+                    request.suite, request.task_id, request.variant
+                )
+            )
         async with self._registry_lock:
             active_count = sum(
                 record.status not in _INACTIVE_STATUSES for record in self._sessions.values()
@@ -78,6 +90,7 @@ class SessionManager:
             worker = EnvWorker.start(self._backend, self._worker_timeout_seconds)
             record = SessionRecord(
                 session_id=session_id,
+                owner_id=owner_id,
                 worker=worker,
                 spec=request.dict(),
                 episode_id=episode_id,
@@ -87,7 +100,7 @@ class SessionManager:
             self._sessions[session_id] = record
 
         try:
-            created = await _run_blocking(worker.create, request.dict())
+            created = await _run_blocking(worker.create, worker_spec)
         except Exception as error:
             worker.terminate()
             async with self._registry_lock:
@@ -142,8 +155,10 @@ class SessionManager:
         )
         return response
 
-    async def reset(self, session_id: str, request: ResetRequest) -> Dict[str, Any]:
-        record = self._get_record(session_id)
+    async def reset(
+        self, session_id: str, request: ResetRequest, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
             self._require_usable(record)
             previous_episode_id = record.episode_id
@@ -158,6 +173,9 @@ class SessionManager:
             record.next_step_index = 0
             record.cache.clear()
             record.last_committed = None
+            record.action_chain_hash = hashlib.sha256(
+                b"libero-action-chain-v1"
+            ).hexdigest()
             record.status = SessionStatus.READY
             record.last_activity_at = self._clock()
             record.spec["init_state_id"] = request.init_state_id
@@ -185,9 +203,14 @@ class SessionManager:
             )
             return response
 
-    async def step(self, session_id: str, request: StepRequest) -> Dict[str, Any]:
-        record = self._get_record(session_id)
+    async def step(
+        self, session_id: str, request: StepRequest, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
+            self._require_current_lease(
+                record, request, require_identity=owner_id is not None
+            )
             if record.status in {SessionStatus.CLOSED, SessionStatus.EXPIRED}:
                 try:
                     self._require_usable(record, request.request_id)
@@ -302,6 +325,11 @@ class SessionManager:
 
             committed_index = record.next_step_index
             record.next_step_index += 1
+            record.action_chain_hash = hashlib.sha256(
+                bytes.fromhex(record.action_chain_hash)
+                + bytes.fromhex(action_hash)
+                + committed_index.to_bytes(8, byteorder="big", signed=False)
+            ).hexdigest()
             if result.get("terminated"):
                 record.status = SessionStatus.TERMINATED
             elif result.get("truncated"):
@@ -350,15 +378,19 @@ class SessionManager:
             record.last_activity_at = self._clock()
             return response
 
-    async def get(self, session_id: str) -> Dict[str, Any]:
-        record = self._get_record(session_id)
+    async def get(
+        self, session_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
             if record.status not in _INACTIVE_STATUSES:
                 record.last_activity_at = self._clock()
             return record.snapshot()
 
-    async def episode_outcome(self, session_id: str) -> Dict[str, Any]:
-        record = self._get_record(session_id)
+    async def episode_outcome(
+        self, session_id: str, owner_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
             if record.status not in {SessionStatus.TERMINATED, SessionStatus.TRUNCATED}:
                 raise PlatformError(
@@ -382,17 +414,60 @@ class SessionManager:
                 "truncated": bool(committed["truncated"]),
                 "reward": float(committed["reward"]),
                 "step_count": record.next_step_index,
+                "action_chain_hash": record.action_chain_hash,
                 "last_request_id": committed["request_id"],
             }
 
-    async def keep_alive(self, session_id: str) -> None:
-        record = self._get_record(session_id)
+    async def keep_alive(
+        self, session_id: str, owner_id: Optional[str] = None
+    ) -> None:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
             self._require_usable(record)
             record.last_activity_at = self._clock()
 
-    async def close(self, session_id: str, reason: str = "client_request") -> None:
-        record = self._get_record(session_id)
+    async def bind_lease(
+        self,
+        session_id: str,
+        owner_id: str,
+        lease_id: str,
+        generation: int,
+        expires_at: float,
+    ) -> None:
+        record = self._get_record(session_id, owner_id)
+        async with record.lock:
+            self._require_usable(record)
+            record.lease_id = lease_id
+            record.lease_generation = generation
+            record.lease_expires_at = expires_at
+
+    async def extend_lease(
+        self,
+        session_id: str,
+        owner_id: str,
+        lease_id: str,
+        generation: int,
+        expires_at: float,
+    ) -> None:
+        record = self._get_record(session_id, owner_id)
+        async with record.lock:
+            self._require_lease_identity(record, lease_id, generation)
+            if record.lease_expires_at is not None and time.time() > record.lease_expires_at:
+                raise PlatformError(
+                    ErrorCode.STALE_LEASE,
+                    "The episode lease has expired",
+                    status_code=409,
+                )
+            record.lease_expires_at = expires_at
+            record.last_activity_at = self._clock()
+
+    async def close(
+        self,
+        session_id: str,
+        reason: str = "client_request",
+        owner_id: Optional[str] = None,
+    ) -> None:
+        record = self._get_record(session_id, owner_id)
         async with record.lock:
             if record.status == SessionStatus.CLOSED:
                 return
@@ -470,7 +545,7 @@ class SessionManager:
         }
 
     def task_catalog(self) -> Dict[str, Any]:
-        return {
+        result = {
             "protocol_version": PROTOCOL_VERSION,
             "backend": self._backend,
             "suites": ["libero_goal", "libero_spatial", "libero_object", "libero_10"],
@@ -478,16 +553,64 @@ class SessionManager:
             "variants": ["base"],
             "control_modes": ["relative", "absolute"],
         }
+        if self._task_manifest is not None:
+            result.update(self._task_manifest.catalog())
+        return result
 
-    def _get_record(self, session_id: str) -> SessionRecord:
+    def _get_record(
+        self, session_id: str, owner_id: Optional[str] = None
+    ) -> SessionRecord:
         record: Optional[SessionRecord] = self._sessions.get(session_id)
-        if record is None:
+        if record is None or (owner_id is not None and record.owner_id != owner_id):
             raise PlatformError(
                 ErrorCode.SESSION_NOT_FOUND,
                 "The requested session does not exist",
                 status_code=404,
             )
         return record
+
+    def _require_current_lease(
+        self,
+        record: SessionRecord,
+        request: StepRequest,
+        require_identity: bool,
+    ) -> None:
+        if record.lease_id is None:
+            return
+        if request.lease_id is None or request.lease_generation is None:
+            if not require_identity:
+                return
+            raise PlatformError(
+                ErrorCode.STALE_LEASE,
+                "Scheduled steps require the active lease identity",
+                status_code=409,
+                request_id=request.request_id,
+            )
+        self._require_lease_identity(
+            record, request.lease_id, request.lease_generation, request.request_id
+        )
+        if record.lease_expires_at is not None and time.time() > record.lease_expires_at:
+            raise PlatformError(
+                ErrorCode.STALE_LEASE,
+                "The episode lease has expired",
+                status_code=409,
+                request_id=request.request_id,
+            )
+
+    @staticmethod
+    def _require_lease_identity(
+        record: SessionRecord,
+        lease_id: str,
+        generation: int,
+        request_id: Optional[str] = None,
+    ) -> None:
+        if record.lease_id != lease_id or record.lease_generation != generation:
+            raise PlatformError(
+                ErrorCode.STALE_LEASE,
+                "The episode lease is no longer current",
+                status_code=409,
+                request_id=request_id,
+            )
 
     @staticmethod
     def _require_usable(

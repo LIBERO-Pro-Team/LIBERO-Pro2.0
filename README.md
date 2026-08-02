@@ -656,7 +656,15 @@ combined
 
 第一阶段的成功标准不是“功能很多”，而是用最小接口可靠打通远程 `reset/step/close`，证明 LIBERO-PRO 可以作为服务端评测环境运行。
 
-## 21. 本机 xVLA 远程评测 runner
+## 21. 用户模型 Adapter 与参考 runner
+
+平台不固定 xVLA。正式边界是用户端 `AgentAdapter`：用户可以接入任意模型或策略，并在 adapter 内完成
+图像、语言、proprio、坐标系和 action 映射。服务端只提供版本化标准 observation/action、环境调度、
+隔离、确定性初态和权威结果。完整契约见 `docs/model-adapter-contract.md`。
+
+xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端协议，不是模型白名单，服务端也不加载其依赖。
+
+### 21.1 本机 xVLA 参考 runner
 
 计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。
 

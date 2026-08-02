@@ -14,16 +14,32 @@ class RemoteRunClient:
         base_url: str,
         timeout: float = 60.0,
         http_client: Optional[Any] = None,
+        api_key: Optional[str] = None,
     ) -> None:
-        self._transport = HttpTransport(base_url, timeout, http_client)
+        self._transport = HttpTransport(base_url, timeout, http_client, api_key)
         self.last_retry_after_seconds: Optional[float] = None
 
     def submit_run(
-        self, owner_id: str, episodes: Sequence[Dict[str, Any]]
+        self,
+        episodes_or_owner: Any = None,
+        episodes: Optional[Sequence[Dict[str, Any]]] = None,
+        *,
+        owner_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        return self._transport.post(
-            "/v1/runs", {"owner_id": owner_id, "episodes": list(episodes)}
-        )
+        """Submit episodes; authenticated servers derive owner from the API key."""
+
+        if episodes is None:
+            if episodes_or_owner is None:
+                raise TypeError("episodes are required")
+            selected_episodes = episodes_or_owner
+            legacy_owner = owner_id
+        else:
+            selected_episodes = episodes
+            legacy_owner = owner_id if episodes_or_owner is None else str(episodes_or_owner)
+        body: Dict[str, Any] = {"episodes": list(selected_episodes)}
+        if legacy_owner is not None:
+            body["owner_id"] = legacy_owner
+        return self._transport.post("/v1/runs", body)
 
     def get_run(self, run_id: str) -> Dict[str, Any]:
         return self._transport.get_json(f"/v1/runs/{run_id}")
@@ -91,6 +107,14 @@ class LeasedRemoteLiberoEnv:
         return dict(self._session["action_schema"])
 
     @property
+    def episode_spec(self) -> Dict[str, Any]:
+        return dict(self._claim["episode_spec"])
+
+    @property
+    def reproducibility(self) -> Dict[str, str]:
+        return dict(self._claim["reproducibility"])
+
+    @property
     def heartbeat_interval_seconds(self) -> float:
         return float(self._claim["heartbeat_interval_seconds"])
 
@@ -119,6 +143,8 @@ class LeasedRemoteLiberoEnv:
                 "episode_id": self._session["episode_id"],
                 "expected_step_index": self._next_step_index,
                 "request_id": request_id or f"req_{uuid.uuid4().hex}",
+                "lease_id": self.lease_id,
+                "lease_generation": int(self._claim["lease_generation"]),
                 "action": np.asarray(action, dtype=np.float32).tolist(),
             },
         )
@@ -145,7 +171,10 @@ class LeasedRemoteLiberoEnv:
             raise RuntimeError("The leased episode has already been completed")
         response = self._transport.post(
             f"/v1/leases/{self.lease_id}/heartbeat",
-            {"runner_id": self._runner_id},
+            {
+                "runner_id": self._runner_id,
+                "lease_generation": int(self._claim["lease_generation"]),
+            },
         )
         self._claim["lease_expires_at"] = response["lease_expires_at"]
         return response
@@ -153,7 +182,10 @@ class LeasedRemoteLiberoEnv:
     def complete(self) -> Dict[str, Any]:
         response = self._transport.post(
             f"/v1/leases/{self.lease_id}/complete",
-            {"runner_id": self._runner_id},
+            {
+                "runner_id": self._runner_id,
+                "lease_generation": int(self._claim["lease_generation"]),
+            },
         )
         self._finished = True
         return response
@@ -161,7 +193,10 @@ class LeasedRemoteLiberoEnv:
     def abandon(self) -> Dict[str, Any]:
         response = self._transport.post(
             f"/v1/leases/{self.lease_id}/abandon",
-            {"runner_id": self._runner_id},
+            {
+                "runner_id": self._runner_id,
+                "lease_generation": int(self._claim["lease_generation"]),
+            },
         )
         self._finished = True
         return response

@@ -43,3 +43,19 @@ def test_readiness_reports_missing_configured_bddl_suite(
     assert result["ready"] is False
     assert result["reason"] == "required_data_missing"
     assert str(bddl_root / "libero_goal") in result["missing_paths"]
+
+
+def test_readiness_reports_valid_task_manifest(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    package_root = tmp_path / "libero"
+    (package_root / "assets").mkdir(parents=True)
+    _make_suite_directories(package_root / "init_files")
+    _make_suite_directories(package_root / "bddl_files")
+    monkeypatch.setattr(readiness, "_find_libero_package_root", lambda: package_root)
+    manifest = Path(__file__).resolve().parents[1] / "assets" / "task_manifest.json"
+
+    result = readiness.check_backend_readiness("libero", str(manifest))
+
+    assert result["ready"] is True
+    assert result["task_manifest"]["task_count"] == 169

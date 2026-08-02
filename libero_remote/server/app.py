@@ -2,12 +2,13 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Dict, Optional
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 
 from libero_remote import __version__
 from libero_remote.environment.readiness import check_backend_readiness
+from libero_remote.environment.task_manifest import load_optional_task_manifest
 from libero_remote.protocol.codec import MESSAGEPACK_MEDIA_TYPE, pack_message
 from libero_remote.protocol.models import (
     CreateSessionRequest,
@@ -19,6 +20,7 @@ from libero_remote.protocol.models import (
 from libero_remote.scheduler import RunScheduler, SubmitRunRequest
 from libero_remote.scheduler.models import ClaimRequest, LeaseCommandRequest
 
+from .auth import ApiKeyAuthenticator
 from .errors import PlatformError
 from .runtime import collect_runtime_manifest
 from .session_manager import SessionManager
@@ -27,24 +29,39 @@ from .settings import Settings
 
 def create_app(settings: Optional[Settings] = None) -> FastAPI:
     resolved = settings or Settings()
+    task_manifest = load_optional_task_manifest(resolved.task_manifest_path)
+    runtime_manifest = collect_runtime_manifest()
+    if task_manifest is not None:
+        runtime_manifest["task_manifest"] = {
+            "version": task_manifest.version,
+            "sha256": task_manifest.sha256,
+            "task_count": len(task_manifest.entries),
+        }
     manager = SessionManager(
         backend=resolved.environment_backend,
         max_sessions=resolved.max_sessions,
         worker_timeout_seconds=resolved.worker_timeout_seconds,
         request_cache_size=resolved.request_cache_size,
         session_idle_timeout_seconds=resolved.session_idle_timeout_seconds,
+        task_manifest=task_manifest,
     )
     scheduler = RunScheduler(
         db_path=resolved.scheduler_db_path,
         queue_capacity=resolved.scheduler_queue_capacity,
+        max_attempts=resolved.max_attempts,
         session_manager=manager,
         heartbeat_interval_seconds=resolved.heartbeat_interval_seconds,
         lease_grace_period_seconds=resolved.lease_grace_period_seconds,
         max_active_sessions_per_owner=resolved.max_active_sessions_per_owner,
         claim_intent_ttl_seconds=resolved.claim_intent_ttl_seconds,
         allow_direct_sessions=resolved.allow_direct_sessions,
+        runtime_identity=runtime_manifest,
+        result_signing_key=resolved.result_signing_key,
     )
-    runtime_manifest = collect_runtime_manifest()
+    authenticate = ApiKeyAuthenticator(
+        required=resolved.authentication_required,
+        api_key_hashes=resolved.api_key_hashes,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -100,7 +117,9 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
 
     @app.get("/v1/health")
     async def health() -> Response:
-        backend = check_backend_readiness(resolved.environment_backend)
+        backend = check_backend_readiness(
+            resolved.environment_backend, resolved.task_manifest_path
+        )
         body = {
             "status": "ok",
             "version": __version__,
@@ -119,68 +138,104 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         return manager.task_catalog()
 
     @app.post("/v1/runs", status_code=201)
-    async def submit_run(request: SubmitRunRequest) -> Dict[str, Any]:
-        return await scheduler.submit(request)
+    async def submit_run(
+        request: SubmitRunRequest,
+        owner_id: Optional[str] = Depends(authenticate),
+    ) -> Dict[str, Any]:
+        return await scheduler.submit(request, owner_id)
 
     @app.get("/v1/runs/{run_id}")
-    async def get_run(run_id: str) -> Dict[str, Any]:
-        return await scheduler.get(run_id)
+    async def get_run(
+        run_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Dict[str, Any]:
+        return await scheduler.get(run_id, owner_id)
 
     @app.get("/v1/runs/{run_id}/episodes")
-    async def get_run_episodes(run_id: str) -> Dict[str, Any]:
-        return await scheduler.list_episodes(run_id)
+    async def get_run_episodes(
+        run_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Dict[str, Any]:
+        return await scheduler.list_episodes(run_id, owner_id)
 
     @app.delete("/v1/runs/{run_id}")
-    async def cancel_run(run_id: str) -> Dict[str, Any]:
-        return await scheduler.cancel(run_id)
+    async def cancel_run(
+        run_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Dict[str, Any]:
+        return await scheduler.cancel(run_id, owner_id)
 
     @app.post("/v1/runs/{run_id}/claim", response_class=Response)
-    async def claim_episode(run_id: str, request: ClaimRequest) -> Response:
-        return _messagepack(await scheduler.claim(run_id, request))
+    async def claim_episode(
+        run_id: str,
+        request: ClaimRequest,
+        owner_id: Optional[str] = Depends(authenticate),
+    ) -> Response:
+        return _messagepack(await scheduler.claim(run_id, request, owner_id))
 
     @app.post("/v1/leases/{lease_id}/complete")
     async def complete_episode(
-        lease_id: str, request: LeaseCommandRequest
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = Depends(authenticate),
     ) -> Dict[str, Any]:
-        return await scheduler.complete(lease_id, request)
+        return await scheduler.complete(lease_id, request, owner_id)
 
     @app.post("/v1/leases/{lease_id}/heartbeat")
     async def heartbeat_episode(
-        lease_id: str, request: LeaseCommandRequest
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = Depends(authenticate),
     ) -> Dict[str, Any]:
-        return await scheduler.heartbeat(lease_id, request)
+        return await scheduler.heartbeat(lease_id, request, owner_id)
 
     @app.post("/v1/leases/{lease_id}/abandon")
     async def abandon_episode(
-        lease_id: str, request: LeaseCommandRequest
+        lease_id: str,
+        request: LeaseCommandRequest,
+        owner_id: Optional[str] = Depends(authenticate),
     ) -> Dict[str, Any]:
-        return await scheduler.abandon(lease_id, request)
+        return await scheduler.abandon(lease_id, request, owner_id)
 
     @app.post("/v1/sessions", response_class=Response)
-    async def create_session(request: CreateSessionRequest) -> Response:
+    async def create_session(
+        request: CreateSessionRequest,
+        owner_id: Optional[str] = Depends(authenticate),
+    ) -> Response:
         if not resolved.allow_direct_sessions:
             raise PlatformError(
                 ErrorCode.DIRECT_SESSIONS_DISABLED,
                 "Direct sessions are disabled; submit and claim a scheduled run",
                 status_code=403,
             )
-        return _messagepack(await manager.create(request), status_code=201)
+        return _messagepack(
+            await manager.create(request, owner_id=owner_id), status_code=201
+        )
 
     @app.post("/v1/sessions/{session_id}/reset", response_class=Response)
-    async def reset_session(session_id: str, request: ResetRequest) -> Response:
-        return _messagepack(await manager.reset(session_id, request))
+    async def reset_session(
+        session_id: str,
+        request: ResetRequest,
+        owner_id: Optional[str] = Depends(authenticate),
+    ) -> Response:
+        return _messagepack(await manager.reset(session_id, request, owner_id))
 
     @app.post("/v1/sessions/{session_id}/step", response_class=Response)
-    async def step_session(session_id: str, request: StepRequest) -> Response:
-        return _messagepack(await manager.step(session_id, request))
+    async def step_session(
+        session_id: str,
+        request: StepRequest,
+        owner_id: Optional[str] = Depends(authenticate),
+    ) -> Response:
+        return _messagepack(await manager.step(session_id, request, owner_id))
 
     @app.get("/v1/sessions/{session_id}")
-    async def get_session(session_id: str) -> Dict[str, Any]:
-        return await manager.get(session_id)
+    async def get_session(
+        session_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Dict[str, Any]:
+        return await manager.get(session_id, owner_id)
 
     @app.delete("/v1/sessions/{session_id}", status_code=204)
-    async def close_session(session_id: str) -> Response:
-        await manager.close(session_id)
+    async def close_session(
+        session_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Response:
+        await manager.close(session_id, owner_id=owner_id)
         return Response(status_code=204)
 
     return app

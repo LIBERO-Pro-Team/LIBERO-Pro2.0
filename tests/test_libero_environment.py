@@ -64,6 +64,17 @@ def test_task_bddl_cannot_escape_configured_root(
         _resolve_task_bddl_file(_Suite(), EscapingTask(), 0)
 
 
+def test_explicit_manifest_bddl_path_takes_precedence(tmp_path: Path) -> None:
+    bddl = tmp_path / "approved.bddl"
+    bddl.write_text("approved", encoding="utf-8")
+
+    resolved = _resolve_task_bddl_file(
+        _Suite(), _Task(), 0, explicit_path=str(bddl)
+    )
+
+    assert resolved == str(bddl.resolve())
+
+
 @pytest.mark.parametrize(
     ("control_mode", "expected_use_delta"),
     [("relative", True), ("absolute", False)],

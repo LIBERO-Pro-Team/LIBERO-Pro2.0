@@ -5,8 +5,12 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from .task_manifest import TaskManifest
 
-def check_backend_readiness(backend: str) -> Dict[str, Any]:
+
+def check_backend_readiness(
+    backend: str, task_manifest_path: Optional[str] = None
+) -> Dict[str, Any]:
     if backend == "fake":
         return {"name": backend, "ready": True}
     if backend != "libero":
@@ -45,6 +49,19 @@ def check_backend_readiness(backend: str) -> Dict[str, Any]:
     if missing:
         result["reason"] = "required_data_missing"
         result["missing_paths"] = missing
+    if not missing and task_manifest_path:
+        try:
+            manifest = TaskManifest.load(task_manifest_path)
+        except Exception as error:
+            result["ready"] = False
+            result["reason"] = "task_manifest_invalid"
+            result["task_manifest_error"] = str(error)
+        else:
+            result["task_manifest"] = {
+                "version": manifest.version,
+                "sha256": manifest.sha256,
+                "task_count": len(manifest.entries),
+            }
     return result
 
 
