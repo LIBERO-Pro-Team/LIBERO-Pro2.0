@@ -45,6 +45,7 @@ RUN apt-get update \
         libxext6 \
         python3.8 \
         python3.8-dev \
+        python3-distutils \
     && curl -fsSL https://bootstrap.pypa.io/pip/3.8/get-pip.py -o /tmp/get-pip.py \
     && python3.8 /tmp/get-pip.py "pip<25" "setuptools<76" wheel \
     && rm -f /tmp/get-pip.py \

@@ -24,6 +24,7 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
     assert "checkpoint" not in deployment
     assert "cudnn" not in dockerfile
     assert "torch==1.11.0+cpu" in dockerfile
+    assert "python3-distutils" in dockerfile
     bddl_setting = (
         "libero_remote_bddl_root="
         "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"
@@ -54,3 +55,16 @@ def test_customer_bundle_scripts_do_not_fetch_runtime_files_from_github() -> Non
 
     assert "git clone" not in sources
     assert "github.com/zxy-mllab/libero-pro" not in sources
+
+
+def test_customer_install_checks_container_gpu_and_uses_bash_entrypoints() -> None:
+    deployment = ROOT / "deploy" / "customer-local"
+    install = (deployment / "install.sh").read_text(encoding="utf-8")
+    readme = (deployment / "README.md").read_text(encoding="utf-8")
+
+    assert "docker run --rm --gpus all" in install
+    assert "--entrypoint nvidia-smi" in install
+    assert "bash configure.sh" in install
+    assert "bash healthcheck.sh" in install
+    assert "bash install.sh" in readme
+    assert "bash add_account.sh team-b" in readme

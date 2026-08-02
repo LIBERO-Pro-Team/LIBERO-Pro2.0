@@ -16,24 +16,29 @@ BDDL、init state 和扰动资产均随 Docker 镜像交付；客户安装时不
 ```bash
 tar -xzf libero-pro-bundle-1.0.0.tar.gz
 cd libero-pro-bundle-1.0.0
-./install.sh
+bash install.sh
 python3 -m pip install wheels/libero_remote-1.0.0-py3-none-any.whl
 set -a && source client.env && set +a
 python3 smoke_test.py
 ```
 
 `configure.sh` 会生成随机 API key 和独立结果签名密钥，只保存 API key 的 SHA-256 到服务端 `.env`。
+`install.sh` 还会在启动服务前验证 Docker 容器能够访问 NVIDIA GPU；这一步失败时，应先修复
+NVIDIA Container Toolkit，不能跳过后继续测试。
 不要共享 `.env`、`client.env` 或 runtime 数据库。若模型在另一台内网机器，修改 Compose 端口为
 `0.0.0.0:8000:8000`，同时配置防火墙，仅允许指定内网源地址；不要直接暴露到公网。
 
 新增独立账户：
 
 ```bash
-./add_account.sh team-b
+bash add_account.sh team-b
 docker compose up -d --force-recreate
 ```
 
-脚本会生成 `client-team-b.env`。每个账户只获得自己的文件，不能共享 API key。
+脚本会生成 `client-team-b.env`。每个账户只获得自己的文件，不能共享 API key。若要让多个账户同时运行，
+将 `.env` 中的 `LIBERO_REMOTE_MAX_SESSIONS` 设置为服务器能够承载的环境总数；
+`LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` 则限制单个账户可占用的环境数。不要把总并发数设置得超过
+GPU 显存和主机内存容量。
 
 ## 模型接入
 
