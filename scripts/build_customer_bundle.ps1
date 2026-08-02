@@ -90,7 +90,7 @@ if ($BuildImage) {
         "-u", "root", "-d", "Ubuntu", "--", "docker", "build",
         "--build-arg", "LIBERO_PRO_SOURCE=local",
         "--build-arg", "LIBERO_REMOTE_COMMIT=$serviceCommit",
-        "--build-arg", "CUDA_BASE_IMAGE=docker.m.daocloud.io/nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04",
+        "--build-arg", "BASE_IMAGE=docker.m.daocloud.io/library/ubuntu:20.04",
         "--tag", "libero-pro-server:$Version", $wslSource
     )
     & wsl.exe @buildArguments

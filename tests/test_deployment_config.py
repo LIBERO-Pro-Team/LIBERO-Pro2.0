@@ -22,6 +22,8 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
     assert "pi0" not in deployment
     assert "model_path" not in deployment
     assert "checkpoint" not in deployment
+    assert "cudnn" not in dockerfile
+    assert "torch==1.11.0+cpu" in dockerfile
     bddl_setting = (
         "libero_remote_bddl_root="
         "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"

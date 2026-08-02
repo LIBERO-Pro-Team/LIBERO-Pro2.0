@@ -1,5 +1,5 @@
-ARG CUDA_BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-runtime-ubuntu20.04
-FROM ${CUDA_BASE_IMAGE}
+ARG BASE_IMAGE=ubuntu:20.04
+FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG LIBERO_PRO_REPOSITORY=https://github.com/Zxy-MLlab/LIBERO-PRO.git
@@ -60,10 +60,8 @@ RUN if [ "${LIBERO_PRO_SOURCE}" = "local" ]; then \
         && git -C "${LIBERO_PRO_ROOT}" checkout "${LIBERO_PRO_COMMIT}"; \
     fi \
     && python3.8 -m pip install \
-        torch==1.11.0+cu113 \
-        torchvision==0.12.0+cu113 \
-        torchaudio==0.11.0 \
-        --extra-index-url https://download.pytorch.org/whl/cu113 \
+        torch==1.11.0+cpu \
+        --extra-index-url https://download.pytorch.org/whl/cpu \
     && python3.8 -m pip install -r "${LIBERO_PRO_ROOT}/requirements.txt" \
     && python3.8 -m pip install -e "${LIBERO_PRO_ROOT}"
 
