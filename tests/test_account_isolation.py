@@ -11,6 +11,38 @@ USER_A = {"Authorization": "Bearer secret-a"}
 USER_B = {"Authorization": "Bearer secret-b"}
 
 
+def test_direct_sessions_enforce_per_account_capacity(tmp_path: Path) -> None:
+    app = create_app(
+        Settings(
+            environment_backend="fake",
+            max_sessions=3,
+            max_active_sessions_per_owner=1,
+            scheduler_db_path=str(tmp_path / "scheduler.sqlite3"),
+            worker_timeout_seconds=5.0,
+            authentication_required=True,
+            api_key_hashes={
+                hashlib.sha256(b"secret-a").hexdigest(): "account-a",
+                hashlib.sha256(b"secret-b").hexdigest(): "account-b",
+            },
+        )
+    )
+    request = {
+        "camera_height": 16,
+        "camera_width": 16,
+        "max_steps": 1,
+    }
+
+    with TestClient(app) as client:
+        first_a = client.post("/v1/sessions", json=request, headers=USER_A)
+        second_a = client.post("/v1/sessions", json=request, headers=USER_A)
+        first_b = client.post("/v1/sessions", json=request, headers=USER_B)
+
+    assert first_a.status_code == 201
+    assert second_a.status_code == 503
+    assert second_a.json()["error_code"] == "SESSION_CAPACITY_REACHED"
+    assert first_b.status_code == 201
+
+
 def test_authenticated_accounts_cannot_access_each_others_runs_or_sessions(
     tmp_path: Path,
 ) -> None:

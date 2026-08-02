@@ -27,3 +27,28 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
         "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"
     )
     assert bddl_setting in dockerfile
+
+
+def test_customer_local_compose_enables_authenticated_direct_sessions() -> None:
+    compose = (ROOT / "deploy" / "customer-local" / "compose.yaml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "LIBERO_REMOTE_AUTHENTICATION_REQUIRED: \"true\"" in compose
+    assert "LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS: \"true\"" in compose
+    assert "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000" in compose
+    assert "libero-pro-server:1.0.0" in compose
+    assert "gpus: all" in compose
+    assert "./assets:/opt/libero-remote/assets:ro" in compose
+
+
+def test_customer_bundle_scripts_do_not_fetch_runtime_files_from_github() -> None:
+    deployment = ROOT / "deploy" / "customer-local"
+    sources = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in deployment.rglob("*")
+        if path.is_file()
+    ).lower()
+
+    assert "git clone" not in sources
+    assert "github.com/zxy-mllab/libero-pro" not in sources

@@ -1,0 +1,39 @@
+services:
+  libero-service:
+    image: libero-pro-server:1.0.0
+    restart: unless-stopped
+    gpus: all
+    ports:
+      - "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
+    environment:
+      LIBERO_REMOTE_BACKEND: libero
+      LIBERO_REMOTE_HOST: 0.0.0.0
+      LIBERO_REMOTE_PORT: 8000
+      LIBERO_REMOTE_AUTHENTICATION_REQUIRED: "true"
+      LIBERO_REMOTE_API_KEY_HASHES: "${LIBERO_REMOTE_API_KEY_HASHES:?Run ./configure.sh first}"
+      LIBERO_REMOTE_RESULT_SIGNING_KEY: "${LIBERO_REMOTE_RESULT_SIGNING_KEY:?Run ./configure.sh first}"
+      LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS: "true"
+      LIBERO_REMOTE_MAX_SESSIONS: "${LIBERO_REMOTE_MAX_SESSIONS:-1}"
+      LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER: "${LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER:-1}"
+      LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS: "${LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS:-120}"
+      LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS: "${LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS:-900}"
+      LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS: "${LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS:-30}"
+      LIBERO_REMOTE_SCHEDULER_DB_PATH: /opt/libero-remote/runtime/scheduler.sqlite3
+      LIBERO_REMOTE_TASK_MANIFEST: /opt/libero-remote/assets/task_manifest.json
+      LIBERO_REMOTE_BDDL_ROOT: /opt/libero-remote/assets/bddl/libero-pro2.0-169-v1
+      LIBERO_REMOTE_IMAGE_DIGEST: "${LIBERO_REMOTE_IMAGE_DIGEST:-}"
+      MUJOCO_GL: egl
+      PYOPENGL_PLATFORM: egl
+      NVIDIA_VISIBLE_DEVICES: "${GPU_ID:-all}"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility,graphics
+    volumes:
+      - ./assets:/opt/libero-remote/assets:ro
+      - ./runtime:/opt/libero-remote/runtime
+      - ./logs:/opt/libero-remote/logs
+    shm_size: "2gb"
+    healthcheck:
+      test: ["CMD", "python3.8", "-m", "libero_remote.server.healthcheck"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3

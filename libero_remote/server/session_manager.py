@@ -51,6 +51,7 @@ class SessionManager:
         worker_timeout_seconds: float = 60.0,
         request_cache_size: int = 16,
         session_idle_timeout_seconds: float = 900.0,
+        max_active_sessions_per_owner: Optional[int] = None,
         task_manifest: Optional[TaskManifest] = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
@@ -59,6 +60,7 @@ class SessionManager:
         self._worker_timeout_seconds = worker_timeout_seconds
         self._request_cache_size = request_cache_size
         self._session_idle_timeout_seconds = session_idle_timeout_seconds
+        self._max_active_sessions_per_owner = max_active_sessions_per_owner
         self._task_manifest = task_manifest
         self._clock = clock
         self._sessions: Dict[str, SessionRecord] = {}
@@ -84,6 +86,18 @@ class SessionManager:
                     "The server has no available environment capacity",
                     status_code=503,
                 )
+            if owner_id is not None and self._max_active_sessions_per_owner is not None:
+                owner_active = sum(
+                    record.owner_id == owner_id
+                    and record.status not in _INACTIVE_STATUSES
+                    for record in self._sessions.values()
+                )
+                if owner_active >= self._max_active_sessions_per_owner:
+                    raise PlatformError(
+                        ErrorCode.SESSION_CAPACITY_REACHED,
+                        "The account has reached its active environment quota",
+                        status_code=503,
+                    )
 
             session_id = f"ses_{uuid.uuid4().hex}"
             episode_id = f"ep_{uuid.uuid4().hex}"
@@ -392,23 +406,25 @@ class SessionManager:
     ) -> Dict[str, Any]:
         record = self._get_record(session_id, owner_id)
         async with record.lock:
-            if record.status not in {SessionStatus.TERMINATED, SessionStatus.TRUNCATED}:
+            committed = record.last_committed
+            finished = committed is not None and bool(
+                committed.get("terminated") or committed.get("truncated")
+            )
+            if not finished:
                 raise PlatformError(
                     ErrorCode.EPISODE_NOT_FINISHED,
                     "The episode must terminate or truncate before completion",
                     status_code=409,
                 )
-            committed = record.last_committed
-            if committed is None:
-                raise PlatformError(
-                    ErrorCode.INTERNAL_ERROR,
-                    "The terminal episode has no committed server result",
-                    status_code=500,
-                )
+            assert committed is not None
             return {
                 "session_id": record.session_id,
                 "episode_id": record.episode_id,
-                "status": record.status.value,
+                "status": (
+                    SessionStatus.TERMINATED.value
+                    if committed["terminated"]
+                    else SessionStatus.TRUNCATED.value
+                ),
                 "success": bool(committed["success"]),
                 "terminated": bool(committed["terminated"]),
                 "truncated": bool(committed["truncated"]),

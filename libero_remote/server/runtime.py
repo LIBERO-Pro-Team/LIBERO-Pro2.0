@@ -14,11 +14,17 @@ def collect_runtime_manifest() -> Dict[str, Any]:
     libero_root_value = os.environ.get("LIBERO_PRO_ROOT")
     libero_root = Path(libero_root_value).resolve() if libero_root_value else None
     devices = _gpu_devices()
+    service_state = _git_state(service_root)
+    libero_state = _git_state(libero_root) if libero_root else _unknown_git_state()
+    if service_state["commit"] is None:
+        service_state["commit"] = _optional_env("LIBERO_REMOTE_COMMIT")
+    if libero_state["commit"] is None:
+        libero_state["commit"] = _optional_env("LIBERO_PRO_COMMIT")
     return {
-        "service": _git_state(service_root),
+        "service": service_state,
         "libero": {
             "root": str(libero_root) if libero_root else None,
-            **(_git_state(libero_root) if libero_root else _unknown_git_state()),
+            **libero_state,
         },
         "packages": {
             "libero": _package_version("libero"),
@@ -49,6 +55,11 @@ def collect_runtime_manifest() -> Dict[str, Any]:
             "PYOPENGL_PLATFORM": os.environ.get("PYOPENGL_PLATFORM"),
         },
     }
+
+
+def _optional_env(name: str) -> Optional[str]:
+    value = os.environ.get(name, "").strip()
+    return value or None
 
 
 def _package_version(distribution: str) -> Optional[str]:

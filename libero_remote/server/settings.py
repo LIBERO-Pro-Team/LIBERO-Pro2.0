@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         default_factory=lambda: secrets.token_hex(32),
         env="LIBERO_REMOTE_RESULT_SIGNING_KEY",
     )
+    image_digest: Optional[str] = Field(None, env="LIBERO_REMOTE_IMAGE_DIGEST")
     environment_backend: str = Field("libero", env="LIBERO_REMOTE_BACKEND")
     max_sessions: int = Field(1, ge=1, env="LIBERO_REMOTE_MAX_SESSIONS")
     worker_timeout_seconds: float = Field(60.0, gt=0.0, env="LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS")

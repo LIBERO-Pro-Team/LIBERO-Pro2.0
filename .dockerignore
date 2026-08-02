@@ -9,3 +9,12 @@ __pycache__
 build
 dist
 .env
+simulator-source/.git
+simulator-source/.codex-tmp
+simulator-source/.pytest_cache
+simulator-source/.ruff_cache
+simulator-source/__pycache__
+simulator-source/hust-vpn-logs
+simulator-source/images
+simulator-source/meeting_output
+simulator-source/runtime

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "libero-remote"
-version = "0.1.0"
+version = "1.0.0"
 description = "Remote evaluation service and client for LIBERO-PRO"
 readme = "README.md"
 requires-python = ">=3.8,<3.14"

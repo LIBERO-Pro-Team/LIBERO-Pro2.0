@@ -100,6 +100,113 @@ def test_task_catalog_advertises_supported_control_modes() -> None:
     assert response.json()["control_modes"] == ["relative", "absolute"]
 
 
+def test_version_reports_fixed_service_and_task_pack_identity() -> None:
+    app = create_app(Settings(environment_backend="fake"))
+
+    with TestClient(app) as http_client:
+        response = http_client.get("/v1/version")
+
+    payload = response.json()
+    assert response.status_code == 200
+    assert payload["service_version"] == "1.0.0"
+    assert payload["sdk_version"] == "1.0.0"
+    assert payload["protocol_version"] == "1.0"
+    assert payload["benchmark_version"] == "libero-pro-2.0"
+    assert payload["task_pack_version"] is None
+    assert payload["perturbation_version"] is None
+
+
+def test_runtime_uses_packaged_commit_metadata_without_git(monkeypatch: Any) -> None:
+    from libero_remote.server import runtime
+
+    monkeypatch.setenv("LIBERO_REMOTE_COMMIT", "a" * 40)
+    monkeypatch.setenv("LIBERO_PRO_COMMIT", "b" * 40)
+    monkeypatch.setattr(runtime, "_git_state", lambda _: runtime._unknown_git_state())
+
+    manifest = runtime.collect_runtime_manifest()
+
+    assert manifest["service"]["commit"] == "a" * 40
+    assert manifest["libero"]["commit"] == "b" * 40
+
+
+def test_authenticated_direct_session_result_is_queryable_by_its_owner() -> None:
+    import hashlib
+
+    app = create_app(
+        Settings(
+            environment_backend="fake",
+            max_sessions=1,
+            worker_timeout_seconds=5.0,
+            authentication_required=True,
+            api_key_hashes={
+                hashlib.sha256(b"secret-a").hexdigest(): "account-a",
+                hashlib.sha256(b"secret-b").hexdigest(): "account-b",
+            },
+        )
+    )
+
+    with TestClient(app) as http_client:
+        env = RemoteLiberoEnv(
+            base_url="http://testserver",
+            http_client=http_client,
+            api_key="secret-a",
+        )
+        _, info = env.reset(camera_height=16, camera_width=16, max_steps=1)
+        env.step(np.zeros(2, dtype=np.float32), request_id="fixed-step")
+        env.close()
+        result = env.result()
+        hidden = http_client.get(
+            f"/v1/results/{info['session_id']}",
+            headers={"Authorization": "Bearer secret-b"},
+        )
+
+    assert result["session_id"] == info["session_id"]
+    assert result["episode_id"] == info["episode_id"]
+    assert result["status"] == "truncated"
+    assert result["truncated"] is True
+    assert result["step_count"] == 1
+    assert len(result["action_chain_hash"]) == 64
+    assert hidden.status_code == 404
+
+
+def test_same_direct_session_spec_and_seed_reproduce_initial_observation() -> None:
+    app = create_app(
+        Settings(
+            environment_backend="fake",
+            max_sessions=2,
+            max_active_sessions_per_owner=2,
+            worker_timeout_seconds=5.0,
+        )
+    )
+
+    with TestClient(app) as http_client:
+        first = RemoteLiberoEnv("http://testserver", http_client=http_client)
+        second = RemoteLiberoEnv("http://testserver", http_client=http_client)
+        first_observation, first_info = first.reset(
+            suite="libero_goal",
+            task_id=0,
+            init_state_id=3,
+            seed=142,
+            camera_height=16,
+            camera_width=16,
+        )
+        second_observation, second_info = second.reset(
+            suite="libero_goal",
+            task_id=0,
+            init_state_id=3,
+            seed=142,
+            camera_height=16,
+            camera_width=16,
+        )
+        first.close()
+        second.close()
+
+    assert first_info["language_instruction"] == second_info["language_instruction"]
+    assert first_observation.keys() == second_observation.keys()
+    for key in first_observation:
+        np.testing.assert_array_equal(first_observation[key], second_observation[key])
+
+
 def test_lifespan_cleanup_expires_an_idle_session() -> None:
     app = create_app(
         Settings(

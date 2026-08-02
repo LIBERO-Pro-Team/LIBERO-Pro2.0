@@ -18,6 +18,7 @@ class RemoteLiberoEnv:
     ) -> None:
         self._transport = HttpTransport(base_url, timeout, http_client, api_key)
         self.session_id: Optional[str] = None
+        self.last_session_id: Optional[str] = None
         self.episode_id: Optional[str] = None
         self.next_step_index = 0
         self.action_schema: Optional[Dict[str, Any]] = None
@@ -41,6 +42,7 @@ class RemoteLiberoEnv:
             }
             response = self._transport.post("/v1/sessions", body)
             self.session_id = str(response["session_id"])
+            self.last_session_id = self.session_id
             self.action_schema = response.get("action_schema")
         else:
             if suite is not None or task_id is not None:
@@ -84,6 +86,14 @@ class RemoteLiberoEnv:
             bool(response["truncated"]),
             info,
         )
+
+    def result(self, session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Return the server-authoritative outcome for a finished direct session."""
+
+        resolved = session_id or self.session_id or self.last_session_id
+        if resolved is None:
+            raise RuntimeError("Call reset() before requesting a result")
+        return self._transport.get_json(f"/v1/results/{resolved}")
 
     def close(self) -> None:
         session_id, self.session_id = self.session_id, None

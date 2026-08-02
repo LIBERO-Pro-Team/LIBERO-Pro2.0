@@ -11,6 +11,7 @@ from libero_remote.environment.readiness import check_backend_readiness
 from libero_remote.environment.task_manifest import load_optional_task_manifest
 from libero_remote.protocol.codec import MESSAGEPACK_MEDIA_TYPE, pack_message
 from libero_remote.protocol.models import (
+    PROTOCOL_VERSION,
     CreateSessionRequest,
     ErrorCode,
     ErrorResponse,
@@ -43,6 +44,7 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
         worker_timeout_seconds=resolved.worker_timeout_seconds,
         request_cache_size=resolved.request_cache_size,
         session_idle_timeout_seconds=resolved.session_idle_timeout_seconds,
+        max_active_sessions_per_owner=resolved.max_active_sessions_per_owner,
         task_manifest=task_manifest,
     )
     scheduler = RunScheduler(
@@ -136,6 +138,26 @@ def create_app(settings: Optional[Settings] = None) -> FastAPI:
     @app.get("/v1/tasks")
     async def tasks() -> Dict[str, Any]:
         return manager.task_catalog()
+
+    @app.get("/v1/version")
+    async def version() -> Dict[str, Any]:
+        task_pack_version = task_manifest.version if task_manifest is not None else None
+        return {
+            "service_version": __version__,
+            "sdk_version": __version__,
+            "protocol_version": PROTOCOL_VERSION,
+            "benchmark_version": "libero-pro-2.0",
+            "image_digest": resolved.image_digest,
+            "simulator_commit": runtime_manifest["libero"]["commit"],
+            "task_pack_version": task_pack_version,
+            "perturbation_version": task_pack_version,
+        }
+
+    @app.get("/v1/results/{session_id}")
+    async def direct_session_result(
+        session_id: str, owner_id: Optional[str] = Depends(authenticate)
+    ) -> Dict[str, Any]:
+        return await manager.episode_outcome(session_id, owner_id)
 
     @app.post("/v1/runs", status_code=201)
     async def submit_run(
