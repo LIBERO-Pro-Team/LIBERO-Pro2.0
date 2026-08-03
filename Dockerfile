@@ -62,6 +62,7 @@ RUN if [ "${LIBERO_PRO_SOURCE}" = "local" ]; then \
     fi \
     && python3.8 -m pip install \
         torch==1.11.0+cpu \
+        torchvision==0.12.0+cpu \
         --extra-index-url https://download.pytorch.org/whl/cpu \
     && python3.8 -m pip install -r "${LIBERO_PRO_ROOT}/requirements.txt" \
     && python3.8 -m pip install -e "${LIBERO_PRO_ROOT}"
