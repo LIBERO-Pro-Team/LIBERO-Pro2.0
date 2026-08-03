@@ -1,6 +1,7 @@
 import ast
 import hashlib
 import json
+import shutil
 import subprocess
 import zipfile
 from pathlib import Path
@@ -283,6 +284,77 @@ def test_customer_install_checks_container_gpu_and_uses_bash_entrypoints() -> No
     assert "bash healthcheck.sh" in install
     assert "bash install.sh" in readme
     assert "bash add_account.sh team-b" in readme
+
+
+def test_customer_healthcheck_waits_through_startup_failures(tmp_path: Path) -> None:
+    healthcheck = tmp_path / "healthcheck.sh"
+    shutil.copy2(ROOT / "deploy" / "customer-local" / "healthcheck.sh", healthcheck)
+    wsl_dir = f"/mnt/{tmp_path.drive[0].lower()}/{tmp_path.as_posix()[3:]}"
+    harness = f"""
+set -euo pipefail
+cd {wsl_dir!r}
+cat > startup_server.py <<'PY'
+import json
+import socket
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    attempts = 0
+
+    def do_GET(self):
+        type(self).attempts += 1
+        if type(self).attempts == 1:
+            self.connection.shutdown(socket.SHUT_RDWR)
+            self.connection.close()
+            return
+        status = 503 if type(self).attempts == 2 else 200
+        payload = json.dumps({{"status": "not_ready" if status == 503 else "ok"}}).encode()
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+        if status == 200:
+            self.server.shutdown_requested = True
+
+    def log_message(self, format, *args):
+        return
+
+
+server = HTTPServer(("127.0.0.1", 0), Handler)
+with open("port", "w", encoding="utf-8") as output:
+    output.write(str(server.server_port))
+while not getattr(server, "shutdown_requested", False):
+    server.handle_request()
+PY
+python3 startup_server.py &
+server_pid=$!
+trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+for _ in $(seq 1 50); do
+  test -s port && break
+  sleep 0.02
+done
+test -s port
+cat > client.env <<EOF
+LIBERO_REMOTE_URL=http://127.0.0.1:$(cat port)
+LIBERO_REMOTE_API_KEY=test-key
+EOF
+LIBERO_REMOTE_HEALTHCHECK_TIMEOUT_SECONDS=5 \
+LIBERO_REMOTE_HEALTHCHECK_INTERVAL_SECONDS=0.05 \
+bash healthcheck.sh
+wait "$server_pid"
+"""
+
+    result = subprocess.run(
+        ["wsl.exe", "bash", "-s"],
+        input=harness.encode("utf-8"),
+        capture_output=True,
+    )
+
+    output = (result.stdout + result.stderr).decode("utf-8", errors="replace")
+    assert result.returncode == 0, output
+    assert '"status": "ok"' in output
 
 
 def test_customer_examples_use_a_published_manifest_task() -> None:
