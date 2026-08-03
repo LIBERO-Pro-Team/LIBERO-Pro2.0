@@ -67,9 +67,16 @@ def test_server_commit_metadata_does_not_invalidate_dependency_layers() -> None:
 
     dependency_install = dockerfile.index('pip install -r "${libero_pro_root}/requirements.txt"')
     service_install = dockerfile.index('pip install ".[server]"')
+    commit_argument = dockerfile.index("arg libero_remote_commit=unknown")
     revision_label = dockerfile.index("org.opencontainers.image.revision")
     commit_environment = dockerfile.index("env libero_remote_commit=")
-    assert dependency_install < service_install < commit_environment < revision_label
+    assert (
+        dependency_install
+        < service_install
+        < commit_argument
+        < commit_environment
+        < revision_label
+    )
 
 
 def test_customer_local_compose_enables_authenticated_direct_sessions() -> None:
