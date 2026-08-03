@@ -10,7 +10,7 @@ services:
               count: all
               capabilities: [gpu]
     ports:
-      - "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
+      - "${LIBERO_REMOTE_BIND_ADDRESS:-127.0.0.1}:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
     environment:
       LIBERO_REMOTE_BACKEND: libero
       LIBERO_REMOTE_HOST: 0.0.0.0

@@ -29,6 +29,30 @@ NVIDIA Container Toolkit，不能跳过后继续测试。
 不要共享 `.env`、`client.env` 或 runtime 数据库。若模型在另一台内网机器，修改 Compose 端口为
 `0.0.0.0:8000:8000`，同时配置防火墙，仅允许指定内网源地址；不要直接暴露到公网。
 
+### 跨机器内网 HTTP
+
+模型和 LIBERO 服务在不同机器时，先在 LIBERO 服务器的防火墙中只允许模型服务器的内网源地址访问
+TCP 8000，再按以下方式生成配置并安装：
+
+```bash
+export LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0
+export LIBERO_REMOTE_PUBLIC_URL=http://LIBERO_SERVER_LAN_IP:8000
+bash install.sh
+```
+
+`LIBERO_SERVER_LAN_IP` 必须替换为 LIBERO 服务器可由模型服务器访问的内网 IP。`configure.sh` 会把
+该地址写入服务端 `.env` 和首个账户的 `client.env`；以后由 `add_account.sh` 生成的账户文件也会继承
+同一地址。将对应账户的 `client*.env` 以安全方式交给该账户，在模型服务器中执行：
+
+```bash
+python3 -m pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
+set -a && source client.env && set +a
+python3 smoke_test.py
+```
+
+HTTP Bearer key 不具备传输加密能力。不要将 8000 端口直接暴露到公网；跨公网必须使用 VPN、内网
+穿透平台或 HTTPS 网关，并继续限制允许访问的来源地址。
+
 新增独立账户：
 
 ```bash

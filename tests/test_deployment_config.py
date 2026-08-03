@@ -87,7 +87,10 @@ def test_customer_local_compose_enables_authenticated_direct_sessions() -> None:
 
     assert "LIBERO_REMOTE_AUTHENTICATION_REQUIRED: \"true\"" in compose
     assert "LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS: \"true\"" in compose
-    assert "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000" in compose
+    assert (
+        "${LIBERO_REMOTE_BIND_ADDRESS:-127.0.0.1}:"
+        "${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
+    ) in compose
     assert "libero-pro-server:1.0.0" in compose
     assert "gpus: all" not in compose
     assert "deploy:" in compose
@@ -108,6 +111,69 @@ def test_customer_bundle_scripts_do_not_fetch_runtime_files_from_github() -> Non
 
     assert "git clone" not in sources
     assert "github.com/zxy-mllab/libero-pro" not in sources
+
+
+def test_customer_configuration_generates_an_explicit_public_http_endpoint(
+    tmp_path: Path,
+) -> None:
+    deployment = tmp_path / "deployment"
+    deployment.mkdir()
+    shutil.copy2(ROOT / "deploy" / "customer-local" / "configure.sh", deployment)
+    wsl_dir = f"/mnt/{tmp_path.drive[0].lower()}/{tmp_path.as_posix()[3:]}/deployment"
+    harness = f"""
+set -euo pipefail
+cd {wsl_dir!r}
+LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0 \\
+LIBERO_REMOTE_PUBLIC_PORT=18000 \\
+LIBERO_REMOTE_PUBLIC_URL=http://server.example:18000 \\
+bash configure.sh
+"""
+
+    result = subprocess.run(
+        ["wsl.exe", "bash", "-s"],
+        input=harness.encode("utf-8"),
+        capture_output=True,
+    )
+
+    output = (result.stdout + result.stderr).decode("utf-8", errors="replace")
+    assert result.returncode == 0, output
+    server_environment = (deployment / ".env").read_text(encoding="utf-8")
+    client_environment = (deployment / "client.env").read_text(encoding="utf-8")
+    assert "LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0\n" in server_environment
+    assert "LIBERO_REMOTE_PUBLIC_PORT=18000\n" in server_environment
+    assert "LIBERO_REMOTE_PUBLIC_URL=http://server.example:18000\n" in server_environment
+    assert "LIBERO_REMOTE_URL=http://server.example:18000\n" in client_environment
+
+
+def test_added_customer_account_inherits_the_configured_public_url(
+    tmp_path: Path,
+) -> None:
+    deployment = tmp_path / "deployment"
+    deployment.mkdir()
+    for script in ("configure.sh", "add_account.sh"):
+        shutil.copy2(ROOT / "deploy" / "customer-local" / script, deployment)
+    wsl_dir = f"/mnt/{tmp_path.drive[0].lower()}/{tmp_path.as_posix()[3:]}/deployment"
+    harness = f"""
+set -euo pipefail
+cd {wsl_dir!r}
+LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0 \\
+LIBERO_REMOTE_PUBLIC_URL=http://server.example:8000 \\
+bash configure.sh
+bash add_account.sh team-b
+"""
+
+    result = subprocess.run(
+        ["wsl.exe", "bash", "-s"],
+        input=harness.encode("utf-8"),
+        capture_output=True,
+    )
+
+    output = (result.stdout + result.stderr).decode("utf-8", errors="replace")
+    assert result.returncode == 0, output
+    client_environment = (deployment / "client-team-b.env").read_text(
+        encoding="utf-8"
+    )
+    assert "LIBERO_REMOTE_URL=http://server.example:8000\n" in client_environment
 
 
 def test_customer_bundle_export_preserves_manifest_bddl_bytes(tmp_path: Path) -> None:
@@ -284,6 +350,18 @@ def test_customer_install_checks_container_gpu_and_uses_bash_entrypoints() -> No
     assert "bash healthcheck.sh" in install
     assert "bash install.sh" in readme
     assert "bash add_account.sh team-b" in readme
+
+
+def test_customer_readme_documents_the_restricted_internal_http_mode() -> None:
+    readme = (ROOT / "deploy" / "customer-local" / "README.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0" in readme
+    assert "LIBERO_REMOTE_PUBLIC_URL=http://LIBERO_SERVER_LAN_IP:8000" in readme
+    assert "只允许模型服务器的内网源地址" in readme
+    assert "不要将 8000 端口直接暴露到公网" in readme
+    assert "set -a && source client.env && set +a" in readme
 
 
 def test_customer_healthcheck_waits_through_startup_failures(tmp_path: Path) -> None:
