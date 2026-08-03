@@ -38,6 +38,16 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
     assert bddl_setting in dockerfile
 
 
+def test_server_commit_metadata_does_not_invalidate_dependency_layers() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8").lower()
+
+    dependency_install = dockerfile.index('pip install -r "${libero_pro_root}/requirements.txt"')
+    service_install = dockerfile.index("pip install .")
+    revision_label = dockerfile.index("org.opencontainers.image.revision")
+    commit_environment = dockerfile.index("env libero_remote_commit=")
+    assert dependency_install < service_install < commit_environment < revision_label
+
+
 def test_customer_local_compose_enables_authenticated_direct_sessions() -> None:
     compose = (ROOT / "deploy" / "customer-local" / "compose.yaml").read_text(
         encoding="utf-8"
