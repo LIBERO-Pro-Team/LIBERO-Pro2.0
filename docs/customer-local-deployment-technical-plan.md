@@ -190,10 +190,11 @@ curl http://127.0.0.1:8000/v1/health
 客户在自己的模型环境中安装：
 
 ```bash
-pip install wheels/libero_remote-1.0.0-py3-none-any.whl
+pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
 ```
 
-Python 客户端只负责网络通信和数据转换，不应依赖 LIBERO、MuJoCo 或 robosuite。
+Python 客户端只负责网络通信和数据转换，不应依赖 LIBERO、MuJoCo 或 robosuite。离线包的
+`wheels/` 同时包含 CPython 3.8-3.12、Linux x86_64 所需的客户端依赖，安装时不访问 PyPI。
 
 ## 六、客户模型调用示例
 
@@ -208,7 +209,7 @@ env = RemoteLiberoEnv(
 
 obs, info = env.reset(
     suite="libero_goal",
-    task_id=0,
+    task_id=9,
     init_state_id=0,
     seed=42,
 )

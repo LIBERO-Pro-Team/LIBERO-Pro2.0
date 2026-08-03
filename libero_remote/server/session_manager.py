@@ -71,11 +71,26 @@ class SessionManager:
     ) -> Dict[str, Any]:
         worker_spec = request.dict()
         if self._task_manifest is not None:
-            worker_spec["_bddl_path"] = str(
-                self._task_manifest.resolve_bddl(
-                    request.suite, request.task_id, request.variant
+            try:
+                worker_spec["_bddl_path"] = str(
+                    self._task_manifest.resolve_bddl(
+                        request.suite, request.task_id, request.variant
+                    )
                 )
-            )
+            except ValueError as error:
+                raise PlatformError(
+                    ErrorCode.INVALID_TASK,
+                    (
+                        "The requested suite, task_id, and variant are not published; "
+                        "query /v1/tasks for valid combinations"
+                    ),
+                    status_code=404,
+                    details={
+                        "suite": request.suite,
+                        "task_id": request.task_id,
+                        "variant": request.variant,
+                    },
+                ) from error
         async with self._registry_lock:
             active_count = sum(
                 record.status not in _INACTIVE_STATUSES for record in self._sessions.values()

@@ -17,12 +17,13 @@ BDDL、init state 和扰动资产均随 Docker 镜像交付；客户安装时不
 tar -xzf libero-pro-bundle-1.0.0.tar.gz
 cd libero-pro-bundle-1.0.0
 bash install.sh
-python3 -m pip install wheels/libero_remote-1.0.0-py3-none-any.whl
+python3 -m pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
 set -a && source client.env && set +a
 python3 smoke_test.py
 ```
 
 `configure.sh` 会生成随机 API key 和独立结果签名密钥，只保存 API key 的 SHA-256 到服务端 `.env`。
+`wheels/` 包含 CPython 3.8-3.12、Linux x86_64 所需的客户端依赖，以上命令不会访问 PyPI。
 `install.sh` 还会在启动服务前验证 Docker 容器能够访问 NVIDIA GPU；这一步失败时，应先修复
 NVIDIA Container Toolkit，不能跳过后继续测试。
 不要共享 `.env`、`client.env` 或 runtime 数据库。若模型在另一台内网机器，修改 Compose 端口为
@@ -52,7 +53,7 @@ env = RemoteLiberoEnv(
 )
 obs, info = env.reset(
     suite="libero_goal",
-    task_id=0,
+    task_id=9,
     init_state_id=0,
     seed=42,
     variant="S10",

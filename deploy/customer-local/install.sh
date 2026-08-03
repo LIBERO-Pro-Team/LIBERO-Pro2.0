@@ -33,4 +33,4 @@ docker compose up -d
 bash healthcheck.sh
 
 echo "Service is running. Install the SDK with:"
-echo "  python3 -m pip install wheels/libero_remote-1.0.0-py3-none-any.whl"
+echo "  python3 -m pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl"

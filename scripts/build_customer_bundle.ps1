@@ -96,6 +96,45 @@ $wheelRoot = Join-Path $staging "wheels"
 New-Item -ItemType Directory -Force $wheelRoot | Out-Null
 & (Join-Path $repoRoot ".venv\Scripts\python.exe") -m pip wheel $repoRoot --no-deps --wheel-dir $wheelRoot
 if ($LASTEXITCODE -ne 0) { throw "Wheel build failed" }
+$sdkWheels = @(Get-ChildItem -LiteralPath $wheelRoot -Filter "libero_remote-$Version-*.whl")
+if ($sdkWheels.Count -ne 1) { throw "Expected exactly one built SDK wheel" }
+$clientCommonRequirements = @(
+    "anyio==3.7.1",
+    "certifi==2025.8.3",
+    "exceptiongroup==1.3.0",
+    "h11==0.14.0",
+    "httpcore==0.17.3",
+    "httpx==0.24.1",
+    "idna==3.10",
+    "sniffio==1.3.1",
+    "typing_extensions==4.13.2"
+)
+$clientPythonVersions = @("38", "39", "310", "311", "312")
+foreach ($pythonVersion in $clientPythonVersions) {
+    $numpyRequirement = if ($pythonVersion -in @("38", "39")) {
+        "numpy==1.22.4"
+    } else {
+        "numpy==1.26.4"
+    }
+    $downloadArguments = @(
+        "-m", "pip", "download",
+        "--dest", $wheelRoot,
+        "--no-deps",
+        "--only-binary=:all:",
+        "--platform", "manylinux2014_x86_64",
+        "--implementation", "cp",
+        "--python-version", $pythonVersion,
+        "--abi", "cp$pythonVersion",
+        "msgpack==1.0.8",
+        $numpyRequirement,
+        "pydantic==1.10.22"
+    )
+    $downloadArguments += $clientCommonRequirements
+    & (Join-Path $repoRoot ".venv\Scripts\python.exe") @downloadArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to build the offline SDK wheelhouse for CPython $pythonVersion"
+    }
+}
 
 $imageRoot = Join-Path $staging "images"
 New-Item -ItemType Directory -Force $imageRoot | Out-Null

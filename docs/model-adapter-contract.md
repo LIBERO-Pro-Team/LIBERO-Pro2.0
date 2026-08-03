@@ -101,7 +101,7 @@ class MyModelAdapter:
 
 episodes = [{
     "suite": "libero_goal",
-    "task_id": 0,
+    "task_id": 9,
     "init_state_id": 0,
     "seed": 142,
     "variant": "base",

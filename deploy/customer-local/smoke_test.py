@@ -11,7 +11,7 @@ with RemoteLiberoEnv(
 ) as env:
     observation, info = env.reset(
         suite="libero_goal",
-        task_id=0,
+        task_id=9,
         init_state_id=0,
         seed=42,
         variant="base",

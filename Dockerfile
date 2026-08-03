@@ -67,7 +67,7 @@ WORKDIR /opt/libero-remote
 COPY pyproject.toml README.md ./
 COPY libero_remote ./libero_remote
 COPY assets ./assets
-RUN python3.8 -m pip install . \
+RUN python3.8 -m pip install ".[server]" \
     && mkdir -p "${LIBERO_CONFIG_PATH}" \
     && printf '%s\n' \
         "assets: ${LIBERO_PRO_ROOT}/libero/libero/assets" \
