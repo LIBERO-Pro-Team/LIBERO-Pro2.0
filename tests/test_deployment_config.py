@@ -143,7 +143,9 @@ def test_customer_bundle_records_built_image_digest() -> None:
     assert "image_digest = $imageDigest" in builder
 
 
-def test_customer_bundle_includes_current_offline_operating_documents() -> None:
+def test_customer_bundle_includes_current_offline_operating_documents(
+    tmp_path: Path,
+) -> None:
     builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
         encoding="utf-8"
     )
@@ -154,10 +156,38 @@ def test_customer_bundle_includes_current_offline_operating_documents() -> None:
         "remote-run-scheduler.md",
     }
 
+    manifest_path = ROOT / "scripts" / "customer-documents.json"
+    destination = tmp_path / "docs"
+    powershell = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-Command",
+            (
+                "$ErrorActionPreference='Stop';"
+                f"$manifest=Get-Content -LiteralPath '{manifest_path}' "
+                "-Raw -Encoding UTF8 | ConvertFrom-Json;"
+                f"New-Item -ItemType Directory -Path '{destination}' | Out-Null;"
+                "$manifest | ForEach-Object {"
+                f"Copy-Item -LiteralPath (Join-Path '{ROOT / 'docs'}' $_) "
+                f"-Destination (Join-Path '{destination}' $_)"
+                "};"
+                f"Get-ChildItem -LiteralPath '{destination}' -File | "
+                "Select-Object -ExpandProperty Name | ConvertTo-Json -Compress"
+            ),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8-sig",
+    )
+    copied_documents = set(json.loads(powershell.stdout))
+
     for document in required_documents:
         assert (ROOT / "docs" / document).is_file()
-        assert f'"{document}"' in builder
-    assert "$customerDocuments" in builder
+    assert copied_documents == required_documents
+    assert "Get-Content -LiteralPath $customerDocumentManifest" in builder
+    assert "-Raw -Encoding UTF8 | ConvertFrom-Json" in builder
     assert "Copy-Item -LiteralPath $documentSource -Destination $documentDestination" in builder
     assert not any(line.rstrip().endswith("\\") for line in builder.splitlines())
 

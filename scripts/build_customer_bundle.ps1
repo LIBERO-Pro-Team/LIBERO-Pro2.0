@@ -172,12 +172,9 @@ Copy-Item -Recurse -Force (Join-Path $repoRoot "assets") (Join-Path $staging "as
 Copy-Item -Force (Join-Path $simRoot "LICENSE") (Join-Path $staging "LIBERO-LICENSE")
 $documentRoot = Join-Path $staging "docs"
 New-Item -ItemType Directory -Force $documentRoot | Out-Null
-$customerDocuments = @(
-    "customer-local-deployment-technical-plan.md",
-    "model-adapter-contract.md",
-    "LIBERO-Pro2.0_远程评测可靠性与多用户并发修复方案.md",
-    "remote-run-scheduler.md"
-)
+$customerDocumentManifest = Join-Path $PSScriptRoot "customer-documents.json"
+$customerDocuments = Get-Content -LiteralPath $customerDocumentManifest `
+    -Raw -Encoding UTF8 | ConvertFrom-Json
 foreach ($document in $customerDocuments) {
     $documentSource = Join-Path $repoRoot "docs\$document"
     $documentDestination = Join-Path $documentRoot $document
