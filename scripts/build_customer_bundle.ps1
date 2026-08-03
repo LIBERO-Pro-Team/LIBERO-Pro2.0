@@ -25,6 +25,15 @@ function Convert-ToWslPath([string]$WindowsPath) {
     return "/mnt/$drive/$relative"
 }
 
+function Assert-ManifestBddlHashes($Manifest, [string]$AssetsRoot) {
+    foreach ($task in $Manifest.tasks) {
+        $bddl = Join-Path $AssetsRoot ($task.bddl_path -replace '/', '\')
+        if (-not (Test-Path -LiteralPath $bddl)) { throw "Missing BDDL: $bddl" }
+        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $bddl).Hash.ToLowerInvariant()
+        if ($actual -ne $task.bddl_sha256) { throw "BDDL hash mismatch: $bddl" }
+    }
+}
+
 if (-not $output.StartsWith([IO.Path]::GetPathRoot($output), [StringComparison]::OrdinalIgnoreCase)) {
     throw "OutputRoot must resolve to an absolute path"
 }
@@ -53,22 +62,18 @@ $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
 if ($manifest.task_count -ne 169 -or $manifest.tasks.Count -ne 169) {
     throw "Expected exactly 169 published BDDL entries"
 }
-foreach ($task in $manifest.tasks) {
-    $bddl = Join-Path (Split-Path $manifestPath) ($task.bddl_path -replace '/', '\')
-    if (-not (Test-Path -LiteralPath $bddl)) { throw "Missing BDDL: $bddl" }
-    $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $bddl).Hash.ToLowerInvariant()
-    if ($actual -ne $task.bddl_sha256) { throw "BDDL hash mismatch: $bddl" }
-}
+Assert-ManifestBddlHashes $manifest (Split-Path $manifestPath)
 
 New-Item -ItemType Directory -Force $staging | Out-Null
 $sourceRoot = Join-Path $staging "source"
 New-Item -ItemType Directory -Force $sourceRoot | Out-Null
 
 $serviceArchive = Join-Path $staging "service.zip"
-git -C $repoRoot archive --format=zip --output=$serviceArchive HEAD
+git -c core.autocrlf=false -C $repoRoot archive --format=zip --output=$serviceArchive HEAD
 if ($LASTEXITCODE -ne 0) { throw "Failed to export committed service source" }
 Expand-Archive -LiteralPath $serviceArchive -DestinationPath $sourceRoot
 Remove-Item -LiteralPath $serviceArchive
+Assert-ManifestBddlHashes $manifest (Join-Path $sourceRoot "assets")
 
 $simDestination = Join-Path $sourceRoot "simulator-source"
 if (Test-Path -LiteralPath $simDestination) { Remove-Item -LiteralPath $simDestination -Recurse -Force }
@@ -95,6 +100,7 @@ if ($LASTEXITCODE -ne 0) { throw "Wheel build failed" }
 $imageRoot = Join-Path $staging "images"
 New-Item -ItemType Directory -Force $imageRoot | Out-Null
 $imageTar = Join-Path $imageRoot "libero-pro-server-$Version.tar"
+$imageDigest = $null
 if ($BuildImage) {
     $wslSource = Convert-ToWslPath $sourceRoot
     & wsl.exe -d Ubuntu -- test -f "$wslSource/Dockerfile"
@@ -108,6 +114,11 @@ if ($BuildImage) {
     )
     & wsl.exe @buildArguments
     if ($LASTEXITCODE -ne 0) { throw "Docker image build failed" }
+    $imageDigest = (& wsl.exe -u root -d Ubuntu -- docker image inspect `
+        --format "{{.Id}}" "libero-pro-server:$Version").Trim()
+    if ($LASTEXITCODE -ne 0 -or $imageDigest -notmatch '^sha256:[0-9a-f]{64}$') {
+        throw "Failed to resolve Docker image digest"
+    }
     $wslImageTar = Convert-ToWslPath $imageTar
     & wsl.exe -u root -d Ubuntu -- docker save --output $wslImageTar "libero-pro-server:$Version"
     if ($LASTEXITCODE -ne 0) { throw "Docker image export failed" }
@@ -137,6 +148,7 @@ $versionInfo = [ordered]@{
     perturbation_version = $manifest.manifest_version
     task_count = $manifest.task_count
     docker_image = if ($BuildImage) { "libero-pro-server:$Version" } else { $null }
+    image_digest = $imageDigest
 }
 $versionInfo | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $staging "VERSION.json")
 

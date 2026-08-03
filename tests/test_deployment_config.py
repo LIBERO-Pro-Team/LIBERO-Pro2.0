@@ -1,3 +1,7 @@
+import hashlib
+import json
+import subprocess
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
@@ -57,6 +61,45 @@ def test_customer_bundle_scripts_do_not_fetch_runtime_files_from_github() -> Non
 
     assert "git clone" not in sources
     assert "github.com/zxy-mllab/libero-pro" not in sources
+
+
+def test_customer_bundle_export_preserves_manifest_bddl_bytes(tmp_path: Path) -> None:
+    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
+        encoding="utf-8"
+    )
+
+    assert "git -c core.autocrlf=false" in builder
+    assert builder.count("Assert-ManifestBddlHashes $manifest") == 2
+    assert 'Assert-ManifestBddlHashes $manifest (Join-Path $sourceRoot "assets")' in builder
+
+    archive = tmp_path / "service.zip"
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "core.autocrlf=false",
+            "archive",
+            "--format=zip",
+            f"--output={archive}",
+            "HEAD",
+        ],
+        cwd=ROOT,
+        check=True,
+    )
+    with zipfile.ZipFile(archive) as exported:
+        manifest = json.loads(exported.read("assets/task_manifest.json"))
+        for task in manifest["tasks"]:
+            content = exported.read(f"assets/{task['bddl_path']}")
+            assert hashlib.sha256(content).hexdigest() == task["bddl_sha256"]
+
+
+def test_customer_bundle_records_built_image_digest() -> None:
+    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'docker image inspect `' in builder
+    assert "image_digest = $imageDigest" in builder
 
 
 def test_customer_install_checks_container_gpu_and_uses_bash_entrypoints() -> None:
