@@ -17,4 +17,5 @@ $lines = foreach ($file in $files) {
     "$hash  $relative"
 }
 $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
-[IO.File]::WriteAllLines($outputPath, $lines, $utf8WithoutBom)
+$content = if ($lines.Count -eq 0) { "" } else { ($lines -join "`n") + "`n" }
+[IO.File]::WriteAllText($outputPath, $content, $utf8WithoutBom)

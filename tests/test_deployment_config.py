@@ -218,9 +218,11 @@ def test_customer_bundle_checksum_manifest_supports_unicode_paths(
         check=True,
     )
     assert 'Join-Path $PSScriptRoot "write_sha256_manifest.ps1"' in builder
+    assert '[IO.File]::WriteAllText(' in builder
 
     manifest_bytes = manifest.read_bytes()
     assert not manifest_bytes.startswith(b"\xef\xbb\xbf")
+    assert b"\r" not in manifest_bytes
     assert "普通文件.txt" in manifest_bytes.decode("utf-8")
     wsl_bundle = f"/mnt/{bundle.drive[0].lower()}/{bundle.as_posix()[3:]}"
     subprocess.run(

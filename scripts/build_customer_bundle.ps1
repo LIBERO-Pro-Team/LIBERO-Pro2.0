@@ -207,6 +207,11 @@ tar -czf $archive -C $output $bundleName
 if ($LASTEXITCODE -ne 0) { throw "Bundle archive creation failed" }
 
 $archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
-Set-Content -Encoding ascii "$archive.sha256" "$archiveHash  $bundleName.tar.gz"
+$utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+[IO.File]::WriteAllText(
+    "$archive.sha256",
+    "$archiveHash  $bundleName.tar.gz`n",
+    $utf8WithoutBom
+)
 Write-Output $bundleRoot
 Write-Output $archive
