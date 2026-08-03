@@ -192,6 +192,51 @@ def test_customer_bundle_includes_current_offline_operating_documents(
     assert not any(line.rstrip().endswith("\\") for line in builder.splitlines())
 
 
+def test_customer_bundle_checksum_manifest_supports_unicode_paths(
+    tmp_path: Path,
+) -> None:
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "普通文件.txt").write_text("unicode path", encoding="utf-8")
+    manifest = bundle / "SHA256SUMS"
+    writer = ROOT / "scripts" / "write_sha256_manifest.ps1"
+    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
+        encoding="utf-8"
+    )
+
+    subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-File",
+            str(writer),
+            "-Root",
+            str(bundle),
+            "-OutputFile",
+            str(manifest),
+        ],
+        check=True,
+    )
+    assert 'Join-Path $PSScriptRoot "write_sha256_manifest.ps1"' in builder
+
+    manifest_bytes = manifest.read_bytes()
+    assert not manifest_bytes.startswith(b"\xef\xbb\xbf")
+    assert "普通文件.txt" in manifest_bytes.decode("utf-8")
+    wsl_bundle = f"/mnt/{bundle.drive[0].lower()}/{bundle.as_posix()[3:]}"
+    subprocess.run(
+        [
+            "wsl.exe",
+            "--cd",
+            wsl_bundle,
+            "--",
+            "sha256sum",
+            "-c",
+            "SHA256SUMS",
+        ],
+        check=True,
+    )
+
+
 def test_customer_bundle_builds_an_offline_linux_sdk_wheelhouse() -> None:
     builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
         encoding="utf-8"

@@ -198,15 +198,9 @@ $versionInfo = [ordered]@{
 }
 $versionInfo | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $staging "VERSION.json")
 
-$checksumFiles = Get-ChildItem $staging -Recurse -File | Where-Object {
-    $_.Name -ne "SHA256SUMS"
-}
-$lines = foreach ($file in $checksumFiles) {
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant()
-    $relative = $file.FullName.Substring($staging.Length + 1).Replace('\', '/')
-    "$hash  $relative"
-}
-$lines | Set-Content -Encoding ascii (Join-Path $staging "SHA256SUMS")
+$checksumManifest = Join-Path $staging "SHA256SUMS"
+& (Join-Path $PSScriptRoot "write_sha256_manifest.ps1") `
+    -Root $staging -OutputFile $checksumManifest
 
 Move-Item -LiteralPath $staging -Destination $bundleRoot
 tar -czf $archive -C $output $bundleName
