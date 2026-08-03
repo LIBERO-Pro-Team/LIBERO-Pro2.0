@@ -32,6 +32,7 @@ RUN apt-get update \
         git \
         build-essential \
         ca-certificates \
+        cmake \
         curl \
         libegl1 \
         libgl1 \

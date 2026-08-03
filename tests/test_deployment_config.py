@@ -26,6 +26,7 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
     assert "torch==1.11.0+cpu" in dockerfile
     assert "torchvision==0.12.0+cpu" in dockerfile
     assert "python3-distutils" in dockerfile
+    assert "cmake" in dockerfile
     bddl_setting = (
         "libero_remote_bddl_root="
         "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"
