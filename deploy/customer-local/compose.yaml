@@ -2,7 +2,13 @@ services:
   libero-service:
     image: libero-pro-server:1.0.0
     restart: unless-stopped
-    gpus: all
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     ports:
       - "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000"
     environment:

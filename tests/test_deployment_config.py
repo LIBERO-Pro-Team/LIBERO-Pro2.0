@@ -88,7 +88,12 @@ def test_customer_local_compose_enables_authenticated_direct_sessions() -> None:
     assert "LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS: \"true\"" in compose
     assert "127.0.0.1:${LIBERO_REMOTE_PUBLIC_PORT:-8000}:8000" in compose
     assert "libero-pro-server:1.0.0" in compose
-    assert "gpus: all" in compose
+    assert "gpus: all" not in compose
+    assert "deploy:" in compose
+    assert "reservations:" in compose
+    assert "devices:" in compose
+    assert "driver: nvidia" in compose
+    assert "capabilities: [gpu]" in compose
     assert "./assets:/opt/libero-remote/assets:ro" in compose
 
 
