@@ -143,6 +143,25 @@ def test_customer_bundle_records_built_image_digest() -> None:
     assert "image_digest = $imageDigest" in builder
 
 
+def test_customer_bundle_includes_current_offline_operating_documents() -> None:
+    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
+        encoding="utf-8"
+    )
+    required_documents = {
+        "customer-local-deployment-technical-plan.md",
+        "model-adapter-contract.md",
+        "LIBERO-Pro2.0_远程评测可靠性与多用户并发修复方案.md",
+        "remote-run-scheduler.md",
+    }
+
+    for document in required_documents:
+        assert (ROOT / "docs" / document).is_file()
+        assert f'"{document}"' in builder
+    assert "$customerDocuments" in builder
+    assert "Copy-Item -LiteralPath $documentSource -Destination $documentDestination" in builder
+    assert not any(line.rstrip().endswith("\\") for line in builder.splitlines())
+
+
 def test_customer_bundle_builds_an_offline_linux_sdk_wheelhouse() -> None:
     builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
         encoding="utf-8"
@@ -213,3 +232,28 @@ def test_customer_examples_use_a_published_manifest_task() -> None:
     )
     assert 'suite="libero_goal",\n    task_id=9,' in customer_readme
     assert 'suite="libero_goal",\n    task_id=9,' in technical_plan
+
+
+def test_customer_technical_plan_matches_the_released_bundle_workflow() -> None:
+    technical_plan = (ROOT / "docs" / "customer-local-deployment-technical-plan.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "版本：1.0.0（2026-08-03）" in technical_plan
+    assert "libero-pro-bundle-1.0.0.tar.gz" in technical_plan
+    assert "bash install.sh" in technical_plan
+    assert "LIBERO_REMOTE_MAX_SESSIONS" in technical_plan
+    assert "LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER" in technical_plan
+    assert "bash add_account.sh team-b" in technical_plan
+    assert "169 个有效任务组合" in technical_plan
+    assert "AgentAdapter" in technical_plan
+    assert "GitHub 不是客户部署来源" in technical_plan
+    for obsolete in (
+        "libero-pro-bundle-v1.0.0",
+        "libero-pro-server-v1.0.0.tar",
+        "LIBERO_MAX_SESSIONS",
+        "LIBERO_API_TOKEN",
+        "API_TOKEN=replace-with-random-token",
+        "cp .env.example .env",
+    ):
+        assert obsolete not in technical_plan

@@ -163,16 +163,26 @@ if ($BuildImage) {
     if ($LASTEXITCODE -ne 0) { throw "Docker image export failed" }
     Remove-Item -LiteralPath $sourceRoot -Recurse -Force
 } else {
-    Set-Content -Encoding ascii (Join-Path $imageRoot "BUILD_REQUIRED.txt") \
+    Set-Content -Encoding ascii (Join-Path $imageRoot "BUILD_REQUIRED.txt") `
         "Run this script with -BuildImage on a Docker host to create the versioned image tar."
 }
 
 Copy-Item -Recurse -Force (Join-Path $repoRoot "deploy\customer-local\*") $staging
 Copy-Item -Recurse -Force (Join-Path $repoRoot "assets") (Join-Path $staging "assets")
 Copy-Item -Force (Join-Path $simRoot "LICENSE") (Join-Path $staging "LIBERO-LICENSE")
-New-Item -ItemType Directory -Force (Join-Path $staging "docs") | Out-Null
-Copy-Item -Force (Join-Path $repoRoot "docs\customer-local-deployment-technical-plan.md") \
-    (Join-Path $staging "docs\customer-local-deployment-technical-plan.md")
+$documentRoot = Join-Path $staging "docs"
+New-Item -ItemType Directory -Force $documentRoot | Out-Null
+$customerDocuments = @(
+    "customer-local-deployment-technical-plan.md",
+    "model-adapter-contract.md",
+    "LIBERO-Pro2.0_远程评测可靠性与多用户并发修复方案.md",
+    "remote-run-scheduler.md"
+)
+foreach ($document in $customerDocuments) {
+    $documentSource = Join-Path $repoRoot "docs\$document"
+    $documentDestination = Join-Path $documentRoot $document
+    Copy-Item -LiteralPath $documentSource -Destination $documentDestination
+}
 New-Item -ItemType Directory -Force (Join-Path $staging "runtime"), (Join-Path $staging "logs") | Out-Null
 
 $versionInfo = [ordered]@{

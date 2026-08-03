@@ -1,463 +1,219 @@
 # LIBERO-PRO 客户本地部署技术方案
 
-版本：v1.0
+版本：1.0.0（2026-08-03）
 
-适用场景：客户下载 LIBERO-PRO 部署包，在自己的服务器上运行环境服务，并通过 Python SDK 调用。
+本方案对应离线交付包 `libero-pro-bundle-1.0.0.tar.gz`。客户在自己的 Ubuntu/NVIDIA
+主机运行 LIBERO-PRO 环境服务，在自己的模型环境中安装轻量 Python SDK。GitHub 不是客户部署来源；
+客户安装和运行不需要 clone 仓库、Git LFS、PyPI 或外部部署服务器。
 
-## 一、总体方案
-
-最合理的部署方式是：
-
-将完整的 LIBERO Service 封装为 Docker 部署包，将环境调用接口封装为轻量级 Python SDK。
-
-不建议把 LIBERO、MuJoCo、robosuite 和客户的模型强行安装到同一个 Python 环境中。这些组件对 Python、CUDA、OpenGL/EGL 和其他依赖的版本要求较多，容易与客户模型环境产生冲突。
-
-整体结构如下：
+## 1. 部署边界
 
 ```text
-客户模型程序
-    |
-    | Python SDK 调用
-    v
-libero_remote.RemoteLiberoEnv
-    |
-    | HTTP 请求
-    v
-LIBERO-PRO Docker Service
-    |
-    |-- LIBERO
-    |-- MuJoCo
-    |-- robosuite
-    |-- 任务资源
-    `-- 扰动配置
+任意客户模型或策略
+  -> 用户端 AgentAdapter / RemoteLiberoEnv
+  -> HTTP + MessagePack
+  -> LIBERO-PRO Docker Service
+  -> 独立 EnvWorker -> LIBERO / MuJoCo / 扰动运行时
 ```
 
-服务实际运行在客户自己的机器上，因此：
+- 模型、checkpoint、processor 和模型显存都位于用户端。
+- 服务端不固定 xVLA、Pi0 或任何模型，也不加载模型权重。
+- 服务端负责固定 BDDL、init state、环境 seed、扰动计划、成功判定和权威结果。
+- 一个 Session 绑定一个独立 Worker 和一个独立 MuJoCo 环境；不同账户不共享环境对象。
+- 客户本地结果适合开发、私有评测和公开复现，不是不可篡改的排行榜证明。
 
-- 模型与服务在同一台机器时，使用 `127.0.0.1` 访问。
-- 模型与服务在不同机器时，使用客户内网 IP 访问。
-- 客户不需要连接我方服务器。
-- 客户机器不需要具备公网入口。
-
-## 二、交付包结构
-
-建议交付包采用以下结构：
+## 2. 交付内容
 
 ```text
-libero-pro-bundle-v1.0.0/
-|-- images/
-|   `-- libero-pro-server-v1.0.0.tar
-|-- wheels/
-|   `-- libero_remote-1.0.0-py3-none-any.whl
-|-- assets/
-|   |-- tasks/
-|   |-- bddl/
-|   |-- init_states/
-|   `-- perturbations/
-|-- docker-compose.yml
-|-- .env.example
+libero-pro-bundle-1.0.0/
+|-- images/libero-pro-server-1.0.0.tar
+|-- wheels/                         # CPython 3.8-3.12 Linux x86_64 离线依赖闭包
+|-- assets/                         # 169 项 manifest、BDDL 与扰动资产
+|-- docs/                           # 本方案、adapter 契约、调度和可靠性方案
+|-- compose.yaml
+|-- configure.sh
+|-- add_account.sh
 |-- install.sh
 |-- healthcheck.sh
+|-- smoke_test.py
+|-- VERSION.json
 |-- SHA256SUMS
 |-- README.md
 `-- LICENSE
 ```
 
-各部分作用如下：
+Docker 镜像内固定 LIBERO-PRO、MuJoCo、robosuite、Python 和完整模型资产。客户主机只通过
+NVIDIA Container Toolkit 注入驱动与 EGL 能力。交付目录不包含服务源码、明文凭据或模型权重。
 
-| 内容 | 作用 |
-| --- | --- |
-| Docker 镜像 | 完整运行 LIBERO、MuJoCo 和环境服务 |
-| Python wheel | 提供 `RemoteLiberoEnv` 客户端接口 |
-| Docker Compose | 配置 GPU、端口、并发数、资源目录和日志目录 |
-| Assets | 保存任务、BDDL、初始状态和扰动配置 |
-| 安装脚本 | 检查环境、加载镜像并启动服务 |
-| 健康检查脚本 | 检查服务是否能够正常访问 |
-| SHA256SUMS | 验证交付文件是否完整 |
-| README | 提供部署、使用和故障排查说明 |
+## 3. 主机要求
 
-任务资源可以直接放入 Docker 镜像，也可以作为独立目录挂载。建议采用独立挂载方式，便于后续单独更新任务和扰动配置。
+- Ubuntu 22.04 x86_64
+- Docker Engine 和 Docker Compose v2
+- NVIDIA 驱动和 NVIDIA Container Toolkit
+- 推荐 16 CPU、32 GB 内存、8 GB 以上 GPU、100 GB SSD
+- 客户端 Python 3.8-3.12，Linux x86_64
 
-## 三、客户机器要求
+安装脚本会同时检查宿主 `nvidia-smi` 和容器内 `nvidia-smi`。任一检查失败都会在服务启动前明确
+退出，不能跳过后继续做 GPU/EGL 测试。
 
-第一版建议只支持 Linux，避免同时维护 Windows、macOS 和不同图形渲染环境。
-
-推荐要求如下：
-
-- 操作系统：Ubuntu 22.04，x86_64
-- 容器环境：Docker + Docker Compose
-- GPU 驱动：NVIDIA Driver
-- GPU 容器支持：NVIDIA Container Toolkit
-- CPU：8 核以上
-- 内存：16-32 GB
-- GPU：NVIDIA GPU，4 GB 以上显存
-- 磁盘：50 GB 以上可用空间
-
-推荐配置为：
-
-- CPU：16 核
-- 内存：32 GB
-- GPU：8 GB 以上显存
-- 磁盘：100 GB 以上 SSD
-
-客户不需要单独安装指定版本的 Python、MuJoCo、robosuite 或 LIBERO，这些依赖均固定在 Docker 容器内部。
-
-## 四、Docker Compose 配置
-
-建议提供可直接启动的 `docker-compose.yml`：
-
-```yaml
-services:
-  libero-service:
-    image: libero-pro-server:1.0.0
-    container_name: libero-pro-service
-    restart: unless-stopped
-    gpus: all
-    ports:
-      - "127.0.0.1:8000:8000"
-    environment:
-      MUJOCO_GL: egl
-      NVIDIA_VISIBLE_DEVICES: "${GPU_ID:-all}"
-      LIBERO_MAX_SESSIONS: "${MAX_SESSIONS:-1}"
-      LIBERO_API_TOKEN: "${API_TOKEN}"
-    volumes:
-      - ./assets:/opt/libero/assets:ro
-      - ./logs:/opt/libero/logs
-    shm_size: "2gb"
-```
-
-同时提供 `.env.example`：
-
-```env
-GPU_ID=7
-MAX_SESSIONS=1
-API_TOKEN=replace-with-random-token
-```
-
-客户复制该文件并根据自己的机器修改 GPU、并发数和访问令牌。
-
-## 五、客户安装流程
-
-1. 解压部署包
+## 4. 离线安装
 
 ```bash
-tar -xzf libero-pro-bundle-v1.0.0.tar.gz
-cd libero-pro-bundle-v1.0.0
+tar -xzf libero-pro-bundle-1.0.0.tar.gz
+cd libero-pro-bundle-1.0.0
+bash install.sh
+python3 -m pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
+set -a && source client.env && set +a
+python3 smoke_test.py
 ```
 
-2. 校验交付文件
+`install.sh` 会执行以下步骤：
 
-```bash
-sha256sum -c SHA256SUMS
-```
+1. 检查 Docker、Compose、NVIDIA 驱动和 Container Toolkit。
+2. 调用 `configure.sh` 生成随机 API key 与结果签名密钥。
+3. 校验 `SHA256SUMS`。
+4. 从 `images/` 加载固定 Docker 镜像并记录实际 image ID。
+5. 启动 Compose 服务并等待 `/v1/health` 就绪。
 
-3. 加载服务镜像
+`.env` 只保存 API key 的 SHA-256；明文 key 位于权限为 0600 的 `client.env`。不得共享
+`.env`、`client*.env` 或 `runtime/scheduler.sqlite3`。
 
-```bash
-docker load -i images/libero-pro-server-v1.0.0.tar
-```
+## 5. 任务范围
 
-4. 配置运行参数
+当前发布 manifest 包含 169 个有效任务组合：
 
-```bash
-cp .env.example .env
-```
+- `libero_10`：1 个 base + 42 个扰动，共 43 项。
+- `libero_goal`：1 个 base + 41 个适用扰动，共 42 项。
+- `libero_object`：1 个 base + 41 个适用扰动，共 42 项。
+- `libero_spatial`：1 个 base + 41 个适用扰动，共 42 项。
 
-客户需要在 `.env` 中设置使用的 GPU、最大并发环境数量和 API Token。
+后三个 suite 已移除不适用的 D20。`GET /v1/tasks` 是有效 suite、task ID 与 variant 组合的唯一
+事实来源；客户端不得自行构造 4 x 43 的笛卡尔积。请求 manifest 外组合会稳定返回
+`INVALID_TASK`/404，而不是启动错误任务。
 
-5. 启动服务
+## 6. 模型接入
 
-```bash
-docker compose up -d
-```
-
-6. 检查服务
-
-```bash
-curl http://127.0.0.1:8000/v1/health
-```
-
-正常情况下应返回：
-
-```json
-{
-  "status": "ok"
-}
-```
-
-7. 安装 Python 客户端
-
-客户在自己的模型环境中安装：
-
-```bash
-pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
-```
-
-Python 客户端只负责网络通信和数据转换，不应依赖 LIBERO、MuJoCo 或 robosuite。离线包的
-`wheels/` 同时包含 CPython 3.8-3.12、Linux x86_64 所需的客户端依赖，安装时不访问 PyPI。
-
-## 六、客户模型调用示例
+直接使用 Gym 风格环境：
 
 ```python
 from libero_remote import RemoteLiberoEnv
 
 env = RemoteLiberoEnv(
     base_url="http://127.0.0.1:8000",
-    api_key="replace-with-random-token",
-    timeout=60.0,
+    api_key="client.env 中的 LIBERO_REMOTE_API_KEY",
+    timeout=120.0,
 )
-
 obs, info = env.reset(
     suite="libero_goal",
     task_id=9,
     init_state_id=0,
     seed=42,
+    variant="S10",
 )
-
-terminated = False
-truncated = False
-
+terminated = truncated = False
 while not (terminated or truncated):
-    action = model.predict(
-        obs,
-        instruction=info["language_instruction"],
-    )
-
+    action = model.predict(obs, instruction=info["language_instruction"])
     obs, reward, terminated, truncated, info = env.step(action)
-
+result = env.result()
 env.close()
 ```
 
-客户端接口应尽量接近 Gym/Gymnasium 的使用方式，使客户可以直接将其接入现有模型评测代码。
-
-## 七、模型和服务不在同一台机器
-
-客户可能使用两台服务器：
-
-```text
-模型服务器 -> 客户内网 -> LIBERO 服务器
-```
-
-此时需要将 Docker 端口配置修改为：
-
-```yaml
-ports:
-  - "0.0.0.0:8000:8000"
-```
-
-模型服务器通过 LIBERO 服务器的内网 IP 访问：
+批量评测使用模型无关的 `AgentAdapter`：
 
 ```python
-env = RemoteLiberoEnv(
-    base_url="http://192.168.1.20:8000",
-    api_key="replace-with-random-token",
-    timeout=60.0,
-)
+class AgentAdapter:
+    def reset(self, context):
+        self.model.reset(seed=context.episode_spec["seed"])
+
+    def act(self, observation):
+        return self.model.predict(observation)
+
+    def close(self):
+        self.model.close()
 ```
 
-内网部署时必须：
+Adapter 可以封装 PyTorch、JAX、TensorFlow、ONNX、私有推理 API、强化学习策略、规划器或人工
+控制。用户端负责图像方向、resize、prompt、proprio 坐标映射、action 反归一化和模型随机性；服务端只
+按 `action_schema` 校验动作，不按模型名称选择预处理。完整契约见 `docs/model-adapter-contract.md`。
 
-- 设置 API Token。
-- 配置服务器防火墙。
-- 只允许指定的客户内网地址访问。
-- 不要将 8000 端口直接暴露到公网。
-- 如需跨公网使用，应通过 VPN、内网穿透平台或 HTTPS 网关访问。
+## 7. 多账户并发
 
-## 八、下载和交付方式
-
-建议同时提供在线安装和离线安装两种方式。
-
-### 1. 在线安装
-
-客户从镜像仓库下载：
+新增独立账户：
 
 ```bash
-docker pull your-registry/libero-pro-server:1.0.0
+bash add_account.sh team-b
+docker compose up -d --force-recreate
 ```
 
-Python 客户端可以从私有 PyPI、对象存储或交付平台下载。
+脚本生成 `client-team-b.env`。每个账户必须使用自己的 API key。Session、Run、Job、Lease、Result
+和 Worker 都按账户隔离；账户 A 无法读取、推进或关闭账户 B 的资源。
 
-在线安装的优点是：
+`.env` 中的主要容量参数：
 
-- 下载方便。
-- 更新简单。
-- 可以按版本管理。
-- 不需要传输完整离线包。
+| 参数 | 作用 |
+| --- | --- |
+| `LIBERO_REMOTE_MAX_SESSIONS` | 全服务器同时存在的环境 Slot 总数 |
+| `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` | 单账户可占用的 Slot 上限 |
+| `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | 环境 Worker 操作超时 |
+| `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | 空闲 Session 回收时间 |
 
-### 2. 离线安装
+总 Slot 数必须在目标 GPU 服务器上按 1/2/4/8 个真实 EGL 环境压测后确定，不能仅根据 API 并发测试
+直接设置。用户端每个 runner 应持有独立的有状态 adapter 实例。
 
-向客户提供完整压缩包：
+## 8. 固定 seed、复测与失败重试
+
+服务端固定并记录 BDDL、init state、环境 seed、相机、控制模式、扰动计划及运行时版本，并返回：
 
 ```text
-libero-pro-bundle-v1.0.0.tar.gz
+job_fingerprint
+runtime_fingerprint
+initial_state_fingerprint
+initial_observation_fingerprint
+perturbation_plan_fingerprint
 ```
 
-离线包中已经包含 Docker 镜像、Python wheel、任务资源和部署配置，适合无法访问镜像仓库或处于封闭网络中的客户。
+失败重试只增加 attempt 和 lease generation，不改变 episode spec、seed 或上述五个指纹。若指纹
+不一致，任务会以 `REPRODUCIBILITY_MISMATCH` 终止。完整轨迹要完全相同，用户还必须固定 checkpoint、
+processor、policy seed、确定性算法并产生相同 action 序列；服务端会记录 action hash chain。
 
-## 九、版本管理要求
+## 9. 网络部署
 
-每个交付版本必须明确记录：
+默认 Compose 只监听 `127.0.0.1:8000`。模型在另一台客户内网机器时，可将端口映射改为
+`0.0.0.0:8000:8000`，并同时配置防火墙或反向代理，只允许指定来源。不要直接把 8000 端口暴露到
+公网，也不要在 URL、日志或命令历史中传递 API key。
 
-- 服务版本。
-- Python SDK 版本。
-- API 协议版本。
-- Benchmark 版本。
-- Docker 镜像 digest。
-- LIBERO 代码 commit。
-- 任务资源版本。
-- 扰动配置版本。
-- 更新内容。
-- 已知问题。
+## 10. 运维接口
 
-禁止只发布 `latest` 版本。正式交付应固定为 `1.0.0`、`1.0.1` 等明确版本。
-
-建议 `/v1/version` 返回：
-
-```json
-{
-  "service_version": "1.0.0",
-  "sdk_version": "1.0.0",
-  "protocol_version": "1.0",
-  "benchmark_version": "libero-pro-2.0",
-  "image_digest": "sha256:...",
-  "task_pack_version": "2026.07",
-  "perturbation_version": "2026.07"
-}
-```
-
-这样客户反馈问题时，可以准确确定其使用的环境和任务版本。
-
-## 十、服务端接口
-
-服务端建议至少提供以下接口：
-
-```text
-GET    /v1/health
-GET    /v1/version
-GET    /v1/tasks
-POST   /v1/sessions
-POST   /v1/sessions/{id}/reset
-POST   /v1/sessions/{id}/step
-DELETE /v1/sessions/{id}
-GET    /v1/results/{id}
-```
-
-各接口作用如下：
-
-| 接口 | 作用 |
+| 接口 | 用途 |
 | --- | --- |
-| `/v1/health` | 检查服务是否正常 |
-| `/v1/version` | 返回服务、协议、任务和扰动版本 |
-| `/v1/tasks` | 查询可使用的任务列表 |
-| `/v1/sessions` | 创建环境会话 |
-| `/reset` | 重置任务和初始状态 |
-| `/step` | 提交动作并获得下一步观测 |
-| `DELETE /sessions/{id}` | 关闭会话并释放资源 |
-| `/v1/results/{id}` | 获取或导出运行结果 |
+| `GET /v1/health` | readiness、容量和调度状态 |
+| `GET /v1/version` | 服务、协议、镜像和模拟器版本 |
+| `GET /v1/tasks` | 169 项有效任务目录 |
+| `POST /v1/sessions` | 创建直接环境 Session |
+| `POST /v1/sessions/{id}/reset` | 使用固定 init state 与 seed 重置 |
+| `POST /v1/sessions/{id}/step` | 幂等提交动作 |
+| `DELETE /v1/sessions/{id}` | 关闭环境并释放 Worker |
+| `GET /v1/results/{id}` | 查询服务端权威结果 |
 
-服务端还应具备：
+批量 Run/Lease 接口由 `RemoteRunClient` 封装，说明见 `docs/remote-run-scheduler.md`。多账户、Lease、
+失败分类和确定性约束见 `docs/LIBERO-Pro2.0_远程评测可靠性与多用户并发修复方案.md`。
 
-- 会话超时自动回收。
-- 最大并发数量限制。
-- 错误参数检查。
-- API Token 验证。
-- 请求日志和错误日志。
-- 防止同一个动作请求被重复执行。
+## 11. 已验证与部署后验收
 
-## 十一、任务与扰动资源
+1.0.0 离线产物已验证：
 
-交付的 Assets 至少应包含：
+- 528 项内部 SHA-256 与外层 tar.gz SHA-256 全部匹配。
+- 镜像内 169 个 BDDL 哈希全部匹配，完整包含资产与 init states。
+- CPython 3.8 和 3.12 可在无网络、无索引模式安装正式 SDK wheelhouse。
+- fake backend 下认证、非法任务 404、双账户隔离、同 seed 初态复现、跨账户结果隐藏、通用 adapter、
+  签名结果和失败重试指纹一致均通过。
+- CPU OSMesa 下真实 LIBERO 的 base、S10 静态扰动和 D01 动态扰动均可 reset 并 step。
 
-- LIBERO 任务定义。
-- BDDL 文件。
-- 初始状态。
-- 物体和场景资源。
-- 静态扰动配置。
-- 动态扰动配置。
-- 扰动参数说明。
-- 随机种子和复现说明。
+客户目标服务器仍必须完成 NVIDIA GPU/EGL 验收：
 
-对于每次运行，服务端应记录：
+1. 执行 `bash install.sh` 并确认容器内 `nvidia-smi` 成功。
+2. 对 base、至少一个静态扰动和一个动态扰动执行真实 reset/step。
+3. 依次压测 1/2/4/8 个环境，记录 GPU 显存、主存、step 延迟和关闭后的资源回落。
+4. 只有通过压力测试的最大值才能写入 `LIBERO_REMOTE_MAX_SESSIONS`。
 
-- 任务集。
-- 任务编号。
-- 初始状态编号。
-- 随机种子。
-- 服务版本。
-- 任务资源版本。
-- 扰动类型。
-- 扰动参数。
-- 运行结果。
-
-这样才能保证客户能够复现实验结果。
-
-## 十二、日志与结果
-
-建议默认将日志和结果保存到：
-
-```text
-logs/
-results/
-```
-
-运行结果可以包含：
-
-- Episode 配置。
-- 动作序列。
-- 奖励。
-- 成功或失败状态。
-- 运行时长。
-- 扰动配置。
-- 可选的视频或观测轨迹。
-- 错误信息。
-
-服务端不得默认收集或上传客户的模型代码、模型权重、密钥和其他敏感数据。
-
-## 十三、升级方式
-
-建议升级时只替换发生变化的部分：
-
-| 更新内容 | 更新方式 |
-| --- | --- |
-| 服务代码或依赖 | 更新 Docker 镜像 |
-| Python 调用接口 | 更新 wheel |
-| 任务和初始状态 | 更新 Assets |
-| 扰动配置 | 更新扰动资源包 |
-| 部署参数 | 更新 Compose 或 `.env.example` |
-
-升级前应保留旧版本镜像和配置，以便出现问题时能够快速回退。
-
-## 十四、需要注意的限制
-
-客户自己部署后，可以：
-
-- 查看任务和扰动配置。
-- 修改环境代码。
-- 修改成功判定。
-- 针对测试任务训练。
-- 修改或伪造本地评测结果。
-
-因此，本地部署产生的成绩无法天然证明环境未被修改。
-
-建议区分两类服务：
-
-| 版本 | 用途 |
-| --- | --- |
-| 客户本地部署版 | 开发、调试、私有评估和公开任务复现 |
-| 我方公网官方版 | 隐藏任务、论文主榜和官方排行榜 |
-
-正式排行榜或权威评测仍应通过我方控制的远程服务完成，客户不能接触隐藏任务、评测逻辑和完整测试资源。
-
-## 十五、最终交付路线
-
-最终建议交付：
-
-Docker 服务镜像 + Python 客户端 SDK + 任务资源包 + Docker Compose 配置 + 安装与健康检查脚本。
-
-其中：
-
-- Docker 容器负责完整运行 LIBERO-PRO。
-- Python SDK 负责为客户提供简单、统一的调用接口。
-- 客户可以在本机或内网中使用。
-- 本地成绩用于开发和自测。
-- 正式成绩由我方远程评测服务产生。
+本地 OSMesa 通过不等同于客户 NVIDIA/EGL 和最终容量通过；这两项必须在实际部署硬件上验收。
