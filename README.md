@@ -62,7 +62,7 @@ docker run --rm --gpus all ubuntu:22.04 nvidia-smi
 
 ## 安装
 
-模型与 LIBERO-PRO 服务默认运行在同一台服务器。无需开放 8000 端口，也无需修改防火墙。
+模型与 LIBERO-PRO 服务默认运行在同一台服务器。
 
 ```bash
 tar -xzf libero-pro-bundle-1.0.0.tar.gz
