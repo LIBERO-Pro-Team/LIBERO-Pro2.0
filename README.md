@@ -34,7 +34,7 @@ sha256sum -c libero-pro-bundle-1.0.0.tar.gz.sha256
 原始压缩包的 SHA-256 应为：
 
 ```text
-848b0daebee406fb98a7c9743da98c12f4e985b1f6ec82a5d77541c02f0a6bad
+e4badb922aab9a3d01faecb22f0c3c6f77f4eec1ef054efc1e4c63344517bfe2
 ```
 
 不要使用仓库源码代替 Release 部署包。正式包已包含固定 Docker 镜像、SDK wheelhouse、任务、BDDL、
@@ -166,7 +166,7 @@ with RemoteLiberoEnv(
         suite="libero_goal",
         task_id=9,
         init_state_id=0,
-        seed=42,
+        seed=142,
         variant="S10",
     )
 
