@@ -107,7 +107,7 @@ obs, info = env.reset(
     suite="libero_goal",
     task_id=9,
     init_state_id=0,
-    seed=42,
+    seed=142,
     variant="S10",
 )
 terminated = truncated = False

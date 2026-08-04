@@ -457,6 +457,7 @@ def test_customer_examples_use_a_published_manifest_task() -> None:
         9,
         "base",
     )
+    assert reset_arguments["seed"] == 142
 
     customer_readme = (deployment / "README.md").read_text(encoding="utf-8")
     technical_plan = (ROOT / "docs" / "customer-local-deployment-technical-plan.md").read_text(
@@ -464,6 +465,9 @@ def test_customer_examples_use_a_published_manifest_task() -> None:
     )
     assert 'suite="libero_goal",\n    task_id=9,' in customer_readme
     assert 'suite="libero_goal",\n    task_id=9,' in technical_plan
+    for document in (customer_readme, technical_plan):
+        assert "seed=142," in document
+        assert "seed=42," not in document
 
 
 def test_customer_technical_plan_matches_the_released_bundle_workflow() -> None:

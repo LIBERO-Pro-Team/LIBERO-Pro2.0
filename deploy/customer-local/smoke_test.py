@@ -13,7 +13,7 @@ with RemoteLiberoEnv(
         suite="libero_goal",
         task_id=9,
         init_state_id=0,
-        seed=42,
+        seed=142,
         variant="base",
         camera_height=64,
         camera_width=64,
