@@ -1,0 +1,8 @@
+deploy/customer-conda/*.sh text eol=lf
+deploy/customer-conda/*.py text eol=lf
+deploy/customer-conda/*.yml text eol=lf
+deploy/customer-conda/*.txt text eol=lf
+deploy/customer-conda/*.md text eol=lf
+deploy/customer-conda/*.json text eol=lf
+scripts/build_conda_bundle.ps1 text eol=lf
+tests/test_conda_deployment.py text eol=lf

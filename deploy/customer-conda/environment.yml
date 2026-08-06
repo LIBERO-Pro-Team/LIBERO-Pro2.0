@@ -1,0 +1,20 @@
+name: libero-pro2
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.8.10
+  - pip=24.3.1
+  - cmake
+  - make
+  - c-compiler
+  - cxx-compiler
+  - pkg-config
+  - libegl
+  - libgl
+  - libglvnd
+  - libglib
+  - mesalib
+  - openmpi
+  - xorg-libx11
+  - xorg-libxext
