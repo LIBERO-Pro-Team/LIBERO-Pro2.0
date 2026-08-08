@@ -58,10 +58,9 @@ docker compose logs -f libero-remote
 
 镜像固定拉取 `LIBERO-PRO` 的 commit
 `eafdb809426b13153aa1e4c42d6601844217dfec`，并安装 Python 3.8、CUDA 11.3 对应的
-PyTorch、robosuite、MuJoCo 和本服务。八类 LIBERO-PRO BDDL 已统一保存在
-`assets/bddl/` 并进入镜像；第一阶段的 `base` 请求固定加载
-`assets/bddl/00_original/bddl`，其余七类由后续 variant 路由接入。init state 仍从固定的
-LIBERO-PRO commit 加载。
+PyTorch、robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO BDDL 位于
+`assets/bddl/libero-pro2.0-169-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
+仅作为历史基线保留，不属于发布 manifest。init state 仍从固定的 LIBERO-PRO commit 加载。
 
 启动后先检查廉价就绪探针：
 
@@ -116,7 +115,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `libero_remote/environment/libero.py` | 查找 suite/task/init state 并包装 `OffScreenRenderEnv` |
 | `libero_remote/environment/observations.py` | 白名单化并规范两路图像和机器人本体状态 |
 | `libero_remote/environment/readiness.py` | 不初始化 MuJoCo 的后端与基础数据就绪检查 |
-| `assets/bddl/` | 集中保存原始任务和七类扰动任务的 320 个正式 BDDL |
+| `assets/bddl/` | 保存历史基线和当前 169 个已发布 BASE/static/dynamic BDDL |
 | `libero_remote/worker/process.py` | 用 `spawn` 子进程隔离 MuJoCo/EGL，并处理超时和强制回收 |
 | `libero_remote/server/session.py` | 保存单个 session 的 episode、step、锁和幂等缓存 |
 | `libero_remote/server/session_manager.py` | 管理容量、顺序、幂等、失败、空闲过期和全局关闭 |

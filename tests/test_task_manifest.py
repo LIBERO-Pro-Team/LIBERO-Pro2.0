@@ -12,6 +12,16 @@ ASSETS_ROOT = Path(__file__).resolve().parents[1] / "assets"
 MANIFEST_PATH = ASSETS_ROOT / "task_manifest.json"
 
 
+def test_published_bddl_tree_excludes_legacy_perturbation_categories() -> None:
+    bddl_root = ASSETS_ROOT / "bddl"
+    directory_names = {path.name for path in bddl_root.iterdir() if path.is_dir()}
+    legacy_prefixes = tuple(f"{index:02d}_" for index in range(1, 8))
+
+    assert (bddl_root / "00_original").is_dir()
+    assert (bddl_root / "libero-pro2.0-169-v1").is_dir()
+    assert not any(name.startswith(legacy_prefixes) for name in directory_names)
+
+
 def test_published_manifest_contains_exactly_169_approved_tasks() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 
