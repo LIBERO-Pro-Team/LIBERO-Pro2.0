@@ -9,3 +9,7 @@ deploy/customer-local/* text eol=lf
 scripts/server_smoke_test.py text eol=lf
 scripts/build_conda_bundle.ps1 text eol=lf
 tests/test_conda_deployment.py text eol=lf
+
+# Preserve the fixed simulator checkout byte-for-byte; its own attributes
+# still mark the large vendor assets for Git LFS.
+simulator-source/** -text

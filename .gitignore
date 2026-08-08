@@ -9,5 +9,8 @@ dist/
 .coverage
 htmlcov/
 runtime/
+# The bundled simulator has a tracked runtime helper; keep it in the source tree.
+!simulator-source/runtime/
+!simulator-source/runtime/**
 .env
 .DS_Store
