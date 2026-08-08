@@ -1,6 +1,6 @@
 {
   "reference_version": "1.0.0",
-  "service_commit": "a71b3e07dd7609daa1c108e813f25d0c42f83fdf",
+  "service_commit": "82c829c290bb011f828b80e117a5c7a0262337e1",
   "simulator_commit": "c02ee2c8255db1c36664fad978197c47e495f178",
   "reference_image": "libero-pro-server:1.0.0",
   "reference_image_digest": "sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933",

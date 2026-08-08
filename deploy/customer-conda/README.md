@@ -10,7 +10,7 @@
 
 本包的 Python 依赖来自已验收的 Docker `v1.0.0` 运行环境，详见 `requirements-lock.txt`：Python `3.8.10`、Torch `1.11.0+cpu`、MuJoCo `3.2.3`、robosuite `1.4.0`、FastAPI `0.103.2`、Uvicorn `0.23.2` 等均为精确版本。源码提交固定为：
 
-- 服务：`a71b3e07dd7609daa1c108e813f25d0c42f83fdf`
+- 服务：`82c829c290bb011f828b80e117a5c7a0262337e1`
 - 模拟器：`c02ee2c8255db1c36664fad978197c47e495f178`
 - Docker 参考镜像摘要（仅用于对照，不是 Conda 运行时镜像）：`sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933`
 

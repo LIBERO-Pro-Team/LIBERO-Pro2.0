@@ -20,7 +20,7 @@ def test_conda_delivery_locks_the_v100_runtime() -> None:
 
     assert baseline == {
         "reference_version": "1.0.0",
-        "service_commit": "a71b3e07dd7609daa1c108e813f25d0c42f83fdf",
+        "service_commit": "82c829c290bb011f828b80e117a5c7a0262337e1",
         "simulator_commit": "c02ee2c8255db1c36664fad978197c47e495f178",
         "reference_image": "libero-pro-server:1.0.0",
         "reference_image_digest": (
@@ -241,7 +241,7 @@ printf '{{}}\n' > "$permission_dir/service-source/assets/task_manifest.json"
     assert server["MUJOCO_GL"] == "egl"
     assert server["PYOPENGL_PLATFORM"] == "egl"
     assert server["LIBERO_REMOTE_COMMIT"] == (
-        "a71b3e07dd7609daa1c108e813f25d0c42f83fdf"
+        "82c829c290bb011f828b80e117a5c7a0262337e1"
     )
     assert server["LIBERO_PRO_COMMIT"] == (
         "c02ee2c8255db1c36664fad978197c47e495f178"
@@ -550,7 +550,7 @@ def test_conda_docs_cover_regular_user_operation_and_headless_egl() -> None:
         "/data/user/envs/libero-pro2/bin/python smoke_test.py",
     ):
         assert command in readme
-    assert "a71b3e07dd7609daa1c108e813f25d0c42f83fdf" in readme
+    assert "82c829c290bb011f828b80e117a5c7a0262337e1" in readme
     assert "c02ee2c8255db1c36664fad978197c47e495f178" in readme
     assert "sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933" in readme
     assert "seed 142" in readme
