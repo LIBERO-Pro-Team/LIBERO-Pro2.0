@@ -1,7 +1,7 @@
 # LIBERO-PRO Remote Evaluation Service
 
-> 状态：第一阶段可运行实现（v0.1）
-> 当前阶段：本地自动化测试已通过，等待 Linux/NVIDIA 服务器真实 LIBERO 验收
+> 状态：1.0.0 发布版本
+> 当前阶段：Docker 与 Conda 离线部署包已完成本地验收，支持 169 项 manifest 任务和多账户服务
 
 ## 1. 当前任务
 
@@ -13,9 +13,9 @@
 - 服务端执行 action，推进环境并返回下一步 observation、reward、终止状态和成功状态。
 - 客户端保持接近 Gym 环境的调用体验，只需要使用 `reset()`、`step()` 和 `close()`。
 
-仓库已经实现第一阶段的协议、独立环境 worker、session 生命周期、HTTP 服务和
-Python 客户端。当前代码可以使用确定性的 `fake` 后端完成本地端到端验证；上传到
-Linux/NVIDIA 服务器后，切换为默认的 `libero` 后端进行真实 MuJoCo/EGL 验收。
+仓库已经实现协议、独立环境 worker、session 生命周期、HTTP 服务、Python 客户端、任务
+manifest、静态/动态扰动运行时和多账户调度。代码可以使用确定性的 `fake` 后端完成本地
+端到端验证；部署到 Linux/NVIDIA 服务器后使用默认的 `libero` 后端执行真实 MuJoCo/EGL 评测。
 
 ## 快速验证
 
@@ -60,8 +60,8 @@ docker compose logs -f libero-remote
 ```
 
 镜像和 Conda 离线包固定使用 `LIBERO-PRO` 的 commit
-`c02ee2c8255db1c36664fad978197c47e495f178`，并安装 Python 3.8、CUDA 11.3 对应的
-PyTorch、robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO BDDL 位于
+`c02ee2c8255db1c36664fad978197c47e495f178`，并安装 Python 3.8、锁定的 PyTorch、
+robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO BDDL 位于
 `assets/bddl/libero-pro2.0-169-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
 仅作为历史基线保留，不属于发布 manifest。init state 仍从固定的 LIBERO-PRO commit 加载。
 
@@ -82,7 +82,7 @@ checkout 内容逐文件一致。
 再从另一台机器运行一次真实环境 smoke test：
 
 ```bash
-git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+git clone --branch model-agnostic-multiuser https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
 cd LIBERO-Pro2.0
 python3.8 -m venv .venv
 source .venv/bin/activate
@@ -95,7 +95,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 
 ### 部署约束
 
-- 第一阶段没有鉴权和限流，只能放在可信内网、VPN 或 SSH 隧道后，不能直接暴露公网。
+- 生产 Compose 默认启用 API key、结果签名和账户隔离；仍只能放在可信内网、VPN 或 SSH 隧道后，不能直接暴露公网。
 - Uvicorn 必须保持单 API 进程。每个 session 已有独立 `spawn` worker，不能再用多个
   Uvicorn worker 分割内存中的 session registry。
 - `LIBERO_REMOTE_MAX_SESSIONS` 默认是 `1`；提高前先测量单环境 GPU 显存和主存。
@@ -111,7 +111,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | `120` | 单次 worker 命令超时；超时后 worker 被终止 |
 | `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | `900` | session 空闲回收时间 |
 | `LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS` | `30` | 后台扫描空闲 session 的间隔 |
-| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/00_original/bddl` | 服务端当前使用的 BDDL 根目录；必须包含四个 suite 子目录 |
+| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/libero-pro2.0-169-v1` | 服务端当前使用的 169 项发布 BDDL 根目录 |
 | `NVIDIA_VISIBLE_DEVICES` | `all` | 容器可见 GPU；生产环境建议指定设备 |
 | `LIBERO_PRO_COMMIT` | 固定 commit | 构建时使用的 LIBERO-PRO 版本 |
 
@@ -163,16 +163,16 @@ python -m ruff check libero_remote tests scripts
 
 | 阶段 | 目标 | 本阶段是否实现 |
 | --- | --- | --- |
-| 第一阶段 | 原始 LIBERO 环境远程化，内网单用户打通完整交互链路 | 是 |
-| 第二阶段 | 接入已有静态扰动，允许用户选择评测类型 | 否 |
-| 第三阶段 | 接入运行时动态扰动，由服务端按规则触发 | 否 |
-| 第四阶段 | 公网部署、并发调度、鉴权、限流、监控和排行榜 | 否 |
+| 第一阶段 | 原始 LIBERO 环境远程化，内网单用户打通完整交互链路 | 已完成 |
+| 第二阶段 | 接入已发布静态扰动，允许用户选择评测类型 | 已完成 |
+| 第三阶段 | 接入已发布运行时动态扰动，由服务端按规则触发 | 已完成 |
+| 第四阶段 | 公网部署、并发调度、鉴权、限流、监控和排行榜 | 部分完成 |
 
-第一阶段只验证技术闭环，不提前解决并发和公网运营问题。
+当前发布已覆盖服务闭环、169 项任务、固定 seed 复现、失败重试、多账户隔离和运行时扰动；公网运营和生产级监控仍需按部署环境单独配置。
 
-## 4. 第一阶段目标
+## 4. 服务目标
 
-第一阶段需要证明下面这条链路可行：
+当前发布需要保证下面这条链路可复现：
 
 1. 用户在内网客户端创建指定的 LIBERO task。
 2. 服务端创建一个独立环境实例并加载指定 init state。
@@ -181,20 +181,18 @@ python -m ruff check libero_remote tests scripts
 5. 服务端执行 `env.step(action)`，返回下一步结果。
 6. episode 成功、超出步数或客户端主动结束后，服务端释放环境。
 
-### 第一阶段范围
+### 当前发布范围
 
 - 支持 `libero_goal`、`libero_spatial`、`libero_object` 和 `libero_10`。
 - 支持按 `suite + task_id + init_state_id + seed` 创建环境。
 - 支持两路默认相机图像和机器人本体状态。
-- 支持一个客户端、一个活跃环境、串行 step。
+- 支持多账户并发、单账户活动 session 配额和串行 step。
 - 支持环境超时回收和显式关闭。
 - 提供一个 Python 客户端包，隐藏网络协议和数组编解码细节。
 
-### 第一阶段暂不包含
+### 当前发布暂不包含
 
-- 多用户并发和 GPU 调度。
-- 公网鉴权、计费、配额和排行榜。
-- 静态或动态扰动。
+- 计费、公开排行榜和公网运营。
 - 用户模型托管和服务端模型推理。
 - 训练数据下载或世界模型训练。
 - Web 管理后台。
@@ -229,7 +227,8 @@ flowchart LR
 | `ObservationCodec` | 筛选 observation 字段并编解码 NumPy 数组 |
 | `TaskCatalog` | 枚举允许调用的 suite、task 和 action/observation 元数据 |
 
-第一阶段不额外抽象扰动模块。等第二阶段确实出现 `base` 与 `static perturbation` 两种实现后，再建立扰动选择的内部 seam。
+任务 manifest 通过 `base`、`S01-S21` 和 `D01-D21` case id 选择已发布 BDDL；固定运行时同时提供
+`set_perturbation_seed`、`begin_perturbation_rollout` 和 `get_perturbation_plan`，并在就绪检查中拒绝缺少这些能力的旧模拟器。
 
 ## 6. 交互流程
 
@@ -303,7 +302,7 @@ env.close()
 
 ## 8. HTTP 接口
 
-第一阶段使用 FastAPI 提供同步请求响应接口。控制信息使用普通 JSON；包含 observation 的响应使用 `application/x-msgpack`，以便直接传输 NumPy 字节数据。
+服务使用 FastAPI 提供同步请求响应接口。控制信息使用普通 JSON；包含 observation 的响应使用 `application/x-msgpack`，以便直接传输 NumPy 字节数据。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -333,7 +332,7 @@ env.close()
 }
 ```
 
-第一阶段只接受 `variant="base"`。保留该字段是为了让第二阶段在不修改客户端主接口的情况下增加静态扰动。
+`variant` 接受 `base`、`S01-S21` 和 `D01-D21`；可用的 suite/task/variant 组合以 `/v1/tasks` 返回的 169 项 manifest 为准。
 
 创建成功后返回：
 
@@ -401,7 +400,7 @@ info: map<string, scalar>
 
 ## 9. Observation 编码
 
-第一阶段不使用 Base64，也不默认使用 JPEG。Base64 会额外增加约三分之一体积；JPEG 的有损压缩可能改变模型输入并影响评测公平性。
+服务不使用 Base64，也不默认使用 JPEG。Base64 会额外增加约三分之一体积；JPEG 的有损压缩可能改变模型输入并影响评测公平性。
 
 每个 NumPy 数组编码为：
 
@@ -422,7 +421,7 @@ info: map<string, scalar>
 - `info` 中只允许标量、短字符串和受控的小型数组。
 - 不对图像做转置、翻转、归一化或颜色空间转换；这些属于用户模型适配逻辑。
 
-两路 `128 x 128 x 3` 的 `uint8` 图像每步约 96 KiB。即使每秒执行 20 step，单 session 的原始图像带宽约为 15 Mbit/s，内网第一阶段可以接受。压缩策略应在测量真实吞吐后决定。
+两路 `128 x 128 x 3` 的 `uint8` 图像每步约 96 KiB。即使每秒执行 20 step，单 session 的原始图像带宽约为 15 Mbit/s；压缩策略应在测量真实吞吐后决定。
 
 ## 10. Session 生命周期
 
@@ -446,17 +445,17 @@ CREATING -> READY -> RUNNING -> TERMINATED
 - 进程退出时关闭全部环境。
 - 响应日志记录 suite、task、step、耗时和结果，但不记录完整图像。
 
-当前实现从第一阶段开始就为每个 session 启动独立 `spawn` worker。FastAPI 进程只保存
+当前实现为每个 session 启动独立 `spawn` worker。FastAPI 进程只保存
 session 元数据、进程句柄和请求缓存，不直接导入或持有 MuJoCo 环境。
 
 ## 11. 与现有 LIBERO-PRO 的连接方式
 
-当前仓库已经具备第一阶段所需的核心能力：
+当前仓库已经具备发布所需的核心能力：
 
 - `libero/libero/benchmark/__init__.py` 可以按 suite 和 task id 查找 BDDL 与 init state。
 - `libero/libero/envs/env_wrapper.py` 中的 `OffScreenRenderEnv` 已提供 `reset()`、`step()`、`set_init_state()` 和 `close()`。
-- `OffScreenRenderEnv.sim` 暴露底层 MuJoCo simulation，后续可用于动态扰动。
-- 根目录 `perturbation.py` 已提供静态 BDDL 扰动组合逻辑，第二阶段可以接入。
+- `OffScreenRenderEnv.sim` 暴露底层 MuJoCo simulation，固定 runtime 已用于动态扰动。
+- `simulator-source/libero/libero/envs/` 提供固定扰动配置解析、静态/动态运行时和扰动计划接口。
 
 环境创建实现可按以下流程完成：
 
@@ -524,7 +523,7 @@ tests/
 
 ## 13. 技术选型
 
-| 领域 | 第一阶段选择 | 原因 |
+| 领域 | 当前发布选择 | 原因 |
 | --- | --- | --- |
 | 服务框架 | FastAPI + Uvicorn | Python 接入简单，便于内网原型和接口校验 |
 | 客户端 | `httpx.Client` | 支持连接复用、超时和明确的同步语义 |
@@ -534,44 +533,44 @@ tests/
 | 配置 | YAML + 环境变量覆盖 | 与现有 LIBERO-PRO 配置方式相容 |
 | 测试 | pytest | 适合协议、模块和端到端测试 |
 
-当前 LIBERO-PRO 使用 Python 3.8.13。实现时应锁定最后一组兼容 Python 3.8 的 FastAPI/Pydantic/httpx 版本；不要直接安装当时的最新版。如果后续升级 Python，需要先验证 PyTorch、robosuite、MuJoCo 和渲染行为是否一致。
+当前交付包使用 Python 3.8.10，并锁定 FastAPI、Pydantic、httpx、PyTorch、robosuite、MuJoCo 和渲染依赖；如果后续升级 Python，需要先验证依赖和渲染行为是否一致。
 
-## 14. 第一阶段实施步骤
+## 14. 发布实施步骤
 
 ### 里程碑 1：协议和编解码
 
-- 定义 session、task、step 和错误模型。
-- 实现 NumPy/MessagePack 编解码。
-- 完成 dtype、shape、非法数据和往返一致性测试。
+- 已定义 session、task、step 和错误模型。
+- 已实现 NumPy/MessagePack 编解码。
+- 已完成 dtype、shape、非法数据和往返一致性测试。
 
 ### 里程碑 2：本地环境模块
 
-- 实现 `TaskCatalog` 和 `EnvironmentFactory`。
-- 用 `suite + task_id + init_state_id` 创建环境。
-- 验证 `reset -> step -> close` 在无网络情况下正常工作。
+- 已实现 `TaskCatalog` 和 `EnvironmentFactory`。
+- 已支持用 `suite + task_id + init_state_id + seed + variant` 创建环境。
+- 已验证 `reset -> step -> close` 在无网络和远程服务中正常工作。
 
 ### 里程碑 3：服务端 session
 
-- 实现 session 状态机和操作串行化。
-- 实现 request id 幂等保护。
-- 实现超时回收、异常清理和健康检查。
+- 已实现 session 状态机和操作串行化。
+- 已实现 request id 幂等保护。
+- 已实现超时回收、异常清理和健康检查。
 
 ### 里程碑 4：HTTP 传输与客户端
 
-- 实现所有 `/v1` 路径。
-- 实现 `RemoteLiberoEnv`。
-- 将 HTTP 错误映射成稳定的 Python 异常类型。
+- 已实现所有 `/v1` 路径。
+- 已实现 `RemoteLiberoEnv`。
+- 已将 HTTP 错误映射成稳定的 Python 异常类型。
 
 ### 里程碑 5：内网端到端验证
 
-- 服务端和客户端分别运行在两台机器上。
-- 使用固定 seed、init state 和 action 序列完成完整 episode。
-- 记录吞吐、延迟、CPU/GPU 显存和环境释放结果。
-- 编写最小用户接入示例。
+- 已提供服务端和客户端跨机器运行方式。
+- 已用固定 seed、init state 和 action 序列完成复现验收。
+- 已记录运行时、任务和结果指纹，并验证环境释放。
+- 已提供最小用户接入示例。
 
 ## 15. 验收标准
 
-第一阶段完成必须同时满足：
+当前发布验收包含：
 
 1. 客户端可以查询可用 task，并创建指定环境。
 2. 客户端能收到两路图像、机器人状态和语言指令。
@@ -586,25 +585,21 @@ tests/
 
 图像一致性应区分两类测试：同一个 observation 的协议往返必须逐字节一致；两个独立 MuJoCo 实例的渲染结果可根据实际硬件设定像素误差阈值。
 
-## 16. 第二阶段：静态扰动
+## 16. 静态扰动
 
-第一阶段稳定后，将创建 session 的 `variant` 扩展为：
+创建 session 时使用已发布 manifest 的 `variant`：
 
 ```text
 base
-object
-swap
-language
-task
-environment
-combined
+S01-S21
+D01-D21
 ```
 
-服务端根据 `variant` 选择已经准备好的 BDDL/init state 集合，或者调用现有 `perturbation.py` 生成受控环境。客户端只选择评测类型，不接触实际 BDDL 文件和扰动配置。
+服务端根据 `variant` 从 169 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置。
 
 需要明确：把 BDDL 留在服务端只能提高直接获取和针对性训练的成本，不能从理论上彻底阻止通过大量查询推断评测分布。因此还需要访问配额、隐藏测试集轮换和异常查询检测。
 
-## 17. 第三阶段：动态扰动
+## 17. 动态扰动
 
 动态扰动在服务端的 `step` 流程中触发：
 
@@ -625,7 +620,7 @@ combined
 - 改变光照强度、方向、眩光和遮挡。
 - 根据可复现的私有 seed 选择扰动时机和幅度。
 
-所有动态扰动必须记录内部审计事件，但不能在普通客户端响应中泄漏隐藏规则。实现前需要为每种扰动规定物理可行范围和成功判定不变量。
+动态扰动会记录内部审计事件，并通过固定 seed、扰动计划指纹和结果回执保证可复现；普通客户端只接收协议要求的计划摘要和结果字段。
 
 ## 18. 风险与处理
 
@@ -636,34 +631,34 @@ combined
 | 图像负载导致延迟或带宽过高 | 先测量原始数据；后续再增加可协商的无损压缩 |
 | 服务崩溃遗留 GPU/环境资源 | `try/finally` 清理、超时回收、进程退出钩子和 worker 隔离 |
 | 不同服务器版本产生评测差异 | 固定镜像、依赖 lock、代码 commit、任务版本和 seed |
-| 用户访问隐藏任务过多导致信息泄漏 | 后续增加鉴权、配额、隐藏任务轮换和查询审计 |
-| 旧依赖限制服务框架版本 | 第一阶段固定 Python 3.8 兼容依赖，升级单独验证 |
+| 用户访问任务过多导致信息泄漏 | 使用 API key、账户配额、manifest 白名单和审计记录 |
+| 旧依赖限制服务框架版本 | 交付包固定 Python 3.8 依赖，升级单独验证 |
 
 ## 19. 待评审问题
 
-开始编码前需要确认：
+当前部署前需要确认：
 
-1. 第一阶段服务端部署在 Linux 服务器还是现有 Windows 环境？
-2. 首个演示只支持 `libero_goal`，还是同时开放四个 10-task suite？
-3. observation 必须返回哪些键？是否需要深度图和 segmentation？
-4. 客户端接口是否需要兼容 Gymnasium 的 `Env` 类型？
-5. 第一阶段是否接受 HTTP + MessagePack，还是直接使用 gRPC？
-6. session 的默认空闲超时和单 episode 最大步数是多少？
-7. 静态扰动选择由用户显式指定，还是服务端隐藏随机分配？
-8. 评测结果由客户端汇总，还是服务端生成不可篡改的 episode 记录？
+1. 目标主机是否满足 NVIDIA 驱动、EGL 和 Docker/Conda 部署前置条件？
+2. 运行 Docker 还是 `v1.0.0-conda-r2` 离线包？
+3. 是否按 `/v1/tasks` 选择已发布的 suite、task 和 variant 组合？
+4. 客户端是否固定相同的 init state、seed、模型、processor 和动作序列？
+5. 是否为每个账户单独生成并保管 API key 和客户端配置？
+6. 单账户和服务器总活动 session 配额是否匹配 GPU 显存与主存？
+7. 是否保留 smoke、结果回执和审计记录用于复测？
+8. 真实评测是否在 smoke 与一致性验收通过后开始？
 
-## 20. 预期第一阶段成果
+## 20. 当前发布成果
 
-完成后应提供：
+当前发布提供：
 
 - 一个可在内网启动的 LIBERO-PRO server。
 - 一个可独立安装的轻量 Python client。
 - 一份协议说明和用户调用示例。
 - 一套单元测试、集成测试和本地/远程一致性测试。
 - 一份内网端到端演示记录及性能基线。
-- 一份进入静态扰动阶段前的遗留问题清单。
+- 一份部署、复测和失败重试的验收记录。
 
-第一阶段的成功标准不是“功能很多”，而是用最小接口可靠打通远程 `reset/step/close`，证明 LIBERO-PRO 可以作为服务端评测环境运行。
+当前发布的成功标准是用固定任务、seed 和运行时完成可复现的远程 `reset/step/close`，并保证任务 manifest、账户隔离、失败重试和环境资源清理一致。
 
 ## 21. 用户模型 Adapter 与参考 runner
 
@@ -700,9 +695,10 @@ wsl.exe -d Ubuntu -- /home/vla/venvs/lerobot-xvla312/bin/python -m pip install "
 Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
 .\scripts\Start-XvlaRemoteEval.ps1 `
   -Suite libero_goal `
-  -TaskId 0 `
+  -TaskId 9 `
   -InitStateId 0 `
   -Episodes 1 `
+  -Seed 142 `
   -MaxSteps 300
 ```
 
@@ -743,9 +739,9 @@ python scripts/validate_local_remote_equivalence.py \
   --base-url http://127.0.0.1:8000 \
   --local-backend libero \
   --suite libero_goal \
-  --task-id 0 \
+  --task-id 9 \
   --init-state-id 0 \
-  --seed 42 \
+  --seed 142 \
   --control-mode relative \
   --steps 10 \
   --output results/local_remote_equivalence.json
@@ -782,7 +778,7 @@ PaliGemma tokenizer 来自受限仓库 `google/paligemma-3b-pt-224`。运行前�
 该仓库许可并将 tokenizer 文件下载到上述目录。adapter 会在模型加载前检查 checkpoint processors 和
 tokenizer 文件，缺失时直接停止。
 
-默认 clean 评测为 `libero_spatial/task 8/init state 0/seed 142/base/500 steps`：
+默认 clean 评测为 `libero_spatial/task 4/init state 0/seed 142/base/500 steps`：
 
 ```powershell
 Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
@@ -790,5 +786,5 @@ Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
 ```
 
 启动器按需建立临时 SSH 隧道，模型推理留在本机 WSL，LIBERO、MuJoCo、BDDL 和相机渲染留在服务器。
-结果写入 `runtime/pi0_remote_eval_spatial_task8_clean.jsonl`。CUDA 加载前会检查 checkpoint 权重之外至少
+结果写入 `runtime/pi0_remote_eval_spatial_task4_clean.jsonl`。CUDA 加载前会检查 checkpoint 权重之外至少
 还有 1 GiB 空闲显存；不足时明确报错，不会尝试量化、静默切到 CPU 或使用未正确加载的随机权重。
