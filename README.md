@@ -757,34 +757,3 @@ python scripts/validate_local_remote_equivalence.py \
 真实环境首次验收默认要求图像逐像素一致。若硬件或渲染栈确实产生可解释差异，必须通过
 `--image-max-abs`、`--image-mean-abs` 和 `--image-mismatch-ratio` 显式声明阈值，并把阈值保留在报告中；
 不能在代码里静默放宽。`/v1/health` 仍只表示进程、依赖和数据目录就绪，不能替代 smoke test 或该一致性验收。
-
-## 23. 本机 Pi0 远程评测 runner
-
-Pi0 adapter 只依赖平台固定的 `LiberoProAgent` 接口：`describe()` 声明所需 camera、observation 字段和
-`relative` 控制模式，`reset()` 清空 checkpoint 的 action queue，`act()` 将标准 observation 转成官方
-LeRobot LIBERO 输入并返回标准 7 维 action。图像旋转、8 维 state 构造、归一化和 action chunk 均由
-checkpoint 对应的 LeRobot processor 处理，服务器不包含 Pi0 专用逻辑。
-
-默认本地资源：
-
-```text
-Pi0 checkpoint: D:\models\pi0-libero-finetuned-v044
-PaliGemma tokenizer: D:\models\paligemma-3b-pt-224
-LeRobot: D:\lerobot
-WSL Python: /home/vla/venvs/lerobot-xvla312/bin/python
-```
-
-PaliGemma tokenizer 来自受限仓库 `google/paligemma-3b-pt-224`。运行前必须先用 Hugging Face 账号接受
-该仓库许可并将 tokenizer 文件下载到上述目录。adapter 会在模型加载前检查 checkpoint processors 和
-tokenizer 文件，缺失时直接停止。
-
-默认 clean 评测为 `libero_spatial/task 4/init state 0/seed 142/base/500 steps`：
-
-```powershell
-Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
-.\scripts\Start-Pi0RemoteEval.ps1
-```
-
-启动器按需建立临时 SSH 隧道，模型推理留在本机 WSL，LIBERO、MuJoCo、BDDL 和相机渲染留在服务器。
-结果写入 `runtime/pi0_remote_eval_spatial_task4_clean.jsonl`。CUDA 加载前会检查 checkpoint 权重之外至少
-还有 1 GiB 空闲显存；不足时明确报错，不会尝试量化、静默切到 CPU 或使用未正确加载的随机权重。
