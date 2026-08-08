@@ -1,0 +1,78 @@
+<mujoco model="wicker_tray">
+  <compiler angle="radian"/>
+
+  <asset>
+    <material name="wicker_tray_mat" rgba="0.34 0.18 0.12 1.0" specular="0.3" shininess="0.3"/>
+    <mesh name="wicker_tray_visual" file="wicker_tray_visual.obj" scale="1 1 1"/>
+  </asset>
+
+  <worldbody>
+    <body name="wicker_tray" pos="0 0 0">
+      <freejoint name="wicker_tray_joint"/>
+
+      <!-- Collision geometry - hollow tray (floor + 4 walls) -->
+      <!-- Floor -->
+      <geom name="wicker_tray_floor"
+            type="box"
+            pos="0 0 0.005"
+            size="0.23 0.33 0.005"
+            mass="0.2"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Left wall (negative X) -->
+      <geom name="wicker_tray_wall_left"
+            type="box"
+            pos="-0.225 0 0.0425"
+            size="0.005 0.33 0.0325"
+            mass="0.075"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Right wall (positive X) -->
+      <geom name="wicker_tray_wall_right"
+            type="box"
+            pos="0.225 0 0.0425"
+            size="0.005 0.33 0.0325"
+            mass="0.075"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Front wall (negative Y) -->
+      <geom name="wicker_tray_wall_front"
+            type="box"
+            pos="0 -0.325 0.0425"
+            size="0.22 0.005 0.0325"
+            mass="0.075"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Back wall (positive Y) -->
+      <geom name="wicker_tray_wall_back"
+            type="box"
+            pos="0 0.325 0.0425"
+            size="0.22 0.005 0.0325"
+            mass="0.075"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="wicker_tray_visual"
+            type="mesh"
+            mesh="wicker_tray_visual"
+            material="wicker_tray_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,21 @@
+<mujoco model="herring_tin">
+  <compiler angle="radian" />
+  <asset>
+    <texture name="herring_tin_tex" type="2d" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/herring_tin/herring_tin_texture.png" />
+    <material name="herring_tin_mat" texture="herring_tin_tex" specular="0.5" shininess="0.5" />
+    <mesh name="herring_tin_visual" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/herring_tin/herring_tin_visual.obj" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0.016">
+        <geom name="herring_tin_collision_box" type="box" size="0.033 0.042 0.016" mass="0.12" friction="0.6 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="herring_tin_collision_end1" type="cylinder" size="0.042 0.016" pos="0.033 0 0" mass="0.04" friction="0.6 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="herring_tin_collision_end2" type="cylinder" size="0.042 0.016" pos="-0.033 0 0" mass="0.04" friction="0.6 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="herring_tin_visual" type="mesh" mesh="herring_tin_visual" material="herring_tin_mat" contype="0" conaffinity="0" group="1" />
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.032" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.085959293 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

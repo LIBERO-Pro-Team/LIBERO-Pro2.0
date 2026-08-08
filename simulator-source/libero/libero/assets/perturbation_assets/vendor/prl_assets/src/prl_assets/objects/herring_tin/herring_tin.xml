@@ -1,0 +1,54 @@
+<mujoco model="herring_tin">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="herring_tin_tex" type="2d" file="herring_tin_texture.png"/>
+    <material name="herring_tin_mat" texture="herring_tin_tex" specular="0.5" shininess="0.5"/>
+    <mesh name="herring_tin_visual" file="herring_tin_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="herring_tin" pos="0 0 0.016">
+      <freejoint name="herring_tin_joint"/>
+
+      <!-- Collision geometry - flat tin with rounded ends -->
+      <!-- Central box -->
+      <geom name="herring_tin_collision_box"
+            type="box"
+            size="0.033 0.042 0.016"
+            mass="0.12"
+            friction="0.6 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+      <!-- Rounded end +X -->
+      <geom name="herring_tin_collision_end1"
+            type="cylinder"
+            size="0.042 0.016"
+            pos="0.033 0 0"
+            mass="0.04"
+            friction="0.6 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+      <!-- Rounded end -X -->
+      <geom name="herring_tin_collision_end2"
+            type="cylinder"
+            size="0.042 0.016"
+            pos="-0.033 0 0"
+            mass="0.04"
+            friction="0.6 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="herring_tin_visual"
+            type="mesh"
+            mesh="herring_tin_visual"
+            material="herring_tin_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

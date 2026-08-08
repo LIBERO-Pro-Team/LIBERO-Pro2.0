@@ -1,0 +1,30 @@
+name: ada_table
+description: Hospital over-bed table used in ADA feeding studies
+category: [furniture, fixture]
+
+# Physical properties
+mass: 15.0  # kg
+material: metal_laminate
+
+# Body-frame extents (z-up): wheelbase at z=0, table top at z=0.735.
+# MuJoCo's mesh loader aligns the source STL so length runs along x.
+dimensions: [1.852, 0.741, 0.735]  # [length, width, height] in meters
+
+# Geometric properties (axis-aligned box bounding the upright table)
+geometric_properties:
+  type: box
+  outer_size: [1.852, 0.741, 0.735]
+
+# MuJoCo simulation
+mujoco:
+  xml_path: ada_table.xml
+  scale: 1.0
+  friction: [0.8, 0.005, 0.0001]
+  # Notable sites (body frame):
+  #   table_surface — center of the table top, at z = height
+  sites:
+    table_surface: [0.0, 0.0, 0.735]
+
+# Perception aliases
+perception:
+  aliases: ["table", "hospital table", "over-bed table", "feeding table"]

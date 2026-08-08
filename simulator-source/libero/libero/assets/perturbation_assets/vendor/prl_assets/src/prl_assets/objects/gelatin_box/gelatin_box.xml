@@ -1,0 +1,33 @@
+<mujoco model="gelatin_box">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="gelatin_box_tex" type="2d" file="gelatin_box_texture.png"/>
+    <material name="gelatin_box_mat" texture="gelatin_box_tex" specular="0.5" shininess="0.5"/>
+    <mesh name="gelatin_box_visual" file="gelatin_box_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="gelatin_box" pos="0 0 0.014">
+      <freejoint name="gelatin_box_joint"/>
+
+      <!-- Collision geometry - box (small Jell-O box) -->
+      <geom name="gelatin_box_collision"
+            type="box"
+            size="0.036 0.044 0.014"
+            mass="0.1"
+            friction="0.7 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="gelatin_box_visual"
+            type="mesh"
+            mesh="gelatin_box_visual"
+            material="gelatin_box_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

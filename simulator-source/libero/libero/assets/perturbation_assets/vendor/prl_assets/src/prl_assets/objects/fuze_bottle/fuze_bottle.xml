@@ -1,0 +1,33 @@
+<mujoco model="fuze_bottle">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="fuze_bottle_tex" type="2d" file="fuze_bottle_visual_0.png"/>
+    <material name="fuze_bottle_mat" texture="fuze_bottle_tex"/>
+    <mesh name="fuze_bottle_visual" file="fuze_bottle_visual.obj" scale="1 1 1"/>
+  </asset>
+
+  <worldbody>
+    <body name="fuze_bottle" pos="0 0 0.1075">
+      <freejoint name="fuze_bottle_joint"/>
+
+      <!-- Collision geometry - cylinder approximation -->
+      <geom name="fuze_bottle_collision"
+            type="cylinder"
+            size="0.037 0.1075"
+            mass="0.4"
+            friction="0.8 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="fuze_bottle_visual"
+            type="mesh"
+            mesh="fuze_bottle_visual"
+            material="fuze_bottle_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

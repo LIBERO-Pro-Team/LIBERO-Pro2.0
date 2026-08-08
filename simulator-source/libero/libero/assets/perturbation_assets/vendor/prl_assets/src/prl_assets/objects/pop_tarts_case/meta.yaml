@@ -1,0 +1,40 @@
+name: pop_tarts_case
+description: >-
+  Kellogg's Pop-Tarts Frosted Strawberry, 12-pack cardboard case.
+  Rectangular box, blue with pink/red branding. Front face shows
+  two pastries with frosting and sprinkles. Bulky — roughly the
+  size of a small toaster (19 x 10 x 16.5 cm). Only graspable
+  across the narrow 102mm
+  depth (front-to-back) — the other two dimensions exceed the
+  Robotiq 2F-140's 140mm max opening.
+category: [food_package, graspable]
+
+# Physical properties
+mass: 0.62  # kg (22 oz, 12-pack case)
+dimensions: [0.191, 0.102, 0.165]  # [width, depth, height] in meters
+material: cardboard
+
+# Geometric properties for grasp planning
+geometric_properties:
+  type: box
+  size: [0.191, 0.102, 0.165]  # full extents
+
+# MuJoCo simulation
+mujoco:
+  xml_path: pop_tarts_case.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+# Perception aliases for detection systems
+perception:
+  aliases: ["pop tarts", "poptarts", "pop tarts case", "food box"]
+
+# Manipulation policy hints
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: side_grasp
+    graspable_axis: y  # only the 102mm depth fits in the gripper
+    difficulty: moderate
+  manipulation:
+    stable_poses: [upright, on_side, on_back]

@@ -1,0 +1,65 @@
+<!-- Hospital over-bed table from ADA feeding studies.
+
+     STL imported from ada_feeding/ada_planning_scene/assets/table.stl.
+     The source STL is authored Y-up; MuJoCo's mesh loader applies a
+     PCA-aligned inertia frame on compile that maps mesh +y → geom +z
+     and shifts the base to z=0.
+
+     Body frame (z-up):
+       z=0     — floor (base contact)
+       z=0.735 — table top (table_surface site)
+       x axis  — length (~1.85 m, long axis runs over the user)
+       y axis  — width  (~0.74 m)
+
+     Collision geometry: the mesh has only the top slab and two thin
+     bases (no support posts), so we use it for visuals only and model
+     the collision shape as five primitives:
+       - 1 box for the top slab
+       - 2 boxes for the perpendicular feet at each end
+       - 2 cylinders for the vertical columns connecting them
+     Masses sum to 15 kg total; the columns are inferred (5 cm Ø). -->
+<mujoco model="ada_table">
+  <asset>
+    <mesh name="ada_table_visual" file="ada_table.stl"/>
+    <material name="ada_table_surface" rgba="0.85 0.82 0.78 1"/>
+  </asset>
+
+  <default>
+    <default class="ada_table_visual">
+      <geom contype="0" conaffinity="0" group="2"
+            mass="0" material="ada_table_surface"/>
+    </default>
+    <default class="ada_table_collision">
+      <geom contype="1" conaffinity="1" group="3"
+            friction="0.8 0.005 0.0001"
+            rgba="0.6 0.6 0.6 0.3"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <body name="ada_table">
+      <!-- Visual mesh (no collision) -->
+      <geom type="mesh" mesh="ada_table_visual" class="ada_table_visual"/>
+
+      <!-- Collision: top slab -->
+      <geom name="ada_table_top" type="box" class="ada_table_collision"
+            pos="0 0 0.714" size="0.926 0.371 0.021" mass="10"/>
+
+      <!-- Collision: perpendicular feet at each end -->
+      <geom name="ada_table_base_left" type="box" class="ada_table_collision"
+            pos="-0.614 0 0.0175" size="0.030 0.330 0.0175" mass="1.5"/>
+      <geom name="ada_table_base_right" type="box" class="ada_table_collision"
+            pos=" 0.614 0 0.0175" size="0.030 0.330 0.0175" mass="1.5"/>
+
+      <!-- Collision: vertical support columns -->
+      <geom name="ada_table_column_left" type="cylinder" class="ada_table_collision"
+            pos="-0.614 0 0.364" size="0.025 0.329" mass="1.0"/>
+      <geom name="ada_table_column_right" type="cylinder" class="ada_table_collision"
+            pos=" 0.614 0 0.364" size="0.025 0.329" mass="1.0"/>
+
+      <!-- Surface site: center of the table top, for placing objects -->
+      <site name="table_surface" pos="0 0 0.735" size="0.01"
+            rgba="0 1 0 0.3"/>
+    </body>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,28 @@
+name: notebook
+description: Amazon Basics hardcover notebook
+category: [office, graspable, flat]
+
+mass: 0.3  # kg
+dimensions: [0.128, 0.212, 0.016]  # meters
+material: paper
+amazon_link: https://www.amazon.com/dp/B01DN8TCEU
+
+geometric_properties:
+  type: box
+  size: [0.128, 0.212, 0.016]
+
+mujoco:
+  xml_path: notebook.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+perception:
+  aliases: ["notebook", "journal", "book"]
+
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: pinch_grasp
+    difficulty: medium
+  manipulation:
+    stable_poses: [flat]

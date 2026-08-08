@@ -1,0 +1,33 @@
+<mujoco model="pop_tarts_case">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="pop_tarts_case_tex" type="2d" file="pop_tarts_case_atlas.png"/>
+    <material name="pop_tarts_case_mat" texture="pop_tarts_case_tex"/>
+    <mesh name="pop_tarts_case_visual" file="pop_tarts_case_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="pop_tarts_case" pos="0 0 0.0825">
+      <freejoint name="pop_tarts_case_joint"/>
+
+      <!-- Collision geometry -->
+      <geom name="pop_tarts_case_collision"
+            type="box"
+            size="0.0953 0.0508 0.0825"
+            mass="0.62"
+            friction="0.7 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual: UV-mapped box with per-face textures from atlas -->
+      <geom name="pop_tarts_case_visual"
+            type="mesh"
+            mesh="pop_tarts_case_visual"
+            material="pop_tarts_case_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

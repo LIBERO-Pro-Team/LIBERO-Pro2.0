@@ -1,0 +1,19 @@
+<mujoco model="pop_tarts_case">
+  <compiler angle="radian" />
+  <asset>
+    <texture name="pop_tarts_case_tex" type="2d" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case_atlas.png" />
+    <material name="pop_tarts_case_mat" texture="pop_tarts_case_tex" />
+    <mesh name="pop_tarts_case_visual" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case_visual.obj" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0.0825">
+        <geom name="pop_tarts_case_collision" type="box" size="0.0953 0.0508 0.0825" mass="0.62" friction="0.7 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="pop_tarts_case_visual" type="mesh" mesh="pop_tarts_case_visual" material="pop_tarts_case_mat" contype="0" conaffinity="0" group="1" />
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.165" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.10826472 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

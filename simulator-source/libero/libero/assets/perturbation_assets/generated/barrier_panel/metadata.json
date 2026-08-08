@@ -1,0 +1,16 @@
+{
+  "name": "barrier_panel",
+  "description": "Movable path barrier or persistent occluder",
+  "perturbations": [
+    "S05",
+    "S12",
+    "D05"
+  ],
+  "parameters": {
+    "half_extents": [
+      0.08,
+      0.008,
+      0.1
+    ]
+  }
+}

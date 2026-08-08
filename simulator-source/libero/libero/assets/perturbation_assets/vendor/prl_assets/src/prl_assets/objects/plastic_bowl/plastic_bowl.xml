@@ -1,0 +1,34 @@
+<mujoco model="plastic_bowl">
+  <compiler angle="radian"/>
+
+  <asset>
+    <material name="plastic_bowl_mat" rgba="0.74 0.74 0.74 1.0" specular="0.5" shininess="0.5"/>
+    <mesh name="plastic_bowl_mesh" file="plastic_bowl_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="plastic_bowl" pos="0 0 0">
+      <freejoint name="plastic_bowl_joint"/>
+
+      <!-- Collision mesh (enables nesting/stacking) -->
+      <geom name="plastic_bowl_collision"
+            type="mesh"
+            mesh="plastic_bowl_mesh"
+            mass="0.15"
+            friction="0.6 0.005 0.0001"
+            solref="0.004 1"
+            solimp="0.95 0.99 0.001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="plastic_bowl_visual"
+            type="mesh"
+            mesh="plastic_bowl_mesh"
+            material="plastic_bowl_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

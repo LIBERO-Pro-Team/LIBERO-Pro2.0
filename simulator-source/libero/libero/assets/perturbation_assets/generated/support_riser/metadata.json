@@ -1,0 +1,14 @@
+{
+  "name": "support_riser",
+  "description": "Tunable receiver or support-surface height block",
+  "perturbations": [
+    "S03"
+  ],
+  "parameters": {
+    "half_extents": [
+      0.1,
+      0.1,
+      0.025
+    ]
+  }
+}

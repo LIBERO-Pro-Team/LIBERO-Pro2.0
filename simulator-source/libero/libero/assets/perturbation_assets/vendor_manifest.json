@@ -1,0 +1,933 @@
+{
+  "format_version": 1,
+  "sources": [
+    {
+      "key": "prl_assets",
+      "repository": "https://github.com/personalrobotics/prl_assets.git",
+      "commit": "c7c474e74961c773f6adc44249ed33599fbf510a",
+      "license": "MIT",
+      "destination": "vendor/prl_assets"
+    },
+    {
+      "key": "pybullet_ycb",
+      "repository": "https://github.com/eleramp/pybullet-object-models.git",
+      "commit": "57cc4007607f6bcbb0a5364ccab7636faf7a91e4",
+      "license": "LGPL-2.1-only",
+      "destination": "vendor/pybullet_ycb"
+    },
+    {
+      "key": "robocasa_fixtures",
+      "repository": "https://github.com/robocasa/robocasa.git",
+      "commit": "b4684e6ee37d377cc392e98302a6b916d588b415",
+      "license": "CC-BY-4.0",
+      "destination": "vendor/robocasa_fixtures"
+    }
+  ],
+  "files": [
+    {
+      "path": "vendor/prl_assets/LICENSE",
+      "bytes": 1131,
+      "sha256": "6f7f8f0be014d7abfee0b268c6db46f2e0867668ed43e553ad1c35dd370b6d38"
+    },
+    {
+      "path": "vendor/prl_assets/README.md",
+      "bytes": 6826,
+      "sha256": "e61d475fa151e3b9a7e9681ebdd69ee25045c3a50a43962ba6983b1715b6251a"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/ada_table/ada_table.stl",
+      "bytes": 39084,
+      "sha256": "6edf2573a10ef6db6d3a5656ab64ea3b3c83c1b9a8da0fd547722507f3299fe1"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/ada_table/ada_table.xml",
+      "bytes": 2779,
+      "sha256": "5c99014e3c06f7d999b676159e2e64ef85d5030e2caaa65540f25da965026a11"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/ada_table/meta.yaml",
+      "bytes": 907,
+      "sha256": "0299e4071b4440b4c168fc6a04b9e4e1b165bbee1a4ef7977fbc3858bbcd67aa"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/can/can.png",
+      "bytes": 3290,
+      "sha256": "c32f96ec78eb4252986324bfb4206ce343795d4e162de3943dbf070b43cc76bf"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/can/can.xml",
+      "bytes": 817,
+      "sha256": "cc148f7267cd02e5d025d4c961efed87b8ef3284ee0d511c70310b32804290d3"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/can/can_visual.stl",
+      "bytes": 57534,
+      "sha256": "bb7dfcd9bc1b3a144164442adfdcc0945a72e271881140782a64041bffc1a2d7"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/can/meta.yaml",
+      "bytes": 1007,
+      "sha256": "889d414056c9597cea1252fb40b0ee9a018d047c3a7171b66da96dacb54403f5"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/cracker_box/cracker_box.xml",
+      "bytes": 1005,
+      "sha256": "0548a98258a3d37faba2e3507b42cd976d044ce6569cc88825a6da0ea662de7f"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/cracker_box/cracker_box_texture.png",
+      "bytes": 896147,
+      "sha256": "5ccba80b612e4aec0843278bd7584811d2b1713af35c10806ba9df345c9c2240"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/cracker_box/cracker_box_visual.obj",
+      "bytes": 1573885,
+      "sha256": "e641224728c338acf6bd0daa88ce4e110f0930093d91f8f4d607c5b623e8132c"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/cracker_box/meta.yaml",
+      "bytes": 637,
+      "sha256": "d589390f0a846734096d1ba81936498f1448295a3e11445210f93556ebc0fa9f"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/fuze_bottle.xml",
+      "bytes": 1009,
+      "sha256": "4344e11637631a10fd73e9c3d72b134ece2b8c721903791c5c5ee0ebef779fea"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/fuze_bottle_visual.obj",
+      "bytes": 190911,
+      "sha256": "55dff3b280eaa50ec8beedc534cc9655868915303fdb870b0cb12b513824b46d"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/fuze_bottle_visual_0.png",
+      "bytes": 668211,
+      "sha256": "0a3883f4e872306f84aaec10b1412d2d1edf551849c31cebd50c50d51cc4dc64"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/material.mtl",
+      "bytes": 205,
+      "sha256": "872198b234c4813efc6979cae5705664da79ababcd18878c4a8d1373f96c1623"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/material_0.png",
+      "bytes": 668211,
+      "sha256": "0a3883f4e872306f84aaec10b1412d2d1edf551849c31cebd50c50d51cc4dc64"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle/meta.yaml",
+      "bytes": 911,
+      "sha256": "5c9d2ac933b75cfede38f95ca41e4434629d580f99694d8e160f15f2a1216786"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/gelatin_box/gelatin_box.xml",
+      "bytes": 1024,
+      "sha256": "4ec5bed7371f547b7a879db8fe3224c937eb0c94178bf217349a5be01199a73c"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/gelatin_box/gelatin_box_texture.png",
+      "bytes": 865318,
+      "sha256": "813ade87ce35853bea7ad2a4ad2fb9767f7d9d17b35892beaa349091cec66d63"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/gelatin_box/gelatin_box_visual.obj",
+      "bytes": 1573988,
+      "sha256": "83f1919df321ebb10ea092047ab91aaa5a571c89b2d578c8766f56e5a15ba250"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/gelatin_box/meta.yaml",
+      "bytes": 631,
+      "sha256": "8b3460267ab75005e44e5aa9d7d3e140e5c4ef9c9934cc5ca65b67d2a6d54206"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/herring_tin/herring_tin.xml",
+      "bytes": 1698,
+      "sha256": "770b1f631cdcf17a397bb1eac7261dfd4108246b39f268c45a08e2501439095e"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/herring_tin/herring_tin_texture.png",
+      "bytes": 998619,
+      "sha256": "3c27c5f22c5a2aaa36e0e230102e9b90110b3e88ff65df55cd5632caea0aa7d6"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/herring_tin/herring_tin_visual.obj",
+      "bytes": 447115,
+      "sha256": "7ad2504435c055ebbe95615f1aa204eb65f61d9c38f7e212ab2665a65bdb0339"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/herring_tin/meta.yaml",
+      "bytes": 654,
+      "sha256": "777c096880b0ac8ed1fdf424833e589268ac2bfe2ce0e13490ff29e13424a545"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/lunchbox/lunchbox.xml",
+      "bytes": 963,
+      "sha256": "fd13d20d448dd2ab7531d74da2886858d7d9dc276a76bf1dd73f40c523e09715"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/lunchbox/lunchbox_texture.png",
+      "bytes": 922047,
+      "sha256": "69749cf95f269ceae47ba182b101e2a209a10b0cab2b8f693d8d44377c5e8577"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/lunchbox/lunchbox_visual.obj",
+      "bytes": 922254,
+      "sha256": "f02ba7ff08be77059025aed97e04f9369e07b11372506dcbb16d2c7c9c246086"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/lunchbox/meta.yaml",
+      "bytes": 653,
+      "sha256": "20e1e36f6b537039c39426fa3c9a58eb167044672a37cc1a2258761995417a06"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/notebook/meta.yaml",
+      "bytes": 607,
+      "sha256": "20c6091027fa0a517624b3c5efbe5100fed823afc599ea1a1d2cbac5438bb490"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/notebook/notebook.xml",
+      "bytes": 984,
+      "sha256": "c986d1ec43008a75f753b380c420ac747730de45f6b4090e4a57dd2d16c4144f"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/notebook/notebook_texture.png",
+      "bytes": 1007996,
+      "sha256": "4e5a1c50f12fee6390011a1c192dde15b7b30493cefdd128ae23c97c5a1ac89a"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/notebook/notebook_visual.obj",
+      "bytes": 172830,
+      "sha256": "d82772c8ba6ebf4c821d5a0f8a0d093c28f950877fd09d44d007507f4582e142"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl/material.mtl",
+      "bytes": 182,
+      "sha256": "c66aa7ec82fc84b427ce24a6c9eb95c06fb1e799e15bfef883dac254bb1a215e"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl/meta.yaml",
+      "bytes": 963,
+      "sha256": "c0170f86a29f4fd362224a00f4002012cffe0705d99523f5f517f7cb8a8e91dc"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl/plastic_bowl.xml",
+      "bytes": 1014,
+      "sha256": "5e8508a388ff84f9f16fdd5d5e9bd238e46c6d5fb5ce1b75c61d5ed2b2fb8760"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl/plastic_bowl_visual.obj",
+      "bytes": 42622,
+      "sha256": "ac899ff6865ecccd6db955eaeaab961ac1e5fb145529f4f1631f6f6783c66f45"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_glass/material.mtl",
+      "bytes": 182,
+      "sha256": "71e4093ca1ed76c90c474dc2d9d989adc78736fee65ed2be4ebe27d02a3396e4"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_glass/meta.yaml",
+      "bytes": 890,
+      "sha256": "70503c40c5bb36952a2c6ede41bbaa3fd5a5f74c275775917eb5981ea18d2809"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_glass/plastic_glass.xml",
+      "bytes": 1062,
+      "sha256": "f7a170fe1b1cf777f8582fa5e606219f0649194a4517cf96e84240a7bdb737bb"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_glass/plastic_glass_visual.obj",
+      "bytes": 24214,
+      "sha256": "2bb0a71679d4f90740d1f61f1afa5e6816f805f6c38f394905bb7b11f35e95d6"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_plate/material.mtl",
+      "bytes": 182,
+      "sha256": "e994c47b69dbe4ec4d2a18490a037a402500a89f59fff3946c60ff7ea81f9f61"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_plate/meta.yaml",
+      "bytes": 830,
+      "sha256": "6d6d9a315259eb575828dd61021df4d99b98a727651fe37782f1d9ed8a5e8777"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_plate/plastic_plate.xml",
+      "bytes": 1599,
+      "sha256": "caa5413bf9aee9a84498310e8a7fc3bf988c546dc33747b70db016d054c5f500"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/plastic_plate/plastic_plate_visual.obj",
+      "bytes": 38093,
+      "sha256": "1f8026b30493f52fa5c37f4ef786d679a859bcf81c909b9089c054ab9878a6e9"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pocky_box/meta.yaml",
+      "bytes": 641,
+      "sha256": "26d499ee96ec1523bd80d5245695d517490bdaf44f3639ec4d57f3aa91c399a2"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pocky_box/pocky_box.xml",
+      "bytes": 990,
+      "sha256": "d630d3a02cbb73eb554fb51740e15ba7a24cf8b380a0a4128d32b92806f200f9"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pocky_box/pocky_box_texture.png",
+      "bytes": 1822188,
+      "sha256": "adc56ae65e9aef1d8beb692c48897dbfd2bb203642682e352d35224b188a3508"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pocky_box/pocky_box_visual.obj",
+      "bytes": 3519719,
+      "sha256": "f1e71cd79652f4e41d84eeb1870f9f5d30c2c1e710dc72eb6b3d85fdba9b9308"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/meta.yaml",
+      "bytes": 1274,
+      "sha256": "dfbe6410ff8d81234ef109c1deb08382950e12a85e30a36db64862e47c0b4491"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case.xml",
+      "bytes": 1054,
+      "sha256": "d2bdd9b9a7de76c4ffcd85f19d18da544615690abc5095b25bbf8dec91372dd5"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case_atlas.png",
+      "bytes": 2400888,
+      "sha256": "bf9b6912eebf86936170c04908f2e08aee7dd8ca1e8fe383f3d829efbcef4a00"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case_visual.mtl",
+      "bytes": 60,
+      "sha256": "003c1b74600fe6680b19dcb2731b367e5835f0d430d05129cbc9e64c51765101"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case/pop_tarts_case_visual.obj",
+      "bytes": 1002,
+      "sha256": "dd4aef0499b6ee24cc46c3033e7c47772afa2cf15b5b8226f69b18bc8ef55a80"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/recycle_bin/meta.yaml",
+      "bytes": 956,
+      "sha256": "1fafce2afd64755f9f8a7b43edec72e8692eb867e661c7a306543f1f1b98f0b3"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/recycle_bin/recycle_bin.png",
+      "bytes": 2733,
+      "sha256": "04429ba6918d17a32165a87dbf729bb32b2b0008fb11a5c1f7b42b7382103fb8"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/recycle_bin/recycle_bin.xml",
+      "bytes": 1578,
+      "sha256": "03257e404f17b3c96ece509c72d8e8c92702943cc2f6f32a1fa526ba2dd4054f"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/spam_can/meta.yaml",
+      "bytes": 625,
+      "sha256": "2eb5aa4005f64a3bce172ec2521b8c37c7a3e5d47376c2dce8490681e2c5e156"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/spam_can/spam_can.xml",
+      "bytes": 994,
+      "sha256": "292909dd211a1b58f259631557d89fae96834389b504632050b6df8ae2421b8a"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/spam_can/spam_can_texture.png",
+      "bytes": 817095,
+      "sha256": "6ae816bf7276147c3098a75742f08002d52afe70334020a26d59c7c0a9f5e4b4"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/spam_can/spam_can_visual.obj",
+      "bytes": 1599258,
+      "sha256": "1ae9135c55fe6f8cd70c9b4f19bdbfc20f405cbaa60b68de2e14cdd18a8380a1"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/sugar_box/meta.yaml",
+      "bytes": 669,
+      "sha256": "7780e454f80f2ed9ab4ac5be9de07395511ab902251a96784496def389041f10"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/sugar_box/sugar_box.xml",
+      "bytes": 979,
+      "sha256": "41118a4f2be9eca45a7750b57ef4574d3cbd9fc3c582a3ed91efc8686bddcd14"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/sugar_box/sugar_box_texture.png",
+      "bytes": 1129998,
+      "sha256": "a4b7a8c438340b234bdf6839cf5c2ccebf053865e77d75792e3000d99832af81"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/sugar_box/sugar_box_visual.obj",
+      "bytes": 1571572,
+      "sha256": "4d82d1b61632d83b44851508fd1fe309ad4ec45321babcd4bdee2d4a9e6e2372"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/wicker_tray/material.mtl",
+      "bytes": 182,
+      "sha256": "ace194cd56cb75a322df161600593b8488121356e5a208ad5abcc8b503aae579"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/wicker_tray/meta.yaml",
+      "bytes": 929,
+      "sha256": "570fb2e10579753ecbada2a8835c1a4d95f6d0f6e93841b0a15699ed28aa39f2"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/wicker_tray/wicker_tray.xml",
+      "bytes": 2332,
+      "sha256": "c26baf41cd2470686fc372e22797c38f415ac328a9659e56d1b736909c28d91f"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/wicker_tray/wicker_tray_visual.obj",
+      "bytes": 14169,
+      "sha256": "3cabf6bb089185dfd5b81d3614abfefa496eafd1a2e61d19d862174531162673"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/yellow_tote/meta.yaml",
+      "bytes": 670,
+      "sha256": "4ea58b7ab7b7cb9cf01328147507498d4bcacc03dfbdb8f4addc4c10661a130b"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/yellow_tote/yellow_tote.xml",
+      "bytes": 2286,
+      "sha256": "9bf4c43ac2c81f1bda23ff625ee93ab90198813acd48775bad222e91d00a9631"
+    },
+    {
+      "path": "vendor/prl_assets/src/prl_assets/objects/yellow_tote/yellow_tote_visual.obj",
+      "bytes": 698946,
+      "sha256": "c6d0c5d25ffdce183b4f42607ef296cb550e655966a04d9187c5fb9d686dd79f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/LICENSE",
+      "bytes": 27025,
+      "sha256": "eadfd25870ec41c1149b9f2b888a9fc735dd0d16b24ae173e7c6ef71b23416aa"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/__init__.py",
+      "bytes": 104,
+      "sha256": "3d1623c0ed403162af5cac73241b3084ee17eb33c178d3d1e678648d1ae572df"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/collision_vhacd.mtl",
+      "bytes": 241,
+      "sha256": "d2cf7424a7cf1fc36f8414d8728aa2f286a11e5d5f46c5d310329caf92ed7d67"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/collision_vhacd.obj",
+      "bytes": 15233,
+      "sha256": "fe17b663f1064ecb03222afc4bc6037ba459fe985b2269782967d70508e40ecf"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/model.urdf",
+      "bytes": 822,
+      "sha256": "66280d8c30a394c585bcec772227af32d56411a44e709c91d925d7bab4c3ca19"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/texture_map.png",
+      "bytes": 2893410,
+      "sha256": "b68de45c4d92a2f8d3e8da357912b16b972ef37f25b56bcb593d4cf9fdc4ba2d"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "e61ad8b22653cd8c05f14cb21022b347a9318828a444770c02d68b4adcae3c0e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana/textured_simple_reoriented.obj",
+      "bytes": 1428035,
+      "sha256": "610c4a5d8aa0fbc7d426322d677369852a8be998c1a4b41c46f3a0ed3f24df1a"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/collision_vhacd.mtl",
+      "bytes": 223,
+      "sha256": "0053e722817174f3dcc1bfac240521ba917b4aacc43fdec5f4940d39b1a8c3d3"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/collision_vhacd.obj",
+      "bytes": 11675,
+      "sha256": "d3f08c7923b1152a9080e93749c11107d189869b45a9fde6013a14d608bafc91"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/model.urdf",
+      "bytes": 892,
+      "sha256": "d9cb444dee0984603129ae292de18d9558c7532ae1e85b652066ee6d4f4ef10d"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/textured.mtl",
+      "bytes": 266,
+      "sha256": "3981e73eb6789a2581f4f17e7a029305b16a4b8ef061810057eefe696310adf8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/textured.obj",
+      "bytes": 10305806,
+      "sha256": "5c8d930afb1a4aa5f0f0e2e28e7ca99b93a39f6f3892d814216724b283add059"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan/textured.png",
+      "bytes": 2649493,
+      "sha256": "1deaae43ffa259caa2a50a01b7400857416347acd74ce2cb971d52101648eb4e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/collision_vhacd.mtl",
+      "bytes": 238,
+      "sha256": "294aa678357f3fdc0d6865231fc1ef13ed87f4b5f9c51f230374d99cfea7451f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/collision_vhacd.obj",
+      "bytes": 1141,
+      "sha256": "6c64fb1a99ae141dd529b4d1157fe5b56d948d781d547b83faa3efbdb3ed2a69"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/model.urdf",
+      "bytes": 812,
+      "sha256": "cc3abb9c73eb731c62213db431ea1083aa7eedbb91006583469ec20266a8d2ff"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/texture_map.png",
+      "bytes": 10406584,
+      "sha256": "9a04bc0e7a10766e44aee4bdfc719462b0b6cc53d186bc6d4e8b890691acdf59"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "a43adcd67cd16ba5b75b44bf1f4071be9f17c371deacf6d636c00d258b80baca"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox/textured_simple_reoriented.obj",
+      "bytes": 1371432,
+      "sha256": "b6e9a38637187e6258865aab8389f34123c04370cfe9654a919608f8b5275118"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/collision_vhacd.mtl",
+      "bytes": 274,
+      "sha256": "b65fd3b586e4242848eab5f0bed9ab19b087b07edfe61c460dcc30ba1d4d2ad8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/collision_vhacd.obj",
+      "bytes": 1121,
+      "sha256": "31bf0eefffb0478f69f0642b8769a730c6be4180563b0accff0bb58faccb8901"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/model.urdf",
+      "bytes": 857,
+      "sha256": "947352259f9c2b865ee8234baaa76eeca9e549222e9a0e235f72f53639d0a513"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/texture_map.png",
+      "bytes": 4311907,
+      "sha256": "6dbfd09f336cd16f165a8f63506ed0d50c4f22e5e3e73757b813be2aeee0c179"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "7667e541f8176920c0a80754ec621d475a6e44c07055143eca0d4e393abe7405"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick/textured_simple_reoriented.obj",
+      "bytes": 1378719,
+      "sha256": "7e1d1ca0b0eaedea15a40ed3d97662d245e57925eeccd5e650b8ba4868387822"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/collision_vhacd.mtl",
+      "bytes": 274,
+      "sha256": "b65fd3b586e4242848eab5f0bed9ab19b087b07edfe61c460dcc30ba1d4d2ad8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/collision_vhacd.obj",
+      "bytes": 992,
+      "sha256": "cb2fbcbf40d867640d42fef061f8a356494e640226ca1a7dc940a8e90264c3f5"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/model.urdf",
+      "bytes": 851,
+      "sha256": "b1cea873b628903166381f449e82084e85d4f87b03ace72e1eecbe239f0fbe02"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/texture_map.png",
+      "bytes": 8252359,
+      "sha256": "5fd0de9bc41b3c77545d116febf7a72875c8b430e35efe974ab601342a942b74"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "511d72ebf8921397be307cc1a87b5d9358f95903691c7ea7f9dd9bba6b63d936"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox/textured_simple_reoriented.obj",
+      "bytes": 1370753,
+      "sha256": "d5d64f3b9c7f2f1f0e0eb1f498a35fc5b79260f2c8755474b7f68266d242c91c"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/collision_vhacd.mtl",
+      "bytes": 241,
+      "sha256": "5d81d69f77d7ccd5c0aacdcc7a8fdeaf6603199a926b35801810b423ef438e65"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/collision_vhacd.obj",
+      "bytes": 19843,
+      "sha256": "2baf31949a6fc9ff4c3f120fe8deca7a919df46e489ab8e5fb8c6d6442c1bbdf"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/model.urdf",
+      "bytes": 845,
+      "sha256": "7647e885e2fc87b37794a32948f7171b84a4dfd0dc2856b86ca13a3a9dfeb112"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/texture_map.png",
+      "bytes": 4448070,
+      "sha256": "87df6530a3ae410af99cbde465bcd429d4a9221d398c8e5ae081ff230868e1d6"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/textured_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "8b3f44354582e0c63db92419bd3c879c6a6100c1fef01e62b705854f0cd87ee0"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer/textured_reoriented.obj",
+      "bytes": 6160993,
+      "sha256": "96d449935f4c2d3b0f790e9c073ed324ff1b5840ffa0719f7bf8e52d6aac39c4"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/collision_vhacd.mtl",
+      "bytes": 274,
+      "sha256": "b65fd3b586e4242848eab5f0bed9ab19b087b07edfe61c460dcc30ba1d4d2ad8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/collision_vhacd.obj",
+      "bytes": 11730,
+      "sha256": "50c084dba14cf0046476d284913ed10821acbfb66f58a8df7f75d59fc69996cd"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/model.urdf",
+      "bytes": 909,
+      "sha256": "770c1465cf93670bd2c449f4eeec0df890c9127ceee6958b2db12763c3cb536a"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/texture_map.png",
+      "bytes": 10704986,
+      "sha256": "58dd75e68ee169389471f1cc53011736fb08e3d2efd75e246cd7543a97696173"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "be96c3ee66405a8417fd044310830615301b8a2cb364bbdb73366a342b9af27d"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan/textured_simple_reoriented.obj",
+      "bytes": 1398234,
+      "sha256": "2ccbc64d3b0187d72b53c925f1152e4c3d3167e2588087dceacab8e903d21f56"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/collision_vhacd.mtl",
+      "bytes": 241,
+      "sha256": "7ad6e7dbda412549a98b592fafcb62d8c2c2d6b2d49b776c32b378dcd106db16"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/collision_vhacd.obj",
+      "bytes": 60110,
+      "sha256": "7957c9404e9aa962944480d1a64263fc7e45b3f0f6fe104c956fa2fc3ab32236"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/model.urdf",
+      "bytes": 892,
+      "sha256": "680e157b53f7bbc5db17edcee2c856aef998d19cd4f4c8181074c3768bc76f31"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/texture_map.png",
+      "bytes": 2847982,
+      "sha256": "64c261bfe0737183330941bb36887d6ac37672c8642324e2bd76eeb8c5108102"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/textured_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "e46db51b94fccf05a4d60c2ace7836f0bce470d3930df045a94477230d046e4e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp/textured_reoriented.obj",
+      "bytes": 6160312,
+      "sha256": "6baf5e5cb7a89da1f8c6beef30a12f27af4e4899921bd4d888c929f55e09e2e8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/collision_vhacd.mtl",
+      "bytes": 237,
+      "sha256": "b5aa215a1dc0527f5e8151ccecdbc7ff8875ee3b7a2540d66c28e7820a79ec83"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/collision_vhacd.obj",
+      "bytes": 9449,
+      "sha256": "c8e3f56ec7752bc12f260fa71c7093f736f1bba7b76d13fe70d1d36f1f61044f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/model.urdf",
+      "bytes": 987,
+      "sha256": "7de153eb327a66835841061727ad0271c32fe3835e0b63c7fa89593663f1eb8d"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/texture_map.png",
+      "bytes": 6761748,
+      "sha256": "5ab81c84e1b0a945c9f1a3f20fe765720ab607ca2841a1da3454b9cf443893b1"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/textured_simple_reoriented.mtl",
+      "bytes": 265,
+      "sha256": "2e2285ecb4fcdaed0801a4bf82a7b417aac188a3e2baa4e54e516816b46bca9f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle/textured_simple_reoriented.obj",
+      "bytes": 1434955,
+      "sha256": "f03f76eadce3977ea4ae4cd8ef57c43f41868a1ccba66ebe45ac1dd23a488be2"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/collision_vhacd.mtl",
+      "bytes": 229,
+      "sha256": "49a8da9f190711f76be8d09e96a049927a31717aabe76349bccc9396843bb8a9"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/collision_vhacd.obj",
+      "bytes": 75978,
+      "sha256": "094dddaa1d37fd7caef496d15eb3b091c41c0f78b940f21be1ce4c43d39100c9"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/model.urdf",
+      "bytes": 884,
+      "sha256": "445442493d904bbb0584ed8e1beb6e6cc9e305b253c309751555be667af8e128"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/texture_map.png",
+      "bytes": 3801754,
+      "sha256": "82d6180a9fafb035d79d928a38018015b9d67e9a9a58ff32e6b6d884865e5e3c"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/textured_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "f77802de86db6ef43cd7a4ff4a6ef27a5e48e832c4813b5a7071d622a05024d8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear/textured_reoriented.obj",
+      "bytes": 6198983,
+      "sha256": "1c444a34538edf7c03d84001538264271eb7961a58d9d7b7b0ecd6dcf8e2124d"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/collision_vhacd.mtl",
+      "bytes": 274,
+      "sha256": "b65fd3b586e4242848eab5f0bed9ab19b087b07edfe61c460dcc30ba1d4d2ad8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/collision_vhacd.obj",
+      "bytes": 100876,
+      "sha256": "3e52da59cb6256226030e68ede255dd6646419cea281c9edd7ea64c6811a3db0"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/model.urdf",
+      "bytes": 851,
+      "sha256": "995c90ee5139202bc8f5ebd658f49019fa8cbfdbafb1ffb7ea419107826f2a54"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/texture_map.png",
+      "bytes": 8447152,
+      "sha256": "f3cf6aa7fce365d25c476127d973998faed0b9b9318d361196b61b9a94828c91"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "9c9750cbc9047a0b4be7a12491b840ca9273925fa75005341ffc2d3ab2d2ad29"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan/textured_simple_reoriented.obj",
+      "bytes": 1373738,
+      "sha256": "751b15c276f076dff5204d018cd1b8032924302ee2c3fd80a151a5192cfc44ee"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/collision_vhacd.mtl",
+      "bytes": 241,
+      "sha256": "b9ac7d03163329e5439cbe682ca5e5abf447383fee0d9419c26d4d0ef3e86157"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/collision_vhacd.obj",
+      "bytes": 32919,
+      "sha256": "13c0c651e1876963f0f50f268e8e7b42b9dcef397f008ed3655a3546c4b9d9b8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/model.urdf",
+      "bytes": 853,
+      "sha256": "db273c58dde5761eb8782f1f313e2e57bbf5db70cdff55e06e84bb70e083c79e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/texture_map.png",
+      "bytes": 6141292,
+      "sha256": "c43c1f9df2529613b3021f89aee21e148fbb3b5e4e8b9606d1d9db761b59c1a5"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "8ed6c6955bcc4479a32cd40211122d3d33fc44774dc86ad9be0e7cc391195140"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill/textured_simple_reoriented.obj",
+      "bytes": 1389122,
+      "sha256": "d10e0de108c17ea8aa387ee26e897dab27943418d82543e21b1dbb5f4a9ca67a"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/collision_vhacd.mtl",
+      "bytes": 241,
+      "sha256": "5a9883cda20a74119f6b00c291dbf7903ac9698e9d3b919669294646d5b54644"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/collision_vhacd.obj",
+      "bytes": 62488,
+      "sha256": "3009944eb528efe2b7a93ba6dd59f637106d95dc9f2718176db51df5d9b05e1f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/model.urdf",
+      "bytes": 850,
+      "sha256": "d80b2ebfdd0e69f1a40063bbd977f2797e291df30bc6ec32774bdf74c58e5ee6"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/texture_map.png",
+      "bytes": 3750935,
+      "sha256": "be06b5b0378c3fb73e69b6427d078972b5f4979da028d5e2b531894e113b81be"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/textured_simple_reoriented.mtl",
+      "bytes": 269,
+      "sha256": "1c1c3131ba9965aae7e35883ce1d82485369611b9354452054857f70f01ea016"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors/textured_simple_reoriented.obj",
+      "bytes": 1380032,
+      "sha256": "b4cf5168e5bc24e908af4effb14dc45e7910c37a211f6bb2bbc6d16f940b73ac"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/collision_vhacd.mtl",
+      "bytes": 229,
+      "sha256": "49a8da9f190711f76be8d09e96a049927a31717aabe76349bccc9396843bb8a9"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/collision_vhacd.obj",
+      "bytes": 11717,
+      "sha256": "8b578ff39c6ad025da830708171c0a1ce8e5535b02d007c1b48c6e646138844c"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/model.urdf",
+      "bytes": 889,
+      "sha256": "d96736cd0b06a7ff8388e01d03d515360caa7932012119beb20a5e80c4c508aa"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/texture_map.png",
+      "bytes": 5266854,
+      "sha256": "f934f40b690a2e4f4a836446fabb532059a263427f55c33f787dd5125fe1bd3e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/textured_reoriented.obj",
+      "bytes": 7231829,
+      "sha256": "cd38baf6be4d5a61cf64fab2b68ffbe18cc3c42f69e213d3374042d6cb8fba0e"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry/textured_reoriented.obj.mtl",
+      "bytes": 238,
+      "sha256": "491708050829130bc7b5f33a2292c2fa353b40dca7fd230e0a6e4f151c185aa8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/collision_vhacd.mtl",
+      "bytes": 229,
+      "sha256": "49a8da9f190711f76be8d09e96a049927a31717aabe76349bccc9396843bb8a9"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/collision_vhacd.obj",
+      "bytes": 46132,
+      "sha256": "5c06005652f36b64f1d9c685821602edada972fce80655d68ebc4c0102498a5f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/model.urdf",
+      "bytes": 886,
+      "sha256": "7c36ce7a6a4eea65d02132df1f52e4ade8661b21c780eae2d1207747c173ede3"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/texture_map.png",
+      "bytes": 3599224,
+      "sha256": "1bf5d28988d55fc8bf048cee9532b2436e95c4b35409d30ae4dde9c7c222a6ca"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/textured_reoriented.obj",
+      "bytes": 7223418,
+      "sha256": "74b4fea913bb26b9aa2443569b5cf918cf5aba1350c7d79f2a0185dcbe287759"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall/textured_reoriented.obj.mtl",
+      "bytes": 238,
+      "sha256": "491708050829130bc7b5f33a2292c2fa353b40dca7fd230e0a6e4f151c185aa8"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/collision_vhacd.mtl",
+      "bytes": 134,
+      "sha256": "294b7a5a5e4b782def23cec025c206654bb2ecdc4201519fba1fe10ed934f3bc"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/collision_vhacd.obj",
+      "bytes": 7668,
+      "sha256": "20d03656e4fbe51dd66b3c6c231ec85eae4a2537a479f525b65827ac1e028127"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/model.urdf",
+      "bytes": 890,
+      "sha256": "e010021eea7485f560bc87ee887dff800782e4f87997bc331735361076cc1258"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/texture_map.png",
+      "bytes": 9350703,
+      "sha256": "33183a894eb75ae04ae5188a3ae689fe8d06ec6b9f9624da1bf853c2a25e70d2"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/textured_simple_reoriented.mtl",
+      "bytes": 265,
+      "sha256": "2e2285ecb4fcdaed0801a4bf82a7b417aac188a3e2baa4e54e516816b46bca9f"
+    },
+    {
+      "path": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan/textured_simple_reoriented.obj",
+      "bytes": 1374586,
+      "sha256": "2a1bbf048b38419155b33d5a335512b5f1a35a4733a035eb51cf3cef13af90eb"
+    },
+    {
+      "path": "vendor/pybullet_ycb/README.md",
+      "bytes": 5228,
+      "sha256": "cbed1d77051b30dcaeadd961d3d472ea911fbdc943efebf8df8a3ae424a3092b"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/LICENSE",
+      "bytes": 1446,
+      "sha256": "3134ce80a153541f66b12d5c5c98d661a91a80b7ff9bb5d738fb720428c4fd48"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/README.md",
+      "bytes": 6764,
+      "sha256": "8666c52b7b2416b20fc33fde3ee67b5246f4674377c91a8ff7495775524c87ab"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/bar_handle.xml",
+      "bytes": 872,
+      "sha256": "40b29e89da25f1fa0d4d07fc476a77720853be0ca268c8096d7b2273419a1771"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/bar_handle_orig.xml",
+      "bytes": 872,
+      "sha256": "40b29e89da25f1fa0d4d07fc476a77720853be0ca268c8096d7b2273419a1771"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/boxed_handle.xml",
+      "bytes": 875,
+      "sha256": "a363bf3c5e04f98ef846d7c5df50de8264d4b2ab8e4babc9944084c9e02188bc"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/boxed_handle_orig.xml",
+      "bytes": 875,
+      "sha256": "a363bf3c5e04f98ef846d7c5df50de8264d4b2ab8e4babc9944084c9e02188bc"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/knob_handle.xml",
+      "bytes": 600,
+      "sha256": "8bb93eaa4a570f8a63a403c94cb251324f0bba6f9d0bd4c5dfa3737dcf54cd3e"
+    },
+    {
+      "path": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/knob_handle_orig.xml",
+      "bytes": 600,
+      "sha256": "8bb93eaa4a570f8a63a403c94cb251324f0bba6f9d0bd4c5dfa3737dcf54cd3e"
+    }
+  ]
+}

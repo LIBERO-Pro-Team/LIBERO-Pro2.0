@@ -1,0 +1,36 @@
+name: wicker_tray
+description: Wicker serving tray for manipulation and transport tasks
+category: [container, tray, graspable]
+
+# Physical properties
+mass: 0.5  # kg
+dimensions: [0.46, 0.66, 0.075]  # [width, length, height] in meters
+material: wicker
+
+# Geometric properties for grasp planning
+geometric_properties:
+  type: tray
+  outer_size: [0.46, 0.66, 0.075]
+  wall_thickness: 0.01
+  floor_thickness: 0.01
+
+# MuJoCo simulation
+mujoco:
+  xml_path: wicker_tray.xml
+  scale: 1.0
+  friction: [0.8, 0.005, 0.0001]
+
+# Perception aliases for detection systems
+perception:
+  aliases: ["tray", "wicker tray", "serving tray", "basket"]
+
+# Manipulation policy hints
+policy:
+  grasping:
+    affordances: [lift, carry, place]
+    preferred_grasp_type: side_grasp
+    graspable_height_range: [0.02, 0.06]
+    difficulty: medium
+  manipulation:
+    stable_poses: [upright]
+    can_contain_objects: true

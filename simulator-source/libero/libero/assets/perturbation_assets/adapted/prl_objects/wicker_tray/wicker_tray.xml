@@ -1,0 +1,22 @@
+<mujoco model="wicker_tray">
+  <compiler angle="radian" />
+  <asset>
+    <material name="wicker_tray_mat" rgba="0.34 0.18 0.12 1.0" specular="0.3" shininess="0.3" />
+    <mesh name="wicker_tray_visual" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/wicker_tray/wicker_tray_visual.obj" scale="1 1 1" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0">
+        <geom name="wicker_tray_floor" type="box" pos="0 0 0.005" size="0.23 0.33 0.005" mass="0.2" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="wicker_tray_wall_left" type="box" pos="-0.225 0 0.0425" size="0.005 0.33 0.0325" mass="0.075" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="wicker_tray_wall_right" type="box" pos="0.225 0 0.0425" size="0.005 0.33 0.0325" mass="0.075" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="wicker_tray_wall_front" type="box" pos="0 -0.325 0.0425" size="0.22 0.005 0.0325" mass="0.075" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="wicker_tray_wall_back" type="box" pos="0 0.325 0.0425" size="0.22 0.005 0.0325" mass="0.075" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="wicker_tray_visual" type="mesh" mesh="wicker_tray_visual" material="wicker_tray_mat" contype="0" conaffinity="0" group="1" />
+      </body>
+      <site name="bottom_site" pos="0 0 -0.0375" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.0375" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.40224371 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

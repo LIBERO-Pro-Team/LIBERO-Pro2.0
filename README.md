@@ -44,8 +44,11 @@ python scripts/server_smoke_test.py --base-url http://127.0.0.1:8000
 ## 服务器部署
 
 Docker 服务器需要 NVIDIA 驱动和 NVIDIA Container Toolkit；客户端机器只需要 Python 包，
-不需要安装 LIBERO 或 MuJoCo。普通 Git clone 不包含完整模拟器，不能直接作为 Docker build
-context。请使用 `libero-pro-bundle-1.0.0.tar.gz` 离线交付包；维护者若需重建该包，必须让
+不需要安装 LIBERO 或 MuJoCo。`model-agnostic-multiuser` 分支包含完整的
+`simulator-source/`；该目录有 2,536 个固定提交的模拟器文件，其中大文件由 Git LFS
+管理。首次 clone 后必须执行 `git lfs pull`，确认 LFS 实体已经下载，再将该分支作为
+Docker build context。无网络或不使用 Git LFS 时，请使用包含相同源码的
+`libero-pro-conda-bundle-1.0.0.tar.gz` 离线交付包；维护者若需重建 Docker 包，必须让
 `scripts/build_customer_bundle.ps1` 从本地 `LIBERO-PRO@c02ee2c` 导出完整 runtime。
 
 ```bash
@@ -73,7 +76,8 @@ curl http://SERVER_IP:8000/v1/tasks
 [`v1.0.0-conda-r2`](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/releases/tag/v1.0.0-conda-r2)
 中的 `libero-pro-conda-bundle-1.0.0.tar.gz` 及其 SHA-256 清单，按
 `deploy/customer-conda/README.md` 安装；该包同时包含固定服务源码、完整模拟器源码、169 项
-BDDL、init states 和锁定依赖。普通 Git clone 只包含服务代码和打包入口，不是完整模拟器 runtime。
+BDDL、init states 和锁定依赖。该离线包中的 `simulator-source/` 与本分支 Git LFS
+checkout 内容逐文件一致。
 
 再从另一台机器运行一次真实环境 smoke test：
 

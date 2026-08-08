@@ -1,0 +1,28 @@
+name: pocky_box
+description: Pocky chocolate biscuit sticks box
+category: [food_package, graspable, box]
+
+mass: 0.15  # kg
+dimensions: [0.158, 0.028, 0.084]  # meters
+material: cardboard
+amazon_link: https://www.amazon.com/dp/B004AH51VW
+
+geometric_properties:
+  type: box
+  size: [0.158, 0.028, 0.084]
+
+mujoco:
+  xml_path: pocky_box.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+perception:
+  aliases: ["pocky", "pocky box", "biscuit sticks"]
+
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: side_grasp
+    difficulty: medium
+  manipulation:
+    stable_poses: [upright, on_side]

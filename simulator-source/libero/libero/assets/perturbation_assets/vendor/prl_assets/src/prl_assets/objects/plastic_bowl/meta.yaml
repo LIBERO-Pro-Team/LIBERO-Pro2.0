@@ -1,0 +1,36 @@
+name: plastic_bowl
+description: Plastic bowl for tableware and manipulation tasks
+category: [container, tableware, graspable]
+
+# Physical properties
+mass: 0.15  # kg
+dimensions: [0.172, 0.172, 0.076]  # [diameter, diameter, height] in meters
+material: plastic
+
+# Geometric properties for grasp planning
+geometric_properties:
+  type: bowl
+  outer_radius: 0.086  # meters
+  inner_radius: 0.045  # meters (floor)
+  height: 0.076  # meters
+  wall_angle: 30  # degrees from vertical
+
+# MuJoCo simulation
+mujoco:
+  xml_path: plastic_bowl.xml
+  scale: 1.0
+  friction: [0.6, 0.005, 0.0001]
+
+# Perception aliases for detection systems
+perception:
+  aliases: ["bowl", "plastic bowl", "food bowl"]
+
+# Manipulation policy hints
+policy:
+  grasping:
+    affordances: [lift, pour, place]
+    preferred_grasp_type: rim_grasp
+    graspable_height_range: [0.02, 0.07]
+    difficulty: medium
+  manipulation:
+    stable_poses: [upright, inverted]

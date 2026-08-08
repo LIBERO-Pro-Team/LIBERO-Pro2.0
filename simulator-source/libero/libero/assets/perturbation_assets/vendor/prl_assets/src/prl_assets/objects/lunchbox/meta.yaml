@@ -1,0 +1,28 @@
+name: lunchbox
+description: Wildkin insulated lunch box
+category: [container, graspable, box]
+
+mass: 0.4  # kg
+dimensions: [0.26, 0.2, 0.098]  # meters [X, Y, Z] in flat resting pose
+material: fabric
+amazon_link: https://www.amazon.com/dp/B00LIPM7CA
+
+geometric_properties:
+  type: box
+  size: [0.26, 0.2, 0.098]
+
+mujoco:
+  xml_path: lunchbox.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+perception:
+  aliases: ["lunchbox", "lunch bag", "lunch box"]
+
+policy:
+  grasping:
+    affordances: [lift, carry, place]
+    preferred_grasp_type: side_grasp
+    difficulty: easy
+  manipulation:
+    stable_poses: [upright, on_side]

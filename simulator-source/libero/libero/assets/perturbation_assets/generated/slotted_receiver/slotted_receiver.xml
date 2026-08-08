@@ -1,0 +1,17 @@
+<mujoco model="slotted_receiver">
+  <compiler angle="radian"/>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom name="floor" type="box" group="0" pos="0 0 0.004" size="0.039999999999999994 0.049 0.004" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="left" type="box" group="0" pos="-0.039999999999999994 0 0.055" size="0.004 0.049 0.055" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="right" type="box" group="0" pos="0.039999999999999994 0 0.055" size="0.004 0.049 0.055" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="front" type="box" group="0" pos="0 -0.049 0.055" size="0.036 0.004 0.055" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="back" type="box" group="0" pos="0 0.049 0.055" size="0.036 0.004 0.055" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0"/>
+      <site name="top_site" pos="0 0 0.11" size="0.005" rgba="0 0 0 0"/>
+      <site name="horizontal_radius_site" pos="0.06888396039717809 0 0" size="0.005" rgba="0 0 0 0"/>
+    </body>
+  </worldbody>
+</mujoco>

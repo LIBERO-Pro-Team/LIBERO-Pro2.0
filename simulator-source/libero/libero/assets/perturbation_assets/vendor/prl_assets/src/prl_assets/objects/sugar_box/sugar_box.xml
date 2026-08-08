@@ -1,0 +1,33 @@
+<mujoco model="sugar_box">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="sugar_box_tex" type="2d" file="sugar_box_texture.png"/>
+    <material name="sugar_box_mat" texture="sugar_box_tex" specular="0.5" shininess="0.5"/>
+    <mesh name="sugar_box_visual" file="sugar_box_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="sugar_box" pos="0 0 0.024">
+      <freejoint name="sugar_box_joint"/>
+
+      <!-- Collision geometry - box -->
+      <geom name="sugar_box_collision"
+            type="box"
+            size="0.088 0.047 0.024"
+            mass="0.5"
+            friction="0.7 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="sugar_box_visual"
+            type="mesh"
+            mesh="sugar_box_visual"
+            material="sugar_box_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

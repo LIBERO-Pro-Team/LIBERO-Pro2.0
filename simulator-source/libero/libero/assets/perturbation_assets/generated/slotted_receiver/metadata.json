@@ -1,0 +1,16 @@
+{
+  "name": "slotted_receiver",
+  "description": "Four-wall slot with tunable X/Y/insertion clearance",
+  "perturbations": [
+    "S07",
+    "S09",
+    "D03",
+    "D19"
+  ],
+  "parameters": {
+    "inner_half_width": 0.036,
+    "inner_half_depth": 0.045,
+    "wall_thickness": 0.004,
+    "wall_height": 0.055
+  }
+}

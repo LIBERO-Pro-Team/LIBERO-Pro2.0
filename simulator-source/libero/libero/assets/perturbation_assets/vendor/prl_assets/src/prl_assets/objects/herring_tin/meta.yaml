@@ -1,0 +1,28 @@
+name: herring_tin
+description: MW Polar herring tin
+category: [food_package, graspable, can]
+
+mass: 0.2  # kg
+dimensions: [0.150, 0.084, 0.032]  # meters [X, Y, Z] in flat resting pose
+material: metal
+amazon_link: https://www.amazon.com/dp/B00F9XCEMK
+
+geometric_properties:
+  type: box
+  size: [0.150, 0.084, 0.032]
+
+mujoco:
+  xml_path: herring_tin.xml
+  scale: 1.0
+  friction: [0.6, 0.005, 0.0001]
+
+perception:
+  aliases: ["herring tin", "fish tin", "sardine can"]
+
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: side_grasp
+    difficulty: easy
+  manipulation:
+    stable_poses: [flat, on_side]

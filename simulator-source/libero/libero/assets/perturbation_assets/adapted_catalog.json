@@ -1,0 +1,486 @@
+{
+  "format_version": 1,
+  "assets": [
+    {
+      "id": "prl/ada_table",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/ada_table/ada_table.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/ada_table",
+      "license": "MIT",
+      "dimensions_m": [
+        1.852,
+        0.741,
+        0.735
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/can",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/can/can.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/can",
+      "license": "MIT",
+      "dimensions_m": [
+        0.066,
+        0.066,
+        0.123
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/cracker_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/cracker_box/cracker_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/cracker_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.062,
+        0.162,
+        0.208
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/fuze_bottle",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/fuze_bottle/fuze_bottle.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle",
+      "license": "MIT",
+      "dimensions_m": [
+        0.073,
+        0.073,
+        0.215
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/gelatin_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/gelatin_box/gelatin_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/gelatin_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.072,
+        0.088,
+        0.028
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/herring_tin",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/herring_tin/herring_tin.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/herring_tin",
+      "license": "MIT",
+      "dimensions_m": [
+        0.15,
+        0.084,
+        0.032
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/lunchbox",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/lunchbox/lunchbox.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/lunchbox",
+      "license": "MIT",
+      "dimensions_m": [
+        0.26,
+        0.2,
+        0.098
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/notebook",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/notebook/notebook.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/notebook",
+      "license": "MIT",
+      "dimensions_m": [
+        0.128,
+        0.212,
+        0.016
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_bowl",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_bowl/plastic_bowl.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl",
+      "license": "MIT",
+      "dimensions_m": [
+        0.172,
+        0.172,
+        0.076
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_glass",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_glass/plastic_glass.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_glass",
+      "license": "MIT",
+      "dimensions_m": [
+        0.096,
+        0.096,
+        0.171
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_plate",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_plate/plastic_plate.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_plate",
+      "license": "MIT",
+      "dimensions_m": [
+        0.265,
+        0.265,
+        0.027
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/pocky_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/pocky_box/pocky_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/pocky_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.158,
+        0.028,
+        0.084
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/pop_tarts_case",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/pop_tarts_case/pop_tarts_case.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case",
+      "license": "MIT",
+      "dimensions_m": [
+        0.191,
+        0.102,
+        0.165
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/recycle_bin",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/recycle_bin/recycle_bin.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/recycle_bin",
+      "license": "MIT",
+      "dimensions_m": [
+        0.25,
+        0.25,
+        0.8
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/spam_can",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/spam_can/spam_can.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/spam_can",
+      "license": "MIT",
+      "dimensions_m": [
+        0.102,
+        0.058,
+        0.084
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/sugar_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/sugar_box/sugar_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/sugar_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.176,
+        0.094,
+        0.048
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/wicker_tray",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/wicker_tray/wicker_tray.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/wicker_tray",
+      "license": "MIT",
+      "dimensions_m": [
+        0.46,
+        0.66,
+        0.075
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/yellow_tote",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/yellow_tote/yellow_tote.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/yellow_tote",
+      "license": "MIT",
+      "dimensions_m": [
+        0.6,
+        0.38,
+        0.29
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbBanana",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbBanana/YcbBanana.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.195845,
+        0.078884,
+        0.03755
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbChipsCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbChipsCan/YcbChipsCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.083514,
+        0.086105,
+        0.240575
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbCrackerBox",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbCrackerBox/YcbCrackerBox.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.07173,
+        0.16397699999999998,
+        0.21348699999999998
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbFoamBrick",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbFoamBrick/YcbFoamBrick.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.074515,
+        0.090454,
+        0.054165000000000005
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbGelatinBox",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbGelatinBox/YcbGelatinBox.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.071542,
+        0.067499,
+        0.08918
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbHammer",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbHammer/YcbHammer.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.128201,
+        0.334162,
+        0.03297
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMasterChefCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMasterChefCan/YcbMasterChefCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.10228899999999999,
+        0.10244600000000001,
+        0.140144
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMediumClamp",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMediumClamp/YcbMediumClamp.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.086876,
+        0.077082,
+        0.028223
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMustardBottle",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMustardBottle/YcbMustardBottle.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.096402,
+        0.058082,
+        0.191501
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPear",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPear/YcbPear.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.06653999999999999,
+        0.104012,
+        0.066483
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPottedMeatCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPottedMeatCan/YcbPottedMeatCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.101137,
+        0.089975,
+        0.08448
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPowerDrill",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPowerDrill/YcbPowerDrill.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.162987,
+        0.123195,
+        0.187434
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbScissors",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbScissors/YcbScissors.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.20386900000000002,
+        0.08717,
+        0.019528000000000004
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbStrawberry",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbStrawberry/YcbStrawberry.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.041922,
+        0.05375,
+        0.045662
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbTennisBall",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbTennisBall/YcbTennisBall.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.066885,
+        0.067133,
+        0.06682300000000001
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbTomatoSoupCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbTomatoSoupCan/YcbTomatoSoupCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.067854,
+        0.06775,
+        0.10203699999999999
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/bar_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/bar_handle/bar_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/bar_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.06,
+        0.08,
+        0.4
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/boxed_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/boxed_handle/boxed_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/boxed_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.06,
+        0.08,
+        0.4
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/knob_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/knob_handle/knob_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/knob_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.04,
+        0.04,
+        0.04
+      ],
+      "readiness": "ready_mjcf"
+    }
+  ]
+}

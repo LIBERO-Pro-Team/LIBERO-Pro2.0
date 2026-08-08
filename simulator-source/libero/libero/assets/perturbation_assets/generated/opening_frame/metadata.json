@@ -1,0 +1,16 @@
+{
+  "name": "opening_frame",
+  "description": "Four-sided opening for approach and insertion clearance",
+  "perturbations": [
+    "S05",
+    "S07",
+    "S09",
+    "D05"
+  ],
+  "parameters": {
+    "inner_half_width": 0.06,
+    "inner_half_height": 0.06,
+    "bar_half_thickness": 0.006,
+    "depth_half_extent": 0.012
+  }
+}

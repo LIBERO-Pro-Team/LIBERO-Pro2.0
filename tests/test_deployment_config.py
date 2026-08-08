@@ -77,7 +77,13 @@ def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     assert simulator_commit in readme
     assert "eafdb809426b13153aa1e4c42d6601844217dfec" not in readme
     assert "libero-pro-conda-bundle-1.0.0.tar.gz" in readme
-    assert "普通 Git clone 不包含完整模拟器" in readme
+    assert "model-agnostic-multiuser` 分支包含完整的" in readme
+    assert "git lfs pull" in readme
+    assert "普通 Git clone 只包含服务代码和打包入口" not in readme
+    simulator_source = ROOT / "simulator-source"
+    assert (simulator_source / "libero/libero/envs/env_wrapper.py").is_file()
+    assert (simulator_source / "libero/libero/envs/perturbation_config.py").is_file()
+    assert (simulator_source / "libero/libero/envs/nonphysical_perturbations.py").is_file()
     assert "docker compose build" not in readme
 
 
