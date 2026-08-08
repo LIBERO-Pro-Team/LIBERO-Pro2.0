@@ -29,7 +29,15 @@ function Assert-ManifestBddlHashes($Manifest, [string]$AssetsRoot) {
     foreach ($task in $Manifest.tasks) {
         $bddl = Join-Path $AssetsRoot ($task.bddl_path -replace '/', '\')
         if (-not (Test-Path -LiteralPath $bddl)) { throw "Missing BDDL: $bddl" }
-        $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $bddl).Hash.ToLowerInvariant()
+        $text = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($bddl))
+        $normalized = $text.Replace("`r`n", "`n").Replace("`r", "`n")
+        $hasher = [Security.Cryptography.SHA256]::Create()
+        try {
+            $digest = $hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($normalized))
+        } finally {
+            $hasher.Dispose()
+        }
+        $actual = ([BitConverter]::ToString($digest) -replace '-', '').ToLowerInvariant()
         if ($actual -ne $task.bddl_sha256) { throw "BDDL hash mismatch: $bddl" }
     }
 }
@@ -146,7 +154,6 @@ if ($BuildImage) {
     if ($LASTEXITCODE -ne 0) { throw "WSL cannot access Docker build context: $wslSource" }
     $buildArguments = @(
         "-u", "root", "-d", "Ubuntu", "--", "docker", "build",
-        "--build-arg", "LIBERO_PRO_SOURCE=local",
         "--build-arg", "LIBERO_REMOTE_COMMIT=$serviceCommit",
         "--build-arg", "BASE_IMAGE=docker.m.daocloud.io/library/ubuntu:20.04",
         "--tag", "libero-pro-server:$Version", $wslSource

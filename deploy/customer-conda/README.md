@@ -2,6 +2,10 @@
 
 这个目录是 Docker 交付之外的本地 Linux 运行方式。服务进程和模型客户端都由普通用户启动；日常运行不需要 root、sudo 或 Docker。NVIDIA 驱动、宿主机 EGL 驱动库和 Conda 本身属于主机前置条件，驱动首次安装可能需要管理员完成。
 
+完整交付件发布在 GitHub release `v1.0.0-conda-r2`，文件名为
+`libero-pro-conda-bundle-1.0.0.tar.gz`。`r2` 只表示同一 `1.0.0` 产品版本的发布修订，
+不改变 bundle、Python 包或服务版本。下载 tar.gz 和同名 `.sha256` 后先校验摘要，再解压安装。
+
 ## 固定基线
 
 本包的 Python 依赖来自已验收的 Docker `v1.0.0` 运行环境，详见 `requirements-lock.txt`：Python `3.8.10`、Torch `1.11.0+cpu`、MuJoCo `3.2.3`、robosuite `1.4.0`、FastAPI `0.103.2`、Uvicorn `0.23.2` 等均为精确版本。源码提交固定为：

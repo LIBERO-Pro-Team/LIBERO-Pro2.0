@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from typing import Any, Dict
 from urllib.request import urlopen
 
@@ -14,9 +15,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
     parser.add_argument("--suite", default="libero_goal")
-    parser.add_argument("--task-id", type=int, default=0)
+    parser.add_argument("--task-id", type=int, default=9)
     parser.add_argument("--init-state-id", type=int, default=0)
-    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--seed", type=int, default=142)
+    parser.add_argument("--variant", default="base")
+    parser.add_argument("--api-key", default=os.environ.get("LIBERO_REMOTE_API_KEY"))
     parser.add_argument("--timeout", type=float, default=120.0)
     return parser.parse_args()
 
@@ -27,12 +30,15 @@ def main() -> None:
     if health.get("status") != "ok":
         raise SystemExit(f"server is not ready: {health}")
 
-    with RemoteLiberoEnv(args.base_url, timeout=args.timeout) as env:
+    with RemoteLiberoEnv(
+        args.base_url, timeout=args.timeout, api_key=args.api_key
+    ) as env:
         observation, info = env.reset(
             suite=args.suite,
             task_id=args.task_id,
             init_state_id=args.init_state_id,
             seed=args.seed,
+            variant=args.variant,
             camera_height=64,
             camera_width=64,
             max_steps=2,

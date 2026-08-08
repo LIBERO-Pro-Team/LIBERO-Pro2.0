@@ -7,6 +7,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 
+def _canonical_text_bytes(raw: bytes) -> bytes:
+    return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def normalize_case_id(value: str) -> str:
     normalized = value.strip().upper()
     return "BASE" if normalized == "BASE" else normalized
@@ -24,7 +28,8 @@ class TaskManifest:
     def load(cls, value: str) -> "TaskManifest":
         path = Path(value).expanduser().resolve()
         raw = path.read_bytes()
-        payload = json.loads(raw.decode("utf-8"))
+        canonical_raw = _canonical_text_bytes(raw)
+        payload = json.loads(canonical_raw.decode("utf-8"))
         version = str(payload.get("manifest_version", "")).strip()
         declared_count = int(payload.get("task_count", -1))
         tasks = payload.get("tasks")
@@ -51,7 +56,7 @@ class TaskManifest:
         return cls(
             path=path,
             version=version,
-            sha256=hashlib.sha256(raw).hexdigest(),
+            sha256=hashlib.sha256(canonical_raw).hexdigest(),
             entries=tuple(entries),
             _by_key=by_key,
         )
@@ -66,7 +71,7 @@ class TaskManifest:
             raise ValueError(f"Manifest BDDL path escapes its root: {relative}") from exc
         if not path.is_file():
             raise FileNotFoundError(f"Manifest BDDL does not exist: {path}")
-        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        actual = hashlib.sha256(_canonical_text_bytes(path.read_bytes())).hexdigest()
         if actual != str(entry["bddl_sha256"]):
             raise ValueError(f"Manifest BDDL hash mismatch: {path}")
 

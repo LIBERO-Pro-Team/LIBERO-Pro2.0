@@ -15,6 +15,10 @@ SUITE_TASK_IDS: Dict[str, int] = {
 }
 
 
+def canonical_text_bytes(raw: bytes) -> bytes:
+    return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True)
@@ -57,7 +61,9 @@ def main() -> None:
                 "case_id": case_id,
                 "case_kind": case_kind,
                 "bddl_path": relative.as_posix(),
-                "bddl_sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+                "bddl_sha256": hashlib.sha256(
+                    canonical_text_bytes(target.read_bytes())
+                ).hexdigest(),
                 "task_version": args.version,
                 "max_steps": 300,
                 "reset_stabilization_steps": 10,

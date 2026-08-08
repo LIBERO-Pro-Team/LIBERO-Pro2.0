@@ -2,9 +2,7 @@ ARG BASE_IMAGE=ubuntu:20.04
 FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG LIBERO_PRO_REPOSITORY=https://github.com/Zxy-MLlab/LIBERO-PRO.git
 ARG LIBERO_PRO_COMMIT=c02ee2c8255db1c36664fad978197c47e495f178
-ARG LIBERO_PRO_SOURCE=remote
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -47,14 +45,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY simulator-source /tmp/libero-pro-source
-RUN if [ "${LIBERO_PRO_SOURCE}" = "local" ]; then \
-        test -f /tmp/libero-pro-source/setup.py \
-        && cp -a /tmp/libero-pro-source "${LIBERO_PRO_ROOT}"; \
-    else \
-        rm -rf /tmp/libero-pro-source \
-        && git clone "${LIBERO_PRO_REPOSITORY}" "${LIBERO_PRO_ROOT}" \
-        && git -C "${LIBERO_PRO_ROOT}" checkout "${LIBERO_PRO_COMMIT}"; \
-    fi \
+RUN test -f /tmp/libero-pro-source/setup.py \
+    && cp -a /tmp/libero-pro-source "${LIBERO_PRO_ROOT}" \
     && python3.8 -m pip install \
         torch==1.11.0+cpu \
         torchvision==0.12.0+cpu \

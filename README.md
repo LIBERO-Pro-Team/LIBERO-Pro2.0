@@ -43,21 +43,21 @@ python scripts/server_smoke_test.py --base-url http://127.0.0.1:8000
 
 ## 服务器部署
 
-首个真实部署建议直接在 Linux GPU 服务器上构建。服务器需要 Docker、NVIDIA 驱动和
-NVIDIA Container Toolkit；客户端机器只需要 Python 包，不需要安装 LIBERO 或 MuJoCo。
+Docker 服务器需要 NVIDIA 驱动和 NVIDIA Container Toolkit；客户端机器只需要 Python 包，
+不需要安装 LIBERO 或 MuJoCo。普通 Git clone 不包含完整模拟器，不能直接作为 Docker build
+context。请使用 `libero-pro-bundle-1.0.0.tar.gz` 离线交付包；维护者若需重建该包，必须让
+`scripts/build_customer_bundle.ps1` 从本地 `LIBERO-PRO@c02ee2c` 导出完整 runtime。
 
 ```bash
-git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
-cd LIBERO-Pro2.0
-cp .env.example .env
-docker compose build
-docker compose up -d
+tar -xzf libero-pro-bundle-1.0.0.tar.gz
+cd libero-pro-bundle-1.0.0
+bash install.sh
 docker compose ps
 docker compose logs -f libero-remote
 ```
 
-镜像固定拉取 `LIBERO-PRO` 的 commit
-`eafdb809426b13153aa1e4c42d6601844217dfec`，并安装 Python 3.8、CUDA 11.3 对应的
+镜像和 Conda 离线包固定使用 `LIBERO-PRO` 的 commit
+`c02ee2c8255db1c36664fad978197c47e495f178`，并安装 Python 3.8、CUDA 11.3 对应的
 PyTorch、robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO BDDL 位于
 `assets/bddl/libero-pro2.0-169-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
 仅作为历史基线保留，不属于发布 manifest。init state 仍从固定的 LIBERO-PRO commit 加载。
@@ -68,6 +68,12 @@ PyTorch、robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO B
 curl http://SERVER_IP:8000/v1/health
 curl http://SERVER_IP:8000/v1/tasks
 ```
+
+非 Docker 部署不要在线 clone `LIBERO-PRO` 或自行解析依赖。下载服务仓库 release
+[`v1.0.0-conda-r2`](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/releases/tag/v1.0.0-conda-r2)
+中的 `libero-pro-conda-bundle-1.0.0.tar.gz` 及其 SHA-256 清单，按
+`deploy/customer-conda/README.md` 安装；该包同时包含固定服务源码、完整模拟器源码、169 项
+BDDL、init states 和锁定依赖。普通 Git clone 只包含服务代码和打包入口，不是完整模拟器 runtime。
 
 再从另一台机器运行一次真实环境 smoke test：
 
@@ -267,9 +273,9 @@ env = RemoteLiberoEnv(
 
 obs, info = env.reset(
     suite="libero_goal",
-    task_id=0,
+    task_id=9,
     init_state_id=0,
-    seed=42,
+    seed=142,
 )
 
 terminated = False
@@ -311,9 +317,9 @@ env.close()
 {
   "protocol_version": "1.0",
   "suite": "libero_goal",
-  "task_id": 0,
+  "task_id": 9,
   "init_state_id": 0,
-  "seed": 42,
+  "seed": 142,
   "variant": "base",
   "control_mode": "relative",
   "camera_names": ["agentview", "robot0_eye_in_hand"],

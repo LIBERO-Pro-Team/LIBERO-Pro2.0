@@ -3,7 +3,6 @@ services:
     build:
       context: .
       args:
-        LIBERO_PRO_REPOSITORY: ${LIBERO_PRO_REPOSITORY:-https://github.com/Zxy-MLlab/LIBERO-PRO.git}
         LIBERO_PRO_COMMIT: ${LIBERO_PRO_COMMIT:-c02ee2c8255db1c36664fad978197c47e495f178}
     image: libero-pro-remote:${LIBERO_REMOTE_IMAGE_TAG:-local}
     restart: unless-stopped

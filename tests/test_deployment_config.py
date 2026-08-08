@@ -1,14 +1,30 @@
 import ast
 import hashlib
 import json
+import runpy
 import shutil
 import subprocess
+import sys
 import zipfile
 from pathlib import Path
 
 import tomllib
 
 ROOT = Path(__file__).parents[1]
+
+
+def test_server_smoke_defaults_to_the_reproducible_published_base_case(
+    monkeypatch,
+) -> None:
+    script = runpy.run_path(str(ROOT / "scripts" / "server_smoke_test.py"))
+    monkeypatch.setattr(sys, "argv", ["server_smoke_test.py"])
+    monkeypatch.setenv("LIBERO_REMOTE_API_KEY", "test-key")
+
+    args = script["parse_args"]()
+
+    assert (args.suite, args.task_id, args.variant) == ("libero_goal", 9, "base")
+    assert (args.init_state_id, args.seed) == (0, 142)
+    assert args.api_key == "test-key"
 
 
 def test_production_compose_enforces_isolation_and_versioned_tasks() -> None:
@@ -40,6 +56,41 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
         "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"
     )
     assert bddl_setting in dockerfile
+
+
+def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    baseline = json.loads(
+        (ROOT / "deploy" / "customer-conda" / "SOURCE_BASELINE.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    simulator_commit = "c02ee2c8255db1c36664fad978197c47e495f178"
+
+    assert f"ARG LIBERO_PRO_COMMIT={simulator_commit}" in dockerfile
+    assert "COPY simulator-source /tmp/libero-pro-source" in dockerfile
+    assert "git clone" not in dockerfile
+    assert "LIBERO_PRO_REPOSITORY" not in dockerfile + compose
+    assert baseline["simulator_commit"] == simulator_commit
+    assert simulator_commit in readme
+    assert "eafdb809426b13153aa1e4c42d6601844217dfec" not in readme
+    assert "libero-pro-conda-bundle-1.0.0.tar.gz" in readme
+    assert "普通 Git clone 不包含完整模拟器" in readme
+    assert "docker compose build" not in readme
+
+
+def test_customer_bundle_hashes_bddl_with_canonical_lf_endings() -> None:
+    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
+        encoding="utf-8"
+    )
+    manifest_builder = (ROOT / "scripts" / "build_task_manifest.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert '.Replace("`r`n", "`n").Replace("`r", "`n")' in builder
+    assert "canonical_text_bytes(target.read_bytes())" in manifest_builder
 
 
 def test_sdk_metadata_separates_client_and_server_dependencies() -> None:

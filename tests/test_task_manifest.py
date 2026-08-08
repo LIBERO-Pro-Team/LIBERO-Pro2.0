@@ -52,6 +52,26 @@ def test_manifest_rejects_a_tampered_bddl(tmp_path: Path) -> None:
         TaskManifest.load(str(manifest_path))
 
 
+def test_manifest_accepts_a_crlf_checkout_of_a_published_bddl(tmp_path: Path) -> None:
+    payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    entry = dict(payload["tasks"][0])
+    source = ASSETS_ROOT / entry["bddl_path"]
+    copied = tmp_path / "task.bddl"
+    canonical = source.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    copied.write_bytes(canonical.replace(b"\n", b"\r\n"))
+    entry["bddl_path"] = copied.name
+    payload["tasks"] = [entry]
+    payload["task_count"] = 1
+    manifest_path = tmp_path / "task_manifest.json"
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    manifest = TaskManifest.load(str(manifest_path))
+
+    assert manifest.require(entry["suite"], entry["base_task_id"], entry["case_id"])[
+        "bddl_path"
+    ] == copied.name
+
+
 def test_manifest_rejects_unpublished_suite_task_case() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 

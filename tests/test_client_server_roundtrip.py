@@ -90,6 +90,26 @@ def test_health_reports_backend_readiness_and_capacity() -> None:
     assert "MUJOCO_GL" in payload["runtime"]["egl"]
 
 
+def test_health_returns_503_when_the_runtime_is_incompatible(monkeypatch: Any) -> None:
+    monkeypatch.setattr(
+        "libero_remote.server.app.check_backend_readiness",
+        lambda *_: {
+            "name": "libero",
+            "ready": False,
+            "reason": "runtime_capabilities_missing",
+            "missing_capabilities": ["set_perturbation_seed"],
+        },
+    )
+    app = create_app(Settings(environment_backend="libero"))
+
+    with TestClient(app) as http_client:
+        response = http_client.get("/v1/health")
+
+    assert response.status_code == 503
+    assert response.json()["status"] == "not_ready"
+    assert response.json()["backend"]["reason"] == "runtime_capabilities_missing"
+
+
 def test_task_catalog_advertises_supported_control_modes() -> None:
     app = create_app(Settings(environment_backend="fake"))
 
