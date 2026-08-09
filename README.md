@@ -670,6 +670,23 @@ xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端
 通用 `libero_remote.runner` 入口不导入任何参考模型；需要示例实现时再从对应的 `runner.xvla` 或
 `runner.pi0` 子模块显式导入。
 
+评估时建议优先使用仓库提供的通用配置、通用 `AgentAdapter`、通用 runner 和通用验收脚本，
+不要先寻找某个模型专用的配置或评估入口。模型专用代码只负责该模型自己的 observation 预处理、
+proprio/坐标系转换、推理和 action 后处理；任务配置、环境交互、任务队列、复现信息、结果记录和一致性验收
+均应复用通用实现。接入新模型时，只需按照 `docs/model-adapter-contract.md` 实现用户端 adapter。
+
+通用评估提供两种运行模式：
+
+- `Scheduled Runner`：先用 `RemoteRunClient.submit_run()` 提交一个或多个 episode，再用
+  `run_scheduled_run()` 领取任务。runner 为每个 episode 建立 lease，在模型推理期间独立发送 heartbeat，
+  按顺序执行 observation/action/step，完成后提交服务端权威结果，再继续领取下一个任务。该模式覆盖任务队列、
+  多用户隔离、并发配额、基础设施失败回收与重试、任务进度持久化和复现指纹校验，建议用于正式批量评估和复测。
+- `Direct Runner`：用 `AgentEpisodeSpec` 描述一个 episode，调用 `run_remote_agent_episode()` 直接
+  `reset` 远程环境、逐 step 调用 adapter、读取服务端结果并关闭 session。该模式不经过任务队列和 lease 调度，
+  适合单任务 smoke test、本地调试和快速验证 adapter 的 observation/action 映射；它不提供 Scheduled Runner
+  的批量调度、跨用户公平性和调度器级失败重试。模型专用 direct runner（例如 xVLA 的参考循环）也属于这一类，
+  仅用于展示模型处理流程，不应替代通用评估入口。
+
 ### 21.1 本机 xVLA 参考 runner
 
 计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。
