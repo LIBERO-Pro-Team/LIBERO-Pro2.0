@@ -687,6 +687,13 @@ proprio/坐标系转换、推理和 action 后处理；任务配置、环境交�
   的批量调度、跨用户公平性和调度器级失败重试。模型专用 direct runner（例如 xVLA 的参考循环）也属于这一类，
   仅用于展示模型处理流程，不应替代通用评估入口。
 
+在 Scheduled Runner 之上，`libero_remote.benchmark` 和 `scripts/run_grouped_eval.py` 提供分组式多 seed
+计划。它们直接读取 `/v1/tasks`，支持按 `base/static/dynamic/all`、suite 和 case 选择已发布任务，按
+一一对应或显式矩阵方式展开 seed 与 init state，并将整个计划提交为一个可恢复的 run。结果可导出为
+JSONL、CSV 和按 suite/variant/group/seed 汇总的 JSON。该层不识别或加载具体模型；已经构造 adapter 的
+runner 可调用 `run_grouped_benchmark()` 一次执行计划中的剩余 rollout。完整用法见
+`docs/grouped-benchmark.md`。
+
 ### 21.1 本机 xVLA 参考 runner
 
 计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。

@@ -41,6 +41,11 @@ class RemoteRunClient:
             body["owner_id"] = legacy_owner
         return self._transport.post("/v1/runs", body)
 
+    def get_task_catalog(self) -> Dict[str, Any]:
+        """Return the server-published source of valid benchmark combinations."""
+
+        return self._transport.get_json("/v1/tasks")
+
     def get_run(self, run_id: str) -> Dict[str, Any]:
         return self._transport.get_json(f"/v1/runs/{run_id}")
 
