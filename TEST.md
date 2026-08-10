@@ -12,6 +12,16 @@ python -m pytest -q \
   tests/test_run_scheduler_roundtrip.py
 ```
 
+Pi0、xVLA 和共用 MP4 writer 的录像回归测试：
+
+```bash
+python -m pytest -q \
+  tests/test_agent_runner.py \
+  tests/test_pi0_runner.py \
+  tests/test_xvla_runner.py \
+  tests/test_video_writer.py
+```
+
 重点覆盖：
 
 - base/static/dynamic/all 与 suite/case 交集筛选。

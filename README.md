@@ -670,6 +670,18 @@ xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端
 通用 `libero_remote.runner` 入口不导入任何参考模型；需要示例实现时再从对应的 `runner.xvla` 或
 `runner.pi0` 子模块显式导入。
 
+Pi0 和 xVLA 的 direct runner 都可以将远程 observation 中的相机帧保存为每个 episode 一个 MP4。
+先在模型环境安装 `pip install -e ".[video]"`，然后给对应 Python runner 增加
+`--record-video`。默认记录 `agentview`、20 FPS；可通过 `--video-camera robot0_eye_in_hand`、
+`--video-fps` 和 `--video-dir` 调整。录像默认关闭，不影响未启用录像的运行环境。
+
+```bash
+python scripts/run_pi0_remote_eval.py ... --record-video --video-dir results/pi0_videos
+python scripts/run_xvla_remote_eval.py ... --record-video --video-dir results/xvla_videos
+```
+
+文件名包含模型、suite、task、variant、seed 和 init state，避免多 episode 结果互相覆盖。
+
 评估时建议优先使用仓库提供的通用配置、通用 `AgentAdapter`、通用 runner 和通用验收脚本，
 不要先寻找某个模型专用的配置或评估入口。模型专用代码只负责该模型自己的 observation 预处理、
 proprio/坐标系转换、推理和 action 后处理；任务配置、环境交互、任务队列、复现信息、结果记录和一致性验收

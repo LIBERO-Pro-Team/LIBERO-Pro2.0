@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Protocol
+from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Protocol
 
 import numpy as np
 
@@ -66,6 +66,11 @@ class RunManifest:
 class EpisodeReport(Protocol):
     def to_dict(self) -> Dict[str, Any]:
         """Return a JSON-serializable episode record."""
+
+
+class ObservationRecorder(Protocol):
+    def write(self, observation: Mapping[str, Any]) -> None:
+        """Record one remote observation."""
 
 
 class XVLAPolicyAdapter:
@@ -209,7 +214,12 @@ def _append_report_record(path: Path, record_type: str, payload: Dict[str, Any])
         stream.write("\n")
 
 
-def run_remote_episode(env: Any, policy: Any, spec: EpisodeSpec) -> EpisodeResult:
+def run_remote_episode(
+    env: Any,
+    policy: Any,
+    spec: EpisodeSpec,
+    recorder: Optional[ObservationRecorder] = None,
+) -> EpisodeResult:
     """Run one xVLA episode and always release its remote session."""
 
     started_at = datetime.now(timezone.utc).isoformat()
@@ -230,6 +240,8 @@ def run_remote_episode(env: Any, policy: Any, spec: EpisodeSpec) -> EpisodeResul
             max_steps=spec.max_steps,
             control_mode=spec.control_mode,
         )
+        if recorder is not None:
+            recorder.write(observation)
         action_schema = reset_info.get("action_schema", {})
         confirmed_mode = action_schema.get("control_mode")
         if confirmed_mode != spec.control_mode:
@@ -243,6 +255,8 @@ def run_remote_episode(env: Any, policy: Any, spec: EpisodeSpec) -> EpisodeResul
         while steps < spec.max_steps:
             action = _validate_libero_action(policy.select_action(observation, instruction))
             observation, reward, terminated, truncated, step_info = env.step(action)
+            if recorder is not None:
+                recorder.write(observation)
             steps += 1
             total_reward += float(reward)
             success = success or bool(step_info.get("success", False))

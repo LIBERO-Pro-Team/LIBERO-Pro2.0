@@ -10,6 +10,7 @@ from libero_remote import RemoteLiberoEnv
 from libero_remote.runner.agent import AgentEpisodeSpec, run_remote_agent_episode
 from libero_remote.runner.pi0 import Pi0PolicyAdapter
 from libero_remote.runner.report import build_run_manifest
+from libero_remote.runner.video import ObservationVideoWriter, episode_video_path
 from libero_remote.runner.xvla import append_episode_result, append_run_manifest
 
 
@@ -37,6 +38,10 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("runtime/pi0_remote_eval_spatial_task8_clean.jsonl"),
     )
+    parser.add_argument("--record-video", action="store_true")
+    parser.add_argument("--video-dir", type=Path)
+    parser.add_argument("--video-camera", default="agentview")
+    parser.add_argument("--video-fps", type=float, default=20.0)
     return parser.parse_args()
 
 
@@ -46,6 +51,10 @@ def main() -> None:
         raise SystemExit("--episodes must be at least 1")
     if args.max_steps < 1:
         raise SystemExit("--max-steps must be at least 1")
+    if args.video_fps <= 0:
+        raise SystemExit("--video-fps must be positive")
+    if args.video_dir is not None and not args.record_video:
+        raise SystemExit("--video-dir requires --record-video")
 
     model_path = _require_directory(args.model_path, "Pi0 model")
     tokenizer_path = _require_directory(args.tokenizer_path, "PaliGemma tokenizer")
@@ -64,6 +73,7 @@ def main() -> None:
         )
 
     output = args.output.expanduser().resolve()
+    video_dir = args.video_dir or output.parent / f"{output.stem}_videos"
     repo_root = Path(__file__).resolve().parents[1]
     manifest = build_run_manifest(
         health=health,
@@ -81,6 +91,9 @@ def main() -> None:
             "variant": args.variant,
             "control_mode": "relative",
             "device": args.device,
+            "record_video": args.record_video,
+            "video_camera": args.video_camera if args.record_video else None,
+            "video_fps": args.video_fps if args.record_video else None,
         },
     )
     append_run_manifest(output, manifest)
@@ -103,7 +116,22 @@ def main() -> None:
             variant=args.variant,
         )
         try:
-            result = run_remote_agent_episode(env, agent, spec)
+            if args.record_video:
+                video_path = episode_video_path(
+                    video_dir,
+                    model_name="pi0",
+                    suite=spec.suite,
+                    task_id=spec.task_id,
+                    variant=spec.variant,
+                    seed=spec.seed,
+                    init_state_id=spec.init_state_id,
+                )
+                with ObservationVideoWriter(
+                    video_path, camera=args.video_camera, fps=args.video_fps
+                ) as recorder:
+                    result = run_remote_agent_episode(env, agent, spec, recorder=recorder)
+            else:
+                result = run_remote_agent_episode(env, agent, spec)
         finally:
             env.close_transport()
         append_episode_result(output, result)
@@ -117,6 +145,9 @@ def main() -> None:
         "episodes": len(results),
         "successes": successes,
         "success_rate": successes / len(results),
+        "video_dir": str(Path(video_dir).expanduser().resolve())
+        if args.record_video
+        else None,
     }
     print(json.dumps(summary, indent=2, sort_keys=True))
 
