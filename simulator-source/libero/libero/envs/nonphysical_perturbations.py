@@ -551,7 +551,7 @@ def _safe_offset_pose(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     before, quat = _entity_pose(env, name)
     requested_array = np.asarray(requested, dtype=np.float64)
-    candidates = (
+    primary_candidates = (
         requested_array,
         np.array([-requested_array[0], requested_array[1]]),
         np.array([requested_array[0], -requested_array[1]]),
@@ -559,6 +559,17 @@ def _safe_offset_pose(
         np.array([requested_array[1], requested_array[0]]),
         np.array([-requested_array[1], -requested_array[0]]),
     )
+    candidates = list(primary_candidates)
+    requested_distance = float(np.linalg.norm(requested_array))
+    if requested_distance > 1e-9:
+        base_angle = math.atan2(requested_array[1], requested_array[0])
+        for multiplier in (1.5, 2.0, 2.5, 3.0, 3.5):
+            distance = requested_distance * multiplier
+            for angle_offset in np.linspace(0.0, 2.0 * math.pi, 16, endpoint=False):
+                angle = base_angle + float(angle_offset)
+                delta = distance * np.array([math.cos(angle), math.sin(angle)])
+                if not any(np.allclose(delta, existing) for existing in candidates):
+                    candidates.append(delta)
     for delta in candidates:
         candidate = before.copy()
         candidate[:2] += delta
@@ -605,6 +616,81 @@ def _regress_predicate_with_safe_offset(
     raise PerturbationValidationError(
         f"No collision-clear pose actually regresses predicate {predicate!r}"
     )
+
+
+def _joint_values_for_diagnostics(values: list[Any]) -> list[Any]:
+    diagnostics: list[Any] = []
+    for value in values:
+        array = np.asarray(value)
+        diagnostics.append(float(array) if array.ndim == 0 else array.tolist())
+    return diagnostics
+
+
+def _regress_articulation_predicate(
+    env: Any, name: str, predicate: list[Any]
+) -> dict[str, Any]:
+    predicate_name = str(predicate[0]).lower()
+    opposite_range = {
+        "open": "default_close_ranges",
+        "close": "default_open_ranges",
+        "turnon": "default_turnoff_ranges",
+        "turnoff": "default_turnon_ranges",
+    }.get(predicate_name)
+    if opposite_range is None:
+        raise PerturbationValidationError(
+            f"Predicate {predicate!r} is not an articulation predicate"
+        )
+
+    state = getattr(env, "object_states_dict", {}).get(name)
+    get_object = getattr(env, "get_object", None)
+    obj = get_object(name) if callable(get_object) else None
+    if state is None or obj is None:
+        raise PerturbationValidationError(
+            f"Cannot regress articulation predicate {predicate!r} for {name!r}"
+        )
+    ranges = (
+        getattr(obj, "object_properties", {})
+        .get("articulation", {})
+        .get(opposite_range, [])
+    )
+    if not ranges:
+        raise PerturbationValidationError(
+            f"Articulation {name!r} has no {opposite_range!r} for {predicate!r}"
+        )
+
+    before = [np.asarray(value).copy() for value in state.get_joint_state()]
+    target_joint = float(sum(float(value) for value in ranges) / len(ranges))
+    state.set_joint(target_joint)
+    env.sim.forward()
+    if bool(env._eval_predicate(predicate)):
+        for joint, value in zip(getattr(obj, "joints", ()), before):
+            env.sim.data.set_joint_qpos(joint, value)
+        env.sim.forward()
+        raise PerturbationValidationError(
+            f"No articulation state actually regresses predicate {predicate!r}"
+        )
+    after = [np.asarray(value).copy() for value in state.get_joint_state()]
+    return {
+        "regression_mode": "articulation_joint",
+        "joint_before": _joint_values_for_diagnostics(before),
+        "joint_after": _joint_values_for_diagnostics(after),
+    }
+
+
+def _regress_completed_predicate(
+    env: Any,
+    name: str,
+    predicate: list[Any],
+    *,
+    ignored: tuple[str, ...] = (),
+) -> tuple[np.ndarray, dict[str, Any]]:
+    if str(predicate[0]).lower() in {"open", "close", "turnon", "turnoff"}:
+        return np.zeros(2, dtype=np.float64), _regress_articulation_predicate(
+            env, name, predicate
+        )
+    return _regress_predicate_with_safe_offset(
+        env, name, predicate, ignored=ignored
+    ), {"regression_mode": "spatial_offset"}
 
 
 def _dynamic_pose_requested_delta(case_id: str, target: str) -> tuple[float, float]:
@@ -1407,7 +1493,7 @@ class NonPhysicalPerturbationRuntime:
             ignored = tuple(
                 name for name in self.plan.targets if name != target
             )
-            applied = _regress_predicate_with_safe_offset(
+            applied, regression_details = _regress_completed_predicate(
                 env, target, predicate, ignored=ignored
             )
             self._log_once(
@@ -1419,6 +1505,7 @@ class NonPhysicalPerturbationRuntime:
                 regressed_predicate=predicate,
                 completed_predicates=list(completed),
                 pending_predicates=list(pending),
+                **regression_details,
             )
         elif case_id in {"D03", "D04", "D05"}:
             name = _injected_name(self.plan)

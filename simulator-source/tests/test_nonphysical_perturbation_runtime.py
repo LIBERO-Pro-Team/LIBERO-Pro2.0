@@ -566,6 +566,58 @@ class RuntimeBehaviorTests(unittest.TestCase):
         np.testing.assert_allclose(delta, [0.0, 0.09])
         self.assertGreater(np.linalg.norm(delta), 0.08)
 
+    def test_safe_offset_pose_expands_search_when_primary_offsets_are_blocked(self):
+        requested = np.array([-0.055, 0.035])
+        primary_offsets = (
+            requested,
+            np.array([-requested[0], requested[1]]),
+            np.array([requested[0], -requested[1]]),
+            -requested,
+            np.array([requested[1], requested[0]]),
+            np.array([-requested[1], -requested[0]]),
+        )
+
+        class Sim:
+            def __init__(self):
+                positions = [np.array([0.0, 0.0, 0.9])]
+                positions.extend(
+                    np.array([offset[0], offset[1], 0.9])
+                    for offset in primary_offsets
+                )
+                self.model = types.SimpleNamespace(
+                    body_pos=np.asarray(positions),
+                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (7, 1)),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+
+        sim = Sim()
+        names = ["moving"] + [f"blocker_{index}" for index in range(6)]
+        env = types.SimpleNamespace(
+            obj_body_id={name: index for index, name in enumerate(names)},
+            objects_dict={name: types.SimpleNamespace(joints=None) for name in names},
+            workspace_offset=np.array([0.0, 0.0, 0.9]),
+            sim=sim,
+        )
+
+        before, after, applied = RUNTIME._safe_offset_pose(
+            env, "moving", tuple(requested)
+        )
+
+        np.testing.assert_allclose(before, [0.0, 0.0, 0.9])
+        self.assertGreater(np.linalg.norm(applied), np.linalg.norm(requested))
+        self.assertTrue(
+            RUNTIME._candidate_is_clear(
+                env, "moving", after[:2], minimum_gap=0.08
+            )
+        )
+
     def test_d18_moves_a_carried_object_to_a_reachable_support_height(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
             self.plan("libero_goal", "02_dynamic", "D18"), seed=7
@@ -739,6 +791,90 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertTrue(runtime.events[-1]["predicate_confirmed_regressed"])
         self.assertEqual(runtime.events[-1]["regressed_predicate"], goal_states[0])
         self.assertEqual(runtime.events[-1]["pending_predicates"], [goal_states[1]])
+
+    def test_d20_regresses_completed_close_predicate_by_opening_joint(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D20",
+            schedule="dynamic",
+            operator="state_or_language_event",
+            variant="interrupt_regress_then_continue",
+            targets=("white_yellow_mug_1", "microwave_1"),
+            references=(),
+            mechanisms=("state_event",),
+            assets=(),
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        mug, microwave = runtime.plan.targets
+        goal_states = [
+            ["in", mug, "microwave_1_heating_region"],
+            ["close", microwave],
+        ]
+
+        class Sim:
+            def __init__(self):
+                self.model = types.SimpleNamespace(
+                    body_pos=np.array([[0.3, 0.0, 0.9], [0.0, 0.0, 0.9]]),
+                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                    site_xpos=np.array([[0.4, 0.4, 1.0]]),
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+
+        class MicrowaveState:
+            def __init__(self):
+                self.joint = -0.0025
+
+            def get_joint_state(self):
+                return [self.joint]
+
+            def set_joint(self, value):
+                self.joint = float(value)
+
+        microwave_object = types.SimpleNamespace(
+            joints=["microwave_door_joint"],
+            object_properties={
+                "articulation": {
+                    "default_open_ranges": [-2.094, -1.3],
+                    "default_close_ranges": [-0.005, 0.0],
+                }
+            },
+        )
+        microwave_state = MicrowaveState()
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={mug: 0, microwave: 1},
+            objects_dict={mug: types.SimpleNamespace(joints=None)},
+            fixtures_dict={microwave: microwave_object},
+            object_states_dict={microwave: microwave_state},
+            object_sites_dict={
+                "microwave_1_heating_region": types.SimpleNamespace(
+                    parent_name=microwave
+                )
+            },
+            parsed_problem={"goal_state": goal_states},
+            workspace_offset=np.array([0.0, 0.0, 0.9]),
+            sim=sim,
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        env.get_object = lambda name: (
+            microwave_object if name == microwave else env.objects_dict.get(name)
+        )
+        env._eval_predicate = lambda state: (
+            microwave_state.joint > -0.005 if state[0] == "close" else False
+        )
+
+        runtime.before_simulation_step(env, step=runtime.EVENT_START)
+
+        self.assertFalse(env._eval_predicate(goal_states[1]))
+        self.assertEqual(runtime.events[-1]["event"], "partial_goal_regressed")
+        self.assertEqual(runtime.events[-1]["regression_mode"], "articulation_joint")
+        self.assertEqual(runtime.events[-1]["regressed_predicate"], goal_states[1])
 
     def test_d20_does_not_report_regression_when_predicate_stays_satisfied(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
