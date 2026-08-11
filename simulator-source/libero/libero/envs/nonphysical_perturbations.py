@@ -752,6 +752,11 @@ class NonPhysicalPerturbationRuntime:
         self.previous_observation: dict[str, Any] | None = None
         self.observation_queue: deque[dict[str, Any]] = deque(maxlen=4)
         self.action_queue: deque[np.ndarray] = deque(maxlen=4)
+        self.gripper_queue: deque[float] = deque(maxlen=4)
+        self._stale_action_chunk: list[np.ndarray] = []
+        self._stale_action_index = 0
+        self._stale_gripper_chunk: list[float] = []
+        self._stale_gripper_index = 0
         self._logged: set[str] = set()
         self._saved_poses: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._dynamic_applied = False
@@ -811,7 +816,24 @@ class NonPhysicalPerturbationRuntime:
         self.previous_observation = None
         self.observation_queue.clear()
         self.action_queue.clear()
+        self.gripper_queue.clear()
+        self._stale_action_chunk.clear()
+        self._stale_action_index = 0
+        self._stale_gripper_chunk.clear()
+        self._stale_gripper_index = 0
         self._logged.clear()
+
+    def _d15_chunk_config(self) -> tuple[int, int]:
+        params = self.plan.params
+        try:
+            chunk_size = max(1, int(params.get("chunk_size", 4)))
+        except (TypeError, ValueError):
+            chunk_size = 4
+        try:
+            stale_steps = max(1, int(params.get("stale_chunk_steps", chunk_size)))
+        except (TypeError, ValueError):
+            stale_steps = chunk_size
+        return chunk_size, stale_steps
 
     def begin_rollout(self, env: Any) -> None:
         """Start perturbation timing after environment-only settling steps."""
@@ -849,6 +871,23 @@ class NonPhysicalPerturbationRuntime:
             if isinstance(value, np.ndarray)
             and (key.endswith("_image") or key.endswith("_depth"))
         ]
+
+    def _configured_rgb_image_keys(self, observation: dict[str, Any]) -> list[str]:
+        """Resolve BDDL camera targets to RGB observation keys."""
+        targets = {str(target).strip().lower() for target in self.plan.targets}
+        if not targets:
+            return []
+        image_keys = self._image_keys(observation)
+        if "rgb" in targets:
+            return [key for key in image_keys if key.endswith("_image")]
+        configured: list[str] = []
+        for key in image_keys:
+            if not key.endswith("_image"):
+                continue
+            camera_name = key[: -len("_image")].lower()
+            if key.lower() in targets or camera_name in targets:
+                configured.append(key)
+        return configured
 
     def transform_observation(
         self, observation: dict[str, Any], step: int
@@ -889,10 +928,14 @@ class NonPhysicalPerturbationRuntime:
                     out[key] = degraded
             self._log_once("sensor_degradation", step)
         elif case_id == "D08" and self.EVENT_START <= step < self.EVENT_END:
-            for key in image_keys:
-                if "image" in key:
-                    out[key] = np.zeros_like(out[key])
-            self._log_once("camera_dropout", step)
+            for key in self._configured_rgb_image_keys(out):
+                out[key] = np.zeros_like(out[key])
+            self._log_once(
+                "camera_dropout",
+                step,
+                targets=list(self.plan.targets),
+                image_keys=self._configured_rgb_image_keys(out),
+            )
         elif case_id == "D09" and self.EVENT_START <= step < self.EVENT_END:
             for key in image_keys:
                 value = out[key]
@@ -939,9 +982,31 @@ class NonPhysicalPerturbationRuntime:
         elif case_id == "D14" and step == self.EVENT_START and previous is not None:
             current = previous
             self._log_once("command_drop_repeat", step)
-        elif case_id == "D15" and self.EVENT_START <= step < self.EVENT_START + 4 and previous is not None:
-            current = previous
-            self._log_once("stale_action_chunk", step)
+        elif case_id == "D15":
+            chunk_size, stale_steps = self._d15_chunk_config()
+            if step < self.EVENT_START:
+                self.action_queue.append(current.copy())
+            elif self.EVENT_START <= step < self.EVENT_START + stale_steps:
+                if not self._stale_action_chunk:
+                    self._stale_action_chunk = list(self.action_queue)[-chunk_size:]
+                    self._stale_action_index = 0
+                if self._stale_action_chunk:
+                    replay_index = min(
+                        self._stale_action_index, len(self._stale_action_chunk) - 1
+                    )
+                    current = self._stale_action_chunk[replay_index].copy()
+                    self._stale_action_index += 1
+                    self._log_once(
+                        "stale_action_chunk",
+                        step,
+                        chunk_length=len(self._stale_action_chunk),
+                        stale_steps=stale_steps,
+                    )
+            else:
+                self.action_queue.clear()
+                self.action_queue.append(current.copy())
+                self._stale_action_chunk.clear()
+                self._stale_action_index = 0
         elif case_id == "D16" and self.EVENT_START <= step < self.EVENT_START + 6:
             current[:] = 0.0
             if current.size:
@@ -968,12 +1033,31 @@ class NonPhysicalPerturbationRuntime:
             current = previous
         elif case_id == "D14" and step == self.EVENT_START and previous is not None:
             current = previous
-        elif (
-            case_id == "D15"
-            and self.EVENT_START <= step < self.EVENT_START + 4
-            and previous is not None
-        ):
-            current = previous
+        elif case_id == "D15":
+            chunk_size, stale_steps = self._d15_chunk_config()
+            if step < self.EVENT_START:
+                self.gripper_queue.append(current)
+            elif self.EVENT_START <= step < self.EVENT_START + stale_steps:
+                if not self._stale_gripper_chunk:
+                    self._stale_gripper_chunk = list(self.gripper_queue)[-chunk_size:]
+                    self._stale_gripper_index = 0
+                if self._stale_gripper_chunk:
+                    replay_index = min(
+                        self._stale_gripper_index, len(self._stale_gripper_chunk) - 1
+                    )
+                    current = self._stale_gripper_chunk[replay_index]
+                    self._stale_gripper_index += 1
+                    self._log_once(
+                        "stale_action_chunk",
+                        step,
+                        chunk_length=len(self._stale_gripper_chunk),
+                        stale_steps=stale_steps,
+                    )
+            else:
+                self.gripper_queue.clear()
+                self.gripper_queue.append(current)
+                self._stale_gripper_chunk.clear()
+                self._stale_gripper_index = 0
         elif case_id == "D16" and self.EVENT_START <= step < self.EVENT_START + 6:
             current = 0.0
         elif (

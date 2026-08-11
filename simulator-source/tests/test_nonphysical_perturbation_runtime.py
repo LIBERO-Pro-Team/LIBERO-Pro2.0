@@ -30,6 +30,41 @@ RUNTIME = load_module("libero_pro_nonphysical_runtime", "nonphysical_perturbatio
 
 
 class SchemaExecutionPlanTests(unittest.TestCase):
+    def test_repo_d08_declares_one_camera_target(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-169-v1"
+                / "libero_goal"
+                / "02_dynamic"
+            ).glob("D08__*.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(plan.case_id, "D08")
+        self.assertEqual(plan.targets, ("robot0_eye_in_hand",))
+
+    def test_repo_d15_declares_replay_chunk_parameters(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-169-v1"
+                / "libero_goal"
+                / "02_dynamic"
+            ).glob("D15__*.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(plan.case_id, "D15")
+        self.assertEqual(plan.params["chunk_size"], 4)
+        self.assertEqual(plan.params["stale_chunk_steps"], 4)
+
     def test_all_172_bddls_resolve_to_an_executable_case(self):
         files = sorted(BDDL_ROOT.rglob("*.bddl"))
         self.assertEqual(len(files), 172)
@@ -359,19 +394,34 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertEqual(runtime.events[-1]["event"], "planar_object_position_swap")
 
     def test_d08_camera_dropout_is_bounded_and_restores(self):
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-            self.plan("libero_goal", "02_dynamic", "D08"), seed=7
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D08",
+            schedule="dynamic",
+            operator="observation_fault",
+            variant="camera_dropout_then_restore",
+            targets=("robot0_eye_in_hand",),
+            references=(),
+            mechanisms=("observation",),
+            assets=(),
         )
-        image = np.full((8, 8, 3), 200, dtype=np.uint8)
-        obs = {"agentview_image": image}
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        agentview = np.full((8, 8, 3), 200, dtype=np.uint8)
+        wrist = np.full((8, 8, 3), 100, dtype=np.uint8)
+        obs = {
+            "agentview_image": agentview,
+            "robot0_eye_in_hand_image": wrist,
+        }
 
         before = runtime.transform_observation(obs, step=20)
         during = runtime.transform_observation(obs, step=50)
         after = runtime.transform_observation(obs, step=90)
 
-        self.assertTrue(np.array_equal(before["agentview_image"], image))
-        self.assertTrue(np.all(during["agentview_image"] == 0))
-        self.assertTrue(np.array_equal(after["agentview_image"], image))
+        self.assertTrue(np.array_equal(before["agentview_image"], agentview))
+        self.assertTrue(np.array_equal(before["robot0_eye_in_hand_image"], wrist))
+        self.assertTrue(np.array_equal(during["agentview_image"], agentview))
+        self.assertTrue(np.all(during["robot0_eye_in_hand_image"] == 0))
+        self.assertTrue(np.array_equal(after["agentview_image"], agentview))
+        self.assertTrue(np.array_equal(after["robot0_eye_in_hand_image"], wrist))
 
     def test_d14_drops_a_command_at_a_deterministic_event_step(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
@@ -396,6 +446,38 @@ class RuntimeBehaviorTests(unittest.TestCase):
         changed = runtime.transform_gripper_force_command(0.90, step=48)
 
         self.assertEqual(changed, 0.25)
+
+    def test_d15_replays_a_stale_action_chunk_in_order_then_resumes(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D15",
+            schedule="dynamic",
+            operator="timing_or_action_fault",
+            variant="stale_chunk_late_chunk_or_replan_interrupt",
+            targets=("action_chunk", "replan"),
+            references=(),
+            mechanisms=("action_timing",),
+            assets=(),
+            params={"chunk_size": 4, "stale_chunk_steps": 4},
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        old_chunk = [
+            np.full(7, value, dtype=np.float64) for value in (0.1, 0.2, 0.3, 0.4)
+        ]
+        for index, action in enumerate(old_chunk, start=44):
+            np.testing.assert_array_equal(runtime.transform_action(action, step=index), action)
+
+        new_actions = [np.full(7, value, dtype=np.float64) for value in (1.1, 1.2, 1.3, 1.4)]
+        replayed = [
+            runtime.transform_action(action, step=48 + index)
+            for index, action in enumerate(new_actions)
+        ]
+        for actual, expected in zip(replayed, old_chunk):
+            np.testing.assert_array_equal(actual, expected)
+
+        resumed = np.full(7, 2.0, dtype=np.float64)
+        np.testing.assert_array_equal(runtime.transform_action(resumed, step=52), resumed)
+        self.assertEqual(runtime.events[-1]["event"], "stale_action_chunk")
+        self.assertEqual(runtime.events[-1]["chunk_length"], 4)
 
     def test_d17_grasp_failure_window_starts_when_the_event_actually_triggers(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(

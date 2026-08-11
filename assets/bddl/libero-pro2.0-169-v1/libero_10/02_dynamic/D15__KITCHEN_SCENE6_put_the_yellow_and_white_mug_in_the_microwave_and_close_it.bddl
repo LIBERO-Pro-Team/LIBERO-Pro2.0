@@ -386,7 +386,10 @@
         (:targets action_chunk replan)
         (:trigger state_change)
         (:variant stale_chunk_late_chunk_or_replan_interrupt)
-        (:policy_gate action_chunk_capable)
+        (:params
+          (:chunk_size 4)
+          (:stale_chunk_steps 4)
+        )
       )
       (D16
         (:operator state_or_language_event)

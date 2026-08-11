@@ -350,7 +350,7 @@
       )
       (D08
         (:operator observation_fault)
-        (:targets agentview robot0_eye_in_hand)
+        (:targets robot0_eye_in_hand)
         (:trigger task_phase)
         (:variant camera_dropout_then_restore)
       )
