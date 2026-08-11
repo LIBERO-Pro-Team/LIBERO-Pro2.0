@@ -224,6 +224,28 @@ def test_remote_episode_runs_until_success_and_closes_session() -> None:
     assert env.closed
 
 
+def test_xvla_episode_records_initial_and_resulting_frames() -> None:
+    class Recorder:
+        def __init__(self) -> None:
+            self.frames = []
+
+        def write(self, observation: dict) -> None:
+            self.frames.append(observation["frame"].copy())
+
+    env = _FakeRemoteEnv()
+    recorder = Recorder()
+
+    result = run_remote_episode(
+        env,
+        _FakePolicy(),
+        EpisodeSpec("libero_goal", 3, 4, 11, 20),
+        recorder=recorder,
+    )
+
+    assert result.steps == 2
+    assert [int(frame[0]) for frame in recorder.frames] == [0, 1, 2]
+
+
 def test_remote_episode_rejects_invalid_policy_action_and_still_closes() -> None:
     class InvalidPolicy(_FakePolicy):
         def select_action(self, observation, instruction: str) -> np.ndarray:

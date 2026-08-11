@@ -3,7 +3,7 @@
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Mapping, Protocol, Tuple
+from typing import Any, Dict, Mapping, Optional, Protocol, Tuple
 
 import numpy as np
 
@@ -198,7 +198,17 @@ def validate_action(action: Any, action_schema: Mapping[str, Any]) -> np.ndarray
     return array
 
 
-def run_remote_agent_episode(env: Any, agent: LiberoProAgent, spec: Any) -> AgentEpisodeResult:
+class ObservationRecorder(Protocol):
+    def write(self, observation: Mapping[str, Any]) -> None:
+        """Record one canonical observation."""
+
+
+def run_remote_agent_episode(
+    env: Any,
+    agent: LiberoProAgent,
+    spec: Any,
+    recorder: Optional[ObservationRecorder] = None,
+) -> AgentEpisodeResult:
     """Run one canonical Agent episode and always close its remote session."""
 
     capabilities = agent.describe()
@@ -226,6 +236,8 @@ def run_remote_agent_episode(env: Any, agent: LiberoProAgent, spec: Any) -> Agen
             control_mode=capabilities.control_mode,
             variant=spec.variant,
         )
+        if recorder is not None:
+            recorder.write(observation)
         action_schema = reset_info.get("action_schema", {})
         validate_action_schema(action_schema, capabilities)
         instruction = str(reset_info["language_instruction"])
@@ -247,6 +259,8 @@ def run_remote_agent_episode(env: Any, agent: LiberoProAgent, spec: Any) -> Agen
             validate_observation(canonical_observation, capabilities)
             action = validate_action(agent.act(canonical_observation), action_schema)
             observation, reward, terminated, truncated, step_info = env.step(action)
+            if recorder is not None:
+                recorder.write(observation)
             instruction = str(step_info.get("language_instruction", instruction))
             steps += 1
             total_reward += float(reward)

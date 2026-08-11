@@ -81,3 +81,10 @@ rebase 发生冲突时：
 
 - 在 worktree 中工作时，不要切换到其他分支
 - 完成任务后确保代码可运行、测试通过
+
+## 关键评测路径
+
+- `libero_remote/benchmark.py`：从 `/v1/tasks` 生成分组、多 seed 计划，复用 scheduler 执行、恢复与汇总。
+- `scripts/run_grouped_eval.py`：模型无关的计划、提交和结果导出入口，不负责加载 adapter 或 checkpoint。
+- `docs/grouped-benchmark.md`：分组评测的用户流程与结果格式。
+- `libero_remote/runner/video.py`：Pi0/xVLA direct rollout 共用的可选 MP4 observation 录像实现。

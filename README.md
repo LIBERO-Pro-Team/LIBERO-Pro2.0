@@ -670,6 +670,18 @@ xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端
 通用 `libero_remote.runner` 入口不导入任何参考模型；需要示例实现时再从对应的 `runner.xvla` 或
 `runner.pi0` 子模块显式导入。
 
+Pi0 和 xVLA 的 direct runner 都可以将远程 observation 中的相机帧保存为每个 episode 一个 MP4。
+先在模型环境安装 `pip install -e ".[video]"`，然后给对应 Python runner 增加
+`--record-video`。默认记录 `agentview`、20 FPS；可通过 `--video-camera robot0_eye_in_hand`、
+`--video-fps` 和 `--video-dir` 调整。录像默认关闭，不影响未启用录像的运行环境。
+
+```bash
+python scripts/run_pi0_remote_eval.py ... --record-video --video-dir results/pi0_videos
+python scripts/run_xvla_remote_eval.py ... --record-video --video-dir results/xvla_videos
+```
+
+文件名包含模型、suite、task、variant、seed 和 init state，避免多 episode 结果互相覆盖。
+
 评估时建议优先使用仓库提供的通用配置、通用 `AgentAdapter`、通用 runner 和通用验收脚本，
 不要先寻找某个模型专用的配置或评估入口。模型专用代码只负责该模型自己的 observation 预处理、
 proprio/坐标系转换、推理和 action 后处理；任务配置、环境交互、任务队列、复现信息、结果记录和一致性验收
@@ -686,6 +698,13 @@ proprio/坐标系转换、推理和 action 后处理；任务配置、环境交�
   适合单任务 smoke test、本地调试和快速验证 adapter 的 observation/action 映射；它不提供 Scheduled Runner
   的批量调度、跨用户公平性和调度器级失败重试。模型专用 direct runner（例如 xVLA 的参考循环）也属于这一类，
   仅用于展示模型处理流程，不应替代通用评估入口。
+
+在 Scheduled Runner 之上，`libero_remote.benchmark` 和 `scripts/run_grouped_eval.py` 提供分组式多 seed
+计划。它们直接读取 `/v1/tasks`，支持按 `base/static/dynamic/all`、suite 和 case 选择已发布任务，按
+一一对应或显式矩阵方式展开 seed 与 init state，并将整个计划提交为一个可恢复的 run。结果可导出为
+JSONL、CSV 和按 suite/variant/group/seed 汇总的 JSON。该层不识别或加载具体模型；已经构造 adapter 的
+runner 可调用 `run_grouped_benchmark()` 一次执行计划中的剩余 rollout。完整用法见
+`docs/grouped-benchmark.md`。
 
 ### 21.1 本机 xVLA 参考 runner
 

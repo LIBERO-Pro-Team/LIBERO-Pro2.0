@@ -88,6 +88,28 @@ def test_agent_episode_uses_declared_relative_schema_and_closes_session() -> Non
     assert env.closed
 
 
+def test_agent_episode_records_initial_and_resulting_frames() -> None:
+    class Recorder:
+        def __init__(self) -> None:
+            self.frames = []
+
+        def write(self, observation: dict) -> None:
+            self.frames.append(observation["agentview_image"].copy())
+
+    env = _RemoteEnv()
+    recorder = Recorder()
+
+    result = run_remote_agent_episode(
+        env,
+        _Agent(),
+        AgentEpisodeSpec("libero_spatial", 8, 0, 142, 500),
+        recorder=recorder,
+    )
+
+    assert result.steps == 2
+    assert len(recorder.frames) == 3
+
+
 def test_agent_episode_rejects_missing_canonical_field_and_closes_session() -> None:
     class MissingFieldEnv(_RemoteEnv):
         def reset(self, **options):
