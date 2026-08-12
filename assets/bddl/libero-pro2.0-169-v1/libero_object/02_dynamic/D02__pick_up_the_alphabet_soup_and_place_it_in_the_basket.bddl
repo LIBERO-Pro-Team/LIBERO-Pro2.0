@@ -313,6 +313,9 @@
         (:targets basket_1)
         (:trigger postgrasp_or_preplace)
         (:variant xy_yaw_update)
+        (:params
+          (:offset_xy -0.120 0.090)
+        )
       )
       (D03
         (:operator occlusion_or_obstacle)

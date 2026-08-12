@@ -693,7 +693,17 @@ def _regress_completed_predicate(
     ), {"regression_mode": "spatial_offset"}
 
 
-def _dynamic_pose_requested_delta(case_id: str, target: str) -> tuple[float, float]:
+def _dynamic_pose_requested_delta(
+    case_id: str, target: str, params: dict[str, Any] | None = None
+) -> tuple[float, float]:
+    configured = (params or {}).get("offset_xy")
+    if configured is not None:
+        delta = np.asarray(configured, dtype=np.float64)
+        if delta.shape != (2,) or not np.all(np.isfinite(delta)):
+            raise PerturbationConfigurationError(
+                f"Perturbation {case_id} offset_xy must contain two finite values"
+            )
+        return float(delta[0]), float(delta[1])
     if case_id == "D02" and target == "wine_rack_1":
         # Move across the rack's narrow functional axis. The previous diagonal
         # offset left the old placement point inside the moved top_region.
@@ -1443,7 +1453,7 @@ class NonPhysicalPerturbationRuntime:
                     f"Dynamic case {case_id} has no movable target in {self.plan.targets}"
                 )
             target = targets[0]
-            delta = _dynamic_pose_requested_delta(case_id, target)
+            delta = _dynamic_pose_requested_delta(case_id, target, self.plan.params)
             if case_id == "D19":
                 before, current_quaternion = _entity_pose(env, target)
                 initial = self._saved_poses.get(target, (before, current_quaternion))[0]

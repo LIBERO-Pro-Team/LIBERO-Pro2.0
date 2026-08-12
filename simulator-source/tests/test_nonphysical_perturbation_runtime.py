@@ -566,6 +566,67 @@ class RuntimeBehaviorTests(unittest.TestCase):
         np.testing.assert_allclose(delta, [0.0, 0.09])
         self.assertGreater(np.linalg.norm(delta), 0.08)
 
+    def test_repo_d02_moves_basket_far_enough_from_a_held_can(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-169-v1"
+                / "libero_object"
+                / "02_dynamic"
+            ).glob("D02__*.bddl")
+        )
+        plan = RUNTIME.build_execution_plan(
+            PARSER.parse_bddl_perturbation_config(path), ASSET_ROOT
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+
+        class Sim:
+            def __init__(self):
+                self.model = types.SimpleNamespace(
+                    body_pos=np.array(
+                        [
+                            [0.01448, 0.25723, 0.9],
+                            [0.01448, 0.25723, 0.9],
+                        ]
+                    ),
+                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={"basket_1": 0, "alphabet_soup_1": 1},
+            objects_dict={
+                "basket_1": types.SimpleNamespace(joints=None),
+                "alphabet_soup_1": types.SimpleNamespace(joints=None),
+            },
+            workspace_offset=np.array([0.0, 0.0, 0.9]),
+            sim=sim,
+        )
+        runtime._dynamic_triggered = lambda env, step: True
+
+        runtime.before_simulation_step(env, step=48)
+
+        np.testing.assert_allclose(plan.params["offset_xy"], [-0.12, 0.09])
+        np.testing.assert_allclose(
+            runtime.events[-1]["delta_xy"], plan.params["offset_xy"]
+        )
+        self.assertAlmostEqual(
+            np.linalg.norm(
+                sim.data.body_xpos[0, :2] - sim.data.body_xpos[1, :2]
+            ),
+            0.15,
+        )
+
     def test_safe_offset_pose_expands_search_when_primary_offsets_are_blocked(self):
         requested = np.array([-0.055, 0.035])
         primary_offsets = (

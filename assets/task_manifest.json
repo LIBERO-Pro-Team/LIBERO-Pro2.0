@@ -1139,7 +1139,7 @@
       "case_id": "D02",
       "case_kind": "dynamic",
       "bddl_path": "bddl/libero-pro2.0-169-v1/libero_object/02_dynamic/D02__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
-      "bddl_sha256": "238d0e3c961b6443c6805fc2193ee6dbe5697feb4073998fbbfee037df156afb",
+      "bddl_sha256": "51baf0940225aff8f5c64b0d13151775b802bd24c773a8599708188e2a3140b4",
       "task_version": "libero-pro2.0-169-v1",
       "max_steps": 300,
       "reset_stabilization_steps": 10,
