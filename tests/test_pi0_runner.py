@@ -83,7 +83,10 @@ def test_pi0_adapter_uses_official_processing_order_and_unbatches_action() -> No
 
     action = adapter.act(_observation())
 
-    np.testing.assert_array_equal(action, np.arange(7, dtype=np.float32))
+    np.testing.assert_array_equal(
+        action,
+        np.clip(np.arange(7, dtype=np.float32), -1.0, 1.0),
+    )
     assert events == [
         "preprocess_observation",
         "env_preprocessor",
@@ -91,6 +94,32 @@ def test_pi0_adapter_uses_official_processing_order_and_unbatches_action() -> No
         "policy",
         "policy_postprocessor",
     ]
+
+
+def test_pi0_adapter_clips_postprocessed_action_to_libero_bounds() -> None:
+    class Policy:
+        def select_action(self, observation):
+            del observation
+            return "model_action"
+
+    adapter = Pi0PolicyAdapter(
+        policy=Policy(),
+        preprocess_observation=lambda raw: raw,
+        env_preprocessor=lambda observation: observation,
+        policy_preprocessor=lambda observation: observation,
+        policy_postprocessor=lambda action: np.array(
+            [[-1.0000278, -1.0111661, -1.0228710, 0.0, 0.25, 0.5, 1.00001]],
+            dtype=np.float32,
+        ),
+        inference_context=nullcontext,
+    )
+
+    action = adapter.act(_observation())
+
+    np.testing.assert_array_equal(
+        action,
+        np.array([-1.0, -1.0, -1.0, 0.0, 0.25, 0.5, 1.0], dtype=np.float32),
+    )
 
 
 def test_pi0_adapter_declares_platform_v1_relative_capabilities() -> None:

@@ -141,7 +141,13 @@ class Pi0PolicyAdapter:
         action_array = _to_numpy(action)
         if action_array.ndim == 2 and action_array.shape[0] == 1:
             action_array = action_array[0]
-        return np.ascontiguousarray(action_array, dtype=np.float32)
+        action_array = np.ascontiguousarray(action_array, dtype=np.float32)
+        if action_array.shape != (7,):
+            raise ValueError(f"Pi0 LIBERO action must contain 7 values, got {action_array.shape}")
+        if not np.isfinite(action_array).all():
+            raise ValueError("Pi0 LIBERO action values must be finite")
+        # Official action unnormalizers can produce small numerical overshoot.
+        return np.ascontiguousarray(np.clip(action_array, -1.0, 1.0), dtype=np.float32)
 
 
 def to_lerobot_pi0_observation(observation: Dict[str, Any]) -> Dict[str, Any]:
