@@ -662,9 +662,10 @@ D01-D21
 
 ## 21. 用户模型 Adapter 与参考 runner
 
-平台不固定 xVLA。正式边界是用户端 `AgentAdapter`：用户可以接入任意模型或策略，并在 adapter 内完成
-图像、语言、proprio、坐标系和 action 映射。服务端只提供版本化标准 observation/action、环境调度、
-隔离、确定性初态和权威结果。完整契约见 `docs/model-adapter-contract.md`。
+平台不固定 xVLA，但这不意味着所有模型共用同一个 adapter 实现。正式边界是模型无关的
+`AgentAdapter` 接口和版本化标准 observation/action；每种模型仍需实现自己的轻量专用 adapter，将通用字段
+映射为该模型实际需要的输入和输出。服务端负责环境调度、隔离、确定性初态和权威结果。完整契约见
+`docs/model-adapter-contract.md`。
 
 xVLA 和 Pi0 runner 只用于展示两个不同模型如何复用同一服务端协议，不是模型白名单，服务端也不加载其依赖。
 通用 `libero_remote.runner` 入口不导入任何参考模型；需要示例实现时再从对应的 `runner.xvla` 或
@@ -682,10 +683,12 @@ python scripts/run_xvla_remote_eval.py ... --record-video --video-dir results/xv
 
 文件名包含模型、suite、task、variant、seed 和 init state，避免多 episode 结果互相覆盖。
 
-评估时建议优先使用仓库提供的通用配置、通用 `AgentAdapter`、通用 runner 和通用验收脚本，
-不要先寻找某个模型专用的配置或评估入口。模型专用代码只负责该模型自己的 observation 预处理、
-proprio/坐标系转换、推理和 action 后处理；任务配置、环境交互、任务队列、复现信息、结果记录和一致性验收
-均应复用通用实现。接入新模型时，只需按照 `docs/model-adapter-contract.md` 实现用户端 adapter。
+评估架构采用“通用运行层 + 模型专用 adapter”：任务配置、标准 observation/action、环境交互、任务队列、
+复现信息、录像与结果记录、协议校验和一致性验收复用通用实现；模型专用 adapter 则负责该模型自己的图像与
+语言输入映射、prompt/tokenizer、proprio 与坐标系转换、官方 processor、推理状态或 action chunk，以及 action
+反归一化、控制语义转换和协议范围收口。xVLA 与 Pi0 因模型约定不同，必须使用各自的 adapter，不能把
+`pixels`、`robot_state` 或其他模型专用字段放进通用 adapter。接入新模型时，应按照
+`docs/model-adapter-contract.md` 新增该模型的专用 adapter；通常无需修改服务端或通用 runner。
 
 通用评估提供两种运行模式：
 
