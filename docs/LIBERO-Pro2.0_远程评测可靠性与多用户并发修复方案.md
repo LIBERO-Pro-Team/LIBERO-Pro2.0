@@ -2,7 +2,7 @@
 
 > **版本**：1.0  
 > **日期**：2026-08-02  
-> **状态**：实施与验收基线
+> **状态**：协议与本机回归已实现；真实服务器容量与 MuJoCo/EGL 验收待最终部署执行
 
 ## 1. 范围与文档优先级
 
@@ -12,9 +12,9 @@
 
 1. 有明确版本号或更新时间时，以版本号更高或更新时间更晚的文档为准。
 2. 同一提交且无法根据时间区分时，Session、Worker、并发和请求重放以 `LIBERO_PRO_Agent_SOP.md` 为准。
-3. xVLA 图像、proprio、坐标系和 action 适配以 `LIBERO_Checkpoint_Evaluation_Issues.md` 中经过实测的结论为准。
+3. 具体参考模型的图像、proprio、坐标系和 action 适配以对应 adapter 的实测文档为准；这些结论不能写入通用服务端协议。
 4. 多用户队列、Slot、Lease 和公平调度以本文为准。
-5. 任务数量统一以版本化任务清单为准。当前有效集合为 169 个任务组合，不再使用旧文档中的 320 个 BDDL 笛卡尔积。
+5. 任务数量统一以版本化任务清单为准。当前有效集合为 1680 个任务组合，不再使用旧文档中的 320 个 BDDL 笛卡尔积。
 
 ## 2. 保留的基础设计
 
@@ -26,15 +26,16 @@
 - 每个 step 使用 `episode_id + expected_step_index + request_id + action_hash` 防止重复执行和乱序执行。
 - Worker 超时或崩溃后当前 Episode 失败，禁止在新环境中继续旧 Episode 或重放不确定是否执行过的 action。
 - 模型在用户侧运行，服务器只运行任务、仿真、扰动、渲染、调度和结果记录。
+- 平台不固定 xVLA 或任何其他模型。用户通过 `AgentAdapter` 接入任意策略；xVLA、Pi0 仅是可选参考实现。
 - `SessionManager` 负责一次环境执行的正确性；`RunScheduler` 负责多任务、多账户之间的排队、分配、恢复和结果汇总，两者职责不得混合。
 
 ## 3. 当前问题与解决方案
 
 ### 3.1 任务集合没有唯一事实来源
 
-**问题**：旧并发方案按 suite 与扰动做笛卡尔积，仍描述为 320 个 BDDL。实际验证后只有 169 个有效组合，其中 `libero_spatial/D20`、`libero_object/D20` 和 `libero_goal/D20` 不适用。若 readiness、任务目录和批量调度分别生成任务，会重新暴露已删除组合或错误报告服务未就绪。
+**问题**：旧并发方案按 suite 与扰动做笛卡尔积，仍描述为 320 个 BDDL。当前发布为 1680 个有效组合。若 readiness、任务目录和批量调度分别生成任务，会重新暴露已删除组合或错误报告服务未就绪。
 
-**解决方案**：发布版本化 `task_manifest.json`，逐项列出全部 169 个有效 job。以下模块只能读取该清单，不得自行构造笛卡尔积：
+**解决方案**：发布版本化 `task_manifest.json`，逐项列出全部 1680 个有效 job。以下模块只能读取该清单，不得自行构造笛卡尔积：
 
 - `/v1/health` readiness 检查；
 - `/v1/tasks` 任务目录；
@@ -138,18 +139,24 @@ camera configuration + max_steps + reset stabilization steps
 
 种子必须由稳定 job 身份和 repetition 编号通过固定算法派生，禁止根据队列顺序、领取时间或 attempt 编号派生。失败重试只增加 `attempt_id` 和 `lease_generation`，不能改变 `JobSpec`、任何 seed 或扰动计划。
 
-动态扰动不得在重试时重新随机生成。第一次展开 job 时生成完整 `perturbation_plan`，其中包含触发 step、目标对象、幅度和参数，并持久化其规范化 JSON 与 SHA-256。
+动态扰动不得在重试时使用新的随机来源。第一次成功 reset 时从环境导出已解析的
+`perturbation_plan`，其中包含触发窗口、目标对象、幅度/参数、资产和 `perturbation_seed`，并持久化其
+规范化 JSON 与 SHA-256。运行期的确定性采样只能从该 seed 派生；对应 LIBERO-PRO 提交和运行时指纹也被锁定。
 
 每次 reset 后，Worker 计算并返回：
 
 ```text
-initial_state_hash
-initial_observation_hash
-perturbation_plan_hash
+initial_state_fingerprint
+initial_observation_fingerprint
+perturbation_plan_fingerprint
 job_fingerprint
+runtime_fingerprint
 ```
 
-同一 job 的所有 attempt 必须具有相同的 `initial_state_hash` 和 `perturbation_plan_hash`，否则在执行模型前以 `REPRODUCIBILITY_MISMATCH` 终止。图像 hash 是否要求逐字节一致由固定 GPU、驱动和 EGL 基线决定；MuJoCo 数值状态必须逐项一致或满足预先规定的严格误差。
+同一 job 的所有 attempt 必须具有相同的五个指纹，否则在执行模型前以
+`REPRODUCIBILITY_MISMATCH` 终止。固定部署基线要求首帧 observation 逐字节一致；MuJoCo 扁平数值状态
+使用规范化 little-endian float64 字节计算 SHA-256。若最终硬件/驱动无法满足该约束，必须形成新 runtime
+版本和独立基线，不能静默放宽同一 Run 的比较标准。
 
 服务器能够保证环境初态和扰动计划一致。若要求整条轨迹也完全一致，客户端还必须固定 checkpoint、adapter、processor、PyTorch/CUDA RNG、确定性算法设置和 policy seed，并产生相同 action 序列。服务器记录逐步 `action_hash`，用于区分环境差异和模型非确定性。
 
@@ -162,23 +169,25 @@ job_fingerprint
 ```text
 account_id, run_id, job_id, attempt_id, lease_generation,
 job_fingerprint, environment/version hashes, seed bundle,
-initial_state_hash, perturbation_plan_hash, action_chain_hash,
+initial_state_fingerprint, initial_observation_fingerprint,
+perturbation_plan_fingerprint, action_chain_hash,
 success, reward, steps, terminated, truncated, failure_class,
 timings, created_at
 ```
 
 写入后返回稳定 `result_receipt`；相同 attempt 的相同结果幂等返回相同 receipt，不同内容返回 `RESULT_CONFLICT`。客户端 JSONL 只是服务器结果的本地副本。
 
-### 3.8 Observation 坐标语义存在冲突
+### 3.8 Observation 坐标语义与模型适配边界
 
 **问题**：`libero_standard_v1` 返回 site-frame `robot0_eef_quat_xyzw`，而 xVLA 使用 controller-frame rotation matrix。直接转换会造成已验证的姿态错误和假低成功率。
 
 **解决方案**：
 
 - `libero_standard_v1` 保持 site-frame 四元数语义，避免静默改变已有协议。
-- xVLA Adapter 使用已经实测的 site-to-controller 变换 `[-Y, X, Z]`。
+- 需要 controller-frame 的模型由其用户端 Adapter 完成显式转换；例如 xVLA 参考 Adapter 使用已经实测的 site-to-controller 变换 `[-Y, X, Z]`。
 - conformance test 提供固定四元数、期望 controller rotation matrix 和图像方向黄金样本。
 - 若未来协议需要原生同时返回两种坐标表示，应新增 `libero_standard_v2`，字段名显式包含 frame，不能改变 v1 字段含义。
+- 通用 runner 只校验 schema 和 action，不得根据模型名称选择预处理或控制模式。
 
 ### 3.9 终态资源和容量管理不足
 
@@ -218,7 +227,7 @@ Session -> account_id + attempt_id + EnvWorker
 ```text
 账户认证
   -> 创建 Run 并锁定 manifest 版本
-  -> 展开 169 个或用户选择的 JobSpec
+  -> 展开 1680 个或用户选择的 JobSpec
   -> 账户间轮询领取 Job，事务创建 Attempt 和 Lease
   -> 创建独立 Session/EnvWorker
   -> reset 并校验初态、扰动计划和 job fingerprint
@@ -232,8 +241,8 @@ Session -> account_id + attempt_id + EnvWorker
 
 ### 6.1 清单与服务就绪
 
-- 清单恰好包含 169 个唯一有效组合。
-- `/v1/tasks` 不再发布三个已删除的 D20 组合。
+- 清单恰好包含 1680 个唯一有效组合。
+- `/v1/tasks` 只发布版本化 manifest 中的有效任务组合。
 - readiness 只校验清单内条目，不要求不存在的矩形组合。
 - 所有 BDDL、init state、资产和 hash 校验通过。
 
@@ -257,7 +266,7 @@ Session -> account_id + attempt_id + EnvWorker
 
 对静态扰动和动态扰动各选代表任务，至少执行首次运行、手工复测、Worker 失败重测和服务重启后重测：
 
-- `job_fingerprint`、seed bundle、init state hash 和扰动计划 hash 完全一致。
+- 五个复现指纹与规范化扰动 plan 完全一致。
 - reset 后 MuJoCo 数值状态相同；固定部署基线下 initial observation hash 相同。
 - 输入同一 action sequence 时，每一步状态、reward、success 和终态一致。
 - 更换 attempt、账户调度顺序或并发数量不能改变任务初态。
@@ -271,12 +280,22 @@ Session -> account_id + attempt_id + EnvWorker
 
 ## 7. 实施顺序
 
-1. 建立 169 项版本化任务清单，统一 readiness、catalog 和批量展开逻辑。
+1. 建立 1680 项版本化任务清单，统一 readiness、catalog 和批量展开逻辑。
 2. 引入持久化 RunScheduler 和账户所有权校验。
 3. 实现 lease generation、防陈旧写入、错误分类和最大重试次数。
 4. 固化 JobSpec、全套 seed、动态扰动计划和初态指纹。
 5. 改为服务器权威结果和稳定 receipt。
 6. 补充 adapter conformance 黄金样本和坐标系验证。
 7. 完成双账户并发隔离、故障恢复、确定性重测和容量压测后再开放多账户使用。
+
+## 8. 当前验证边界
+
+本机自动化测试覆盖任务清单、API key 账户隔离、双账户独立 Worker、轮询和单账户配额、step 幂等、
+lease generation、防陈旧写入、结果持久化与 receipt、重试上限、服务重启恢复、三类环境指纹以及
+任意用户 adapter 接口。xVLA 和 Pi0 只作为客户端参考实现，不进入服务端镜像或调度判断。
+
+尚未在本机宣称完成的项目是最终公共服务器上的真实 LIBERO/MuJoCo/EGL 回归和 `1/2/4/8` Slot
+资源压测。这些结果依赖最终 GPU、驱动、EGL 和容器运行时，只能在实际部署后验收。GitHub 中的代码和
+文档不会自动发布到服务器。
 
 上述顺序不能颠倒：如果没有不可变任务清单和持久化身份，先增加并发只会把错误任务、陈旧租约和不可复现结果放大。

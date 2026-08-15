@@ -1,0 +1,33 @@
+<mujoco model="pocky_box">
+  <compiler angle="radian"/>
+
+  <asset>
+    <texture name="pocky_box_tex" type="2d" file="pocky_box_texture.png"/>
+    <material name="pocky_box_mat" texture="pocky_box_tex" specular="0.5" shininess="0.5"/>
+    <mesh name="pocky_box_visual" file="pocky_box_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="pocky_box" pos="0 0 0.042">
+      <freejoint name="pocky_box_joint"/>
+
+      <!-- Collision geometry - thin tall box -->
+      <geom name="pocky_box_collision"
+            type="box"
+            size="0.079 0.014 0.042"
+            mass="0.15"
+            friction="0.7 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="pocky_box_visual"
+            type="mesh"
+            mesh="pocky_box_visual"
+            material="pocky_box_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

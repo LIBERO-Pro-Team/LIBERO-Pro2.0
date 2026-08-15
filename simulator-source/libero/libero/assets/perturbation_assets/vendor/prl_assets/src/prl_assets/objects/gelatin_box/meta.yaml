@@ -1,0 +1,28 @@
+name: gelatin_box
+description: Jell-O gelatin dessert box
+category: [food_package, graspable, box]
+
+mass: 0.1  # kg
+dimensions: [0.072, 0.088, 0.028]  # meters
+material: cardboard
+amazon_link: https://www.amazon.com/dp/B00I8GFU4E
+
+geometric_properties:
+  type: box
+  size: [0.072, 0.088, 0.028]
+
+mujoco:
+  xml_path: gelatin_box.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+perception:
+  aliases: ["gelatin box", "jello", "jell-o"]
+
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: pinch_grasp
+    difficulty: medium
+  manipulation:
+    stable_poses: [upright, on_side]

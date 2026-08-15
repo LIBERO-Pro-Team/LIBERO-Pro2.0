@@ -1,0 +1,16 @@
+<mujoco model="opening_frame">
+  <compiler angle="radian"/>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom name="left" type="box" group="0" pos="-0.066 0 0.066" size="0.006 0.012 0.066" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="right" type="box" group="0" pos="0.066 0 0.066" size="0.006 0.012 0.066" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="bottom" type="box" group="0" pos="0 0 0.006" size="0.06 0.012 0.006" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="top" type="box" group="0" pos="0 0 0.126" size="0.06 0.012 0.006" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0"/>
+      <site name="top_site" pos="0 0 0.132" size="0.005" rgba="0 0 0 0"/>
+      <site name="horizontal_radius_site" pos="0.07299315036357863 0 0" size="0.005" rgba="0 0 0 0"/>
+    </body>
+  </worldbody>
+</mujoco>

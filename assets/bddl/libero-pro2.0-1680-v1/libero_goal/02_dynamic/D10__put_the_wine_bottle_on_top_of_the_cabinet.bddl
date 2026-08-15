@@ -1,0 +1,530 @@
+(define (problem LIBERO_Tabletop_Manipulation)
+  (:domain robosuite)
+  (:language Put the wine bottle on the top of the drawer)
+    (:regions
+      (plate_region
+          (:target main_table)
+          (:ranges (
+              (0.04 -0.03 0.060000000000000005 -0.01)
+            )
+          )
+      )
+      (akita_black_bowl_region
+          (:target main_table)
+          (:ranges (
+              (-0.09999999999999999 -0.01 -0.08 0.01)
+            )
+          )
+      )
+      (wine_bottle_region
+          (:target main_table)
+          (:ranges (
+              (-0.21000000000000002 -0.060000000000000005 -0.19 -0.04)
+            )
+          )
+      )
+      (cream_cheese_region
+          (:target main_table)
+          (:ranges (
+              (-0.060000000000000005 0.12000000000000001 -0.04 0.14)
+            )
+          )
+      )
+      (stove_front_region
+          (:target main_table)
+          (:ranges (
+              (-0.09 0.16999999999999998 -0.010000000000000002 0.25)
+            )
+          )
+      )
+      (cabinet_region
+          (:target main_table)
+          (:ranges (
+              (0.02 -0.25 0.04 -0.23)
+            )
+          )
+          (:yaw_rotation (
+              (3.141592653589793 3.141592653589793)
+            )
+          )
+      )
+      (stove_region
+          (:target main_table)
+          (:ranges (
+              (-0.42 0.2 -0.4 0.22)
+            )
+          )
+      )
+      (wine_rack_region
+          (:target main_table)
+          (:ranges (
+              (-0.27 -0.27 -0.25 -0.25)
+            )
+          )
+          (:yaw_rotation (
+              (3.141592653589793 3.141592653589793)
+            )
+          )
+      )
+      (top_region
+          (:target wooden_cabinet_1)
+      )
+      (middle_region
+          (:target wooden_cabinet_1)
+      )
+      (bottom_region
+          (:target wooden_cabinet_1)
+      )
+      (top_side
+          (:target wooden_cabinet_1)
+      )
+      (cook_region
+          (:target flat_stove_1)
+      )
+      (right_region
+          (:target bowl_drainer_1)
+      )
+      (left_region
+          (:target bowl_drainer_1)
+      )
+      (top_region
+          (:target wine_rack_1)
+      )
+    )
+
+  (:fixtures
+    main_table - table
+    wooden_cabinet_1 - wooden_cabinet
+    flat_stove_1 - flat_stove
+    wine_rack_1 - wine_rack
+  )
+
+  (:objects
+    akita_black_bowl_1 - akita_black_bowl
+    cream_cheese_1 - cream_cheese
+    wine_bottle_1 - wine_bottle
+    plate_1 - plate
+  )
+
+  (:obj_of_interest
+    wine_bottle_1
+    wooden_cabinet_1_top_side
+  )
+
+  (:init
+    (On wine_bottle_1 main_table_wine_bottle_region)
+    (On akita_black_bowl_1 main_table_akita_black_bowl_region)
+    (On plate_1 main_table_plate_region)
+    (On cream_cheese_1 main_table_cream_cheese_region)
+    (On wooden_cabinet_1 main_table_cabinet_region)
+    (On flat_stove_1 main_table_stove_region)
+    (On wine_rack_1 main_table_wine_rack_region)
+  )
+
+  (:goal
+    (And (On wine_bottle_1 wooden_cabinet_1_top_side))
+  )
+
+  (:perturbation_config
+    (:schema_version 4)
+    (:profile nonphysical_shared_operator_schema)
+    (:source_suite libero_goal)
+    (:source_task put_the_wine_bottle_on_top_of_the_cabinet)
+    (:configuration_mode shared_operator_instances)
+    (:active_cases D10)
+    (:case_id D10)
+    (:case_kind dynamic)
+    (:excluded_domains mass friction force stiffness damping collision_impulse)
+    (:schema_status base_capability_catalog)
+
+    (:case_defaults
+      (:enable_rule listed_in_active_cases)
+      (:unlisted_cases disabled)
+      (:schedule_rule S_static_D_dynamic)
+      (:base_constraints goal_unchanged collision_free task_completable)
+      (:runtime_rule selected_operator_and_schedule)
+    )
+
+    (:schedule_catalog
+      (static (:start reset) (:duration episode) (:restore false))
+      (dynamic (:start event_trigger) (:duration case_defined) (:restore case_defined))
+    )
+
+    (:perturbations
+      (S01
+        (:operator pose_transform)
+        (:targets wine_bottle_1)
+        (:variant xy_yaw)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S02
+        (:operator pose_transform)
+        (:targets wooden_cabinet_1)
+        (:variant xy_yaw)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S03
+        (:operator geometry_variant)
+        (:targets wooden_cabinet_1 main_table)
+        (:variant receiver_or_support_height)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S04
+        (:operator pose_transform)
+        (:targets wine_bottle_1 akita_black_bowl_1)
+        (:variant planar_object_position_swap)
+        (:constraints same_support_surface collision_free task_completable)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S05
+        (:operator geometry_variant)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:references akita_black_bowl_1)
+        (:variant restricted_approach_or_path)
+        (:constraints initial_collision_free ik_reachable full_path_exists)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S06
+        (:operator asset_or_appearance)
+        (:targets wine_bottle_1)
+        (:variant same_class_or_unseen_instance)
+        (:params
+          (:interaction_mode placement)
+          (:asset_id prl/fuze_bottle)
+          (:asset_scale 0.72)
+        )
+      )
+      (S07
+        (:operator geometry_variant)
+        (:targets wooden_cabinet_1)
+        (:parts opening rim contain_region)
+        (:variant functional_part_geometry)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S08
+        (:operator geometry_variant)
+        (:targets wine_bottle_1)
+        (:variant scale_or_aspect_ratio)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S09
+        (:operator geometry_variant)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:variant container_opening_clearance_and_pose_coupling)
+        (:constraints real_collision_geometry full_containment positive_clearance insertion_depth)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S10
+        (:operator asset_or_appearance)
+        (:targets wine_bottle_1)
+        (:references akita_black_bowl_1)
+        (:variant irrelevant_object_clutter)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S11
+        (:operator asset_or_appearance)
+        (:targets wine_bottle_1)
+        (:references akita_black_bowl_1)
+        (:variant same_class_or_visually_similar_distractor)
+        (:params
+          (:interaction_mode placement)
+          (:asset_id prl/fuze_bottle)
+          (:asset_scale 0.72)
+        )
+      )
+      (S12
+        (:operator occlusion_or_obstacle)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:references akita_black_bowl_1 agentview)
+        (:variant persistent_front_occlusion)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S13
+        (:operator asset_or_appearance)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:variant color_texture_reflection_or_surface_state)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S14
+        (:operator asset_or_appearance)
+        (:targets main_table wine_bottle_1)
+        (:variant foreground_background_contrast_or_scene_domain)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S15
+        (:operator camera_transform)
+        (:targets agentview robot0_eye_in_hand)
+        (:variant fixed_extrinsics_or_cross_camera_calibration)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S16
+        (:operator camera_transform)
+        (:targets agentview robot0_eye_in_hand)
+        (:variant intrinsics_fov_resolution_crop_or_distortion)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S17
+        (:operator state_or_language_event)
+        (:targets robot0)
+        (:variant initial_joints_eef_orientation_or_gripper_opening)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S18
+        (:operator state_or_language_event)
+        (:targets robot0)
+        (:variant base_tcp_joint_zero_or_grasp_center_calibration)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S19
+        (:operator observation_fault)
+        (:targets rgb depth)
+        (:variant compression_noise_blur_exposure_contamination_or_depth_holes)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S20
+        (:operator timing_or_action_fault)
+        (:targets observation inference control action)
+        (:variant fixed_rate_delay_or_action_window)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (S21
+        (:operator state_or_language_event)
+        (:targets task_instruction)
+        (:variant semantic_paraphrase)
+        (:params
+          (:interaction_mode placement)
+          (:source Put_the_wine_bottle_on_the_top_of_the_drawer)
+          (:value please_Put_the_wine_bottle_on_the_top_of_the_drawer)
+        )
+      )
+      (D01
+        (:operator pose_transform)
+        (:targets wine_bottle_1)
+        (:trigger approach_or_pregrasp)
+        (:variant xy_yaw_update)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D02
+        (:operator pose_transform)
+        (:targets wooden_cabinet_1)
+        (:trigger postgrasp_or_preplace)
+        (:variant xy_yaw_update)
+        (:params
+          (:interaction_mode placement)
+          (:offset_xy -0.06 0.045)
+        )
+      )
+      (D03
+        (:operator occlusion_or_obstacle)
+        (:targets wooden_cabinet_1)
+        (:references akita_black_bowl_1)
+        (:trigger preplace)
+        (:variant occupy_or_release_receiver)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D04
+        (:operator occlusion_or_obstacle)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:references akita_black_bowl_1)
+        (:trigger task_phase)
+        (:variant enter_hold_exit_occlusion)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D05
+        (:operator occlusion_or_obstacle)
+        (:targets robot_future_path)
+        (:references akita_black_bowl_1)
+        (:trigger transport)
+        (:variant obstacle_enters_path)
+        (:constraints alternate_collision_free_path_exists)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D06
+        (:operator pose_transform)
+        (:targets akita_black_bowl_1 wine_bottle_1)
+        (:trigger task_phase)
+        (:variant distractor_move_or_local_rearrangement)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D07
+        (:operator camera_transform)
+        (:targets agentview robot0_eye_in_hand)
+        (:trigger task_phase)
+        (:variant shake_drift_or_persistent_offset)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D08
+        (:operator observation_fault)
+        (:targets agentview robot0_eye_in_hand)
+        (:trigger task_phase)
+        (:variant camera_dropout_then_restore)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D09
+        (:operator observation_fault)
+        (:targets rgb)
+        (:trigger task_phase)
+        (:variant light_shadow_or_exposure_change)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D10
+        (:operator observation_fault)
+        (:targets rgb depth)
+        (:trigger task_phase)
+        (:variant drop_repeat_or_freeze_frames)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D11
+        (:operator observation_fault)
+        (:targets agentview robot0_eye_in_hand depth proprioception)
+        (:trigger task_phase)
+        (:variant timestamp_offset_or_state_freeze)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D12
+        (:operator timing_or_action_fault)
+        (:targets observation inference)
+        (:trigger task_phase)
+        (:variant transient_latency_spike)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D13
+        (:operator timing_or_action_fault)
+        (:targets arm gripper)
+        (:trigger task_phase)
+        (:variant delay_jitter_or_desynchronization)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D14
+        (:operator timing_or_action_fault)
+        (:targets action)
+        (:trigger task_phase)
+        (:variant command_drop_or_repeat)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D15
+        (:operator timing_or_action_fault)
+        (:targets action_chunk replan)
+        (:trigger state_change)
+        (:variant stale_chunk_late_chunk_or_replan_interrupt)
+        (:params
+          (:interaction_mode placement)
+          (:chunk_size 4)
+          (:stale_chunk_steps 4)
+        )
+      )
+      (D16
+        (:operator state_or_language_event)
+        (:targets robot0)
+        (:trigger task_phase)
+        (:variant bounded_action_takeover_or_reachable_state_offset)
+        (:constraints no_physical_contact)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D17
+        (:operator state_or_language_event)
+        (:targets wine_bottle_1 gripper)
+        (:trigger grasp_attempt)
+        (:variant grasp_failure_result)
+        (:constraints retry_remains_possible)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D18
+        (:operator state_or_language_event)
+        (:targets wine_bottle_1)
+        (:trigger transport)
+        (:variant reachable_collision_free_drop_state)
+        (:constraints recovery_remains_possible)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D19
+        (:operator state_or_language_event)
+        (:targets wine_bottle_1 wooden_cabinet_1)
+        (:trigger place_attempt)
+        (:variant misplace_partial_insert_or_wrong_receiver_result)
+        (:constraints correction_remains_possible)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+      (D21
+        (:operator state_or_language_event)
+        (:targets task_instruction)
+        (:trigger task_phase)
+        (:variant equivalent_restatement_or_clarification)
+        (:constraints semantic_goal_unchanged)
+        (:params
+          (:interaction_mode placement)
+        )
+      )
+    )
+  )
+)

@@ -1,0 +1,44 @@
+<mujoco model="plastic_plate">
+  <compiler angle="radian"/>
+
+  <asset>
+    <material name="plastic_plate_mat" rgba="0.8 0.8 0.8 1.0" specular="0.5" shininess="0.5"/>
+    <mesh name="plastic_plate_mesh" file="plastic_plate_visual.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="plastic_plate" pos="0 0 0">
+      <freejoint name="plastic_plate_joint"/>
+
+      <!-- The plate OBJ is an open surface mesh, so MuJoCo's mesh loader
+           can't compute a true centroid. Its inertia-frame fallback puts
+           the body origin at the bottom of the rotated mesh (y_min, which
+           becomes z_min after the inertia-frame rotation). We shift both
+           geoms down by half the plate thickness (0.0135 m) so the body
+           origin lands at the geometric center, matching the convention
+           that placement TSRs assume (subject body origin = COM). -->
+
+      <!-- Collision mesh (enables stacking) -->
+      <geom name="plastic_plate_collision"
+            type="mesh"
+            mesh="plastic_plate_mesh"
+            pos="0 0 -0.0135"
+            mass="0.12"
+            friction="0.6 0.005 0.0001"
+            solref="0.004 1"
+            solimp="0.95 0.99 0.001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>
+
+      <!-- Visual mesh -->
+      <geom name="plastic_plate_visual"
+            type="mesh"
+            mesh="plastic_plate_mesh"
+            pos="0 0 -0.0135"
+            material="plastic_plate_mat"
+            contype="0"
+            conaffinity="0"/>
+    </body>
+  </worldbody>
+</mujoco>

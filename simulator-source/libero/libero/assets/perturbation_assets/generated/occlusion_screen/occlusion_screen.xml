@@ -1,0 +1,13 @@
+<mujoco model="occlusion_screen">
+  <compiler angle="radian"/>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom name="occlusion_screen" type="box" group="0" pos="0 0 0.08" size="0.06 0.003 0.08" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0"/>
+      <site name="top_site" pos="0 0 0.16" size="0.005" rgba="0 0 0 0"/>
+      <site name="horizontal_radius_site" pos="0.06007495318350235 0 0" size="0.005" rgba="0 0 0 0"/>
+    </body>
+  </worldbody>
+</mujoco>

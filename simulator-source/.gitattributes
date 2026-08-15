@@ -1,0 +1,4 @@
+# Keep large third-party perturbation meshes and textures out of normal Git history.
+libero/libero/assets/perturbation_assets/vendor/** whitespace=-trailing-space,-space-before-tab
+libero/libero/assets/perturbation_assets/vendor/**/*.obj filter=lfs diff=lfs merge=lfs -text
+libero/libero/assets/perturbation_assets/vendor/**/*.png filter=lfs diff=lfs merge=lfs -text

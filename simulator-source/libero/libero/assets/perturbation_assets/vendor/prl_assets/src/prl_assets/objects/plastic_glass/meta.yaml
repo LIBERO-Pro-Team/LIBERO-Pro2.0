@@ -1,0 +1,34 @@
+name: plastic_glass
+description: Plastic drinking glass for tableware and pouring tasks
+category: [container, tableware, graspable]
+
+# Physical properties
+mass: 0.08  # kg
+dimensions: [0.096, 0.096, 0.171]  # [diameter, diameter, height] in meters
+material: plastic
+
+# Geometric properties for grasp planning
+geometric_properties:
+  type: cylinder
+  radius: 0.048  # meters
+  height: 0.171  # meters
+
+# MuJoCo simulation
+mujoco:
+  xml_path: plastic_glass.xml
+  scale: 1.0
+  friction: [0.6, 0.005, 0.0001]
+
+# Perception aliases for detection systems
+perception:
+  aliases: ["glass", "plastic glass", "drinking glass", "cup"]
+
+# Manipulation policy hints
+policy:
+  grasping:
+    affordances: [lift, pour]
+    preferred_grasp_type: side_grasp
+    graspable_height_range: [0.03, 0.14]
+    difficulty: easy
+  manipulation:
+    stable_poses: [upright, inverted]

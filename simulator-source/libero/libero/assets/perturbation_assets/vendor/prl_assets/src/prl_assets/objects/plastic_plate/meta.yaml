@@ -1,0 +1,33 @@
+name: plastic_plate
+description: Plastic plate for tableware and feeding tasks
+category: [tableware, graspable]
+
+# Physical properties
+mass: 0.12  # kg
+dimensions: [0.265, 0.265, 0.027]  # [diameter, diameter, height] in meters
+material: plastic
+
+# Geometric properties for grasp planning
+geometric_properties:
+  type: cylinder
+  radius: 0.133  # meters
+  height: 0.027  # meters
+
+# MuJoCo simulation
+mujoco:
+  xml_path: plastic_plate.xml
+  scale: 1.0
+  friction: [0.6, 0.005, 0.0001]
+
+# Perception aliases for detection systems
+perception:
+  aliases: ["plate", "plastic plate", "dinner plate", "dish"]
+
+# Manipulation policy hints
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: edge_grasp
+    difficulty: medium
+  manipulation:
+    stable_poses: [upright, inverted]

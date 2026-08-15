@@ -1,0 +1,1192 @@
+{
+  "format_version": 1,
+  "summary": {
+    "ready_mjcf_assets": 42,
+    "external_adapted_assets": 37,
+    "generated_parametric_assets": 5,
+    "perturbation_directions_covered": 41
+  },
+  "sources": [
+    {
+      "key": "prl_assets",
+      "repository": "https://github.com/personalrobotics/prl_assets.git",
+      "commit": "c7c474e74961c773f6adc44249ed33599fbf510a",
+      "license": "MIT",
+      "destination": "vendor/prl_assets"
+    },
+    {
+      "key": "pybullet_ycb",
+      "repository": "https://github.com/eleramp/pybullet-object-models.git",
+      "commit": "57cc4007607f6bcbb0a5364ccab7636faf7a91e4",
+      "license": "LGPL-2.1-only",
+      "destination": "vendor/pybullet_ycb"
+    },
+    {
+      "key": "robocasa_fixtures",
+      "repository": "https://github.com/robocasa/robocasa.git",
+      "commit": "b4684e6ee37d377cc392e98302a6b916d588b415",
+      "license": "CC-BY-4.0",
+      "destination": "vendor/robocasa_fixtures"
+    }
+  ],
+  "asset_sets": {
+    "everyday_objects": [
+      "prl/can",
+      "prl/cracker_box",
+      "prl/fuze_bottle",
+      "prl/gelatin_box",
+      "prl/herring_tin",
+      "prl/lunchbox",
+      "prl/notebook",
+      "prl/plastic_bowl",
+      "prl/plastic_glass",
+      "prl/plastic_plate",
+      "prl/pocky_box",
+      "prl/pop_tarts_case",
+      "prl/recycle_bin",
+      "prl/spam_can",
+      "prl/sugar_box",
+      "prl/wicker_tray",
+      "prl/yellow_tote",
+      "ycb/YcbBanana",
+      "ycb/YcbChipsCan",
+      "ycb/YcbCrackerBox",
+      "ycb/YcbFoamBrick",
+      "ycb/YcbGelatinBox",
+      "ycb/YcbHammer",
+      "ycb/YcbMasterChefCan",
+      "ycb/YcbMediumClamp",
+      "ycb/YcbMustardBottle",
+      "ycb/YcbPear",
+      "ycb/YcbPottedMeatCan",
+      "ycb/YcbPowerDrill",
+      "ycb/YcbScissors",
+      "ycb/YcbStrawberry",
+      "ycb/YcbTennisBall",
+      "ycb/YcbTomatoSoupCan"
+    ],
+    "semantic_distractor_pairs": [
+      "prl/cracker_box",
+      "ycb/YcbCrackerBox",
+      "prl/gelatin_box",
+      "ycb/YcbGelatinBox",
+      "prl/can",
+      "ycb/YcbMasterChefCan",
+      "ycb/YcbTomatoSoupCan"
+    ],
+    "textured_objects": [
+      "prl/cracker_box",
+      "prl/fuze_bottle",
+      "prl/gelatin_box",
+      "prl/pocky_box",
+      "prl/pop_tarts_case",
+      "prl/spam_can",
+      "prl/sugar_box",
+      "ycb/YcbBanana",
+      "ycb/YcbChipsCan",
+      "ycb/YcbCrackerBox",
+      "ycb/YcbGelatinBox",
+      "ycb/YcbMasterChefCan",
+      "ycb/YcbMustardBottle",
+      "ycb/YcbPottedMeatCan",
+      "ycb/YcbPowerDrill",
+      "ycb/YcbTomatoSoupCan"
+    ],
+    "affordance_handles": [
+      "robocasa/bar_handle",
+      "robocasa/boxed_handle",
+      "robocasa/knob_handle"
+    ]
+  },
+  "assets": [
+    {
+      "id": "prl/ada_table",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/ada_table/ada_table.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/ada_table",
+      "license": "MIT",
+      "dimensions_m": [
+        1.852,
+        0.741,
+        0.735
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/can",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/can/can.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/can",
+      "license": "MIT",
+      "dimensions_m": [
+        0.066,
+        0.066,
+        0.123
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/cracker_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/cracker_box/cracker_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/cracker_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.062,
+        0.162,
+        0.208
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/fuze_bottle",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/fuze_bottle/fuze_bottle.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle",
+      "license": "MIT",
+      "dimensions_m": [
+        0.073,
+        0.073,
+        0.215
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/gelatin_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/gelatin_box/gelatin_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/gelatin_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.072,
+        0.088,
+        0.028
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/herring_tin",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/herring_tin/herring_tin.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/herring_tin",
+      "license": "MIT",
+      "dimensions_m": [
+        0.15,
+        0.084,
+        0.032
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/lunchbox",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/lunchbox/lunchbox.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/lunchbox",
+      "license": "MIT",
+      "dimensions_m": [
+        0.26,
+        0.2,
+        0.098
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/notebook",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/notebook/notebook.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/notebook",
+      "license": "MIT",
+      "dimensions_m": [
+        0.128,
+        0.212,
+        0.016
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_bowl",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_bowl/plastic_bowl.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_bowl",
+      "license": "MIT",
+      "dimensions_m": [
+        0.172,
+        0.172,
+        0.076
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_glass",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_glass/plastic_glass.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_glass",
+      "license": "MIT",
+      "dimensions_m": [
+        0.096,
+        0.096,
+        0.171
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/plastic_plate",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/plastic_plate/plastic_plate.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/plastic_plate",
+      "license": "MIT",
+      "dimensions_m": [
+        0.265,
+        0.265,
+        0.027
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/pocky_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/pocky_box/pocky_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/pocky_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.158,
+        0.028,
+        0.084
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/pop_tarts_case",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/pop_tarts_case/pop_tarts_case.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/pop_tarts_case",
+      "license": "MIT",
+      "dimensions_m": [
+        0.191,
+        0.102,
+        0.165
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/recycle_bin",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/recycle_bin/recycle_bin.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/recycle_bin",
+      "license": "MIT",
+      "dimensions_m": [
+        0.25,
+        0.25,
+        0.8
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/spam_can",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/spam_can/spam_can.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/spam_can",
+      "license": "MIT",
+      "dimensions_m": [
+        0.102,
+        0.058,
+        0.084
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/sugar_box",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/sugar_box/sugar_box.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/sugar_box",
+      "license": "MIT",
+      "dimensions_m": [
+        0.176,
+        0.094,
+        0.048
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/wicker_tray",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/wicker_tray/wicker_tray.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/wicker_tray",
+      "license": "MIT",
+      "dimensions_m": [
+        0.46,
+        0.66,
+        0.075
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "prl/yellow_tote",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/yellow_tote/yellow_tote.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/yellow_tote",
+      "license": "MIT",
+      "dimensions_m": [
+        0.6,
+        0.38,
+        0.29
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbBanana",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbBanana/YcbBanana.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbBanana",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.195845,
+        0.078884,
+        0.03755
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbChipsCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbChipsCan/YcbChipsCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbChipsCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.083514,
+        0.086105,
+        0.240575
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbCrackerBox",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbCrackerBox/YcbCrackerBox.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbCrackerBox",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.07173,
+        0.16397699999999998,
+        0.21348699999999998
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbFoamBrick",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbFoamBrick/YcbFoamBrick.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbFoamBrick",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.074515,
+        0.090454,
+        0.054165000000000005
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbGelatinBox",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbGelatinBox/YcbGelatinBox.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbGelatinBox",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.071542,
+        0.067499,
+        0.08918
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbHammer",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbHammer/YcbHammer.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbHammer",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.128201,
+        0.334162,
+        0.03297
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMasterChefCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMasterChefCan/YcbMasterChefCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMasterChefCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.10228899999999999,
+        0.10244600000000001,
+        0.140144
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMediumClamp",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMediumClamp/YcbMediumClamp.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMediumClamp",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.086876,
+        0.077082,
+        0.028223
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbMustardBottle",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbMustardBottle/YcbMustardBottle.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbMustardBottle",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.096402,
+        0.058082,
+        0.191501
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPear",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPear/YcbPear.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPear",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.06653999999999999,
+        0.104012,
+        0.066483
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPottedMeatCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPottedMeatCan/YcbPottedMeatCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPottedMeatCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.101137,
+        0.089975,
+        0.08448
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbPowerDrill",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbPowerDrill/YcbPowerDrill.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbPowerDrill",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.162987,
+        0.123195,
+        0.187434
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbScissors",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbScissors/YcbScissors.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbScissors",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.20386900000000002,
+        0.08717,
+        0.019528000000000004
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbStrawberry",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbStrawberry/YcbStrawberry.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbStrawberry",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.041922,
+        0.05375,
+        0.045662
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbTennisBall",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbTennisBall/YcbTennisBall.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTennisBall",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.066885,
+        0.067133,
+        0.06682300000000001
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "ycb/YcbTomatoSoupCan",
+      "format": "mjcf",
+      "path": "adapted/ycb_objects/YcbTomatoSoupCan/YcbTomatoSoupCan.xml",
+      "source_asset": "vendor/pybullet_ycb/pybullet_object_models/ycb_objects/YcbTomatoSoupCan",
+      "license": "LGPL-2.1-only",
+      "dimensions_m": [
+        0.067854,
+        0.06775,
+        0.10203699999999999
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/bar_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/bar_handle/bar_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/bar_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.06,
+        0.08,
+        0.4
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/boxed_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/boxed_handle/boxed_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/boxed_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.06,
+        0.08,
+        0.4
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "robocasa/knob_handle",
+      "format": "mjcf",
+      "path": "adapted/robocasa_handles/knob_handle/knob_handle.xml",
+      "source_asset": "vendor/robocasa_fixtures/robocasa/models/assets/fixtures/handles/knob_handle.xml",
+      "license": "CC-BY-4.0",
+      "dimensions_m": [
+        0.04,
+        0.04,
+        0.04
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "generated/barrier_panel",
+      "format": "mjcf",
+      "path": "generated/barrier_panel/barrier_panel.xml",
+      "source_asset": "scripts/generate_perturbation_primitives.py",
+      "license": "MIT",
+      "parameters": {
+        "half_extents": [
+          0.08,
+          0.008,
+          0.1
+        ]
+      },
+      "perturbations": [
+        "S05",
+        "S12",
+        "D05"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "generated/occlusion_screen",
+      "format": "mjcf",
+      "path": "generated/occlusion_screen/occlusion_screen.xml",
+      "source_asset": "scripts/generate_perturbation_primitives.py",
+      "license": "MIT",
+      "parameters": {
+        "half_extents": [
+          0.06,
+          0.003,
+          0.08
+        ]
+      },
+      "perturbations": [
+        "S12",
+        "D04"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "generated/opening_frame",
+      "format": "mjcf",
+      "path": "generated/opening_frame/opening_frame.xml",
+      "source_asset": "scripts/generate_perturbation_primitives.py",
+      "license": "MIT",
+      "parameters": {
+        "inner_half_width": 0.06,
+        "inner_half_height": 0.06,
+        "bar_half_thickness": 0.006,
+        "depth_half_extent": 0.012
+      },
+      "perturbations": [
+        "S05",
+        "S07",
+        "S09",
+        "D05"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "generated/slotted_receiver",
+      "format": "mjcf",
+      "path": "generated/slotted_receiver/slotted_receiver.xml",
+      "source_asset": "scripts/generate_perturbation_primitives.py",
+      "license": "MIT",
+      "parameters": {
+        "inner_half_width": 0.036,
+        "inner_half_depth": 0.045,
+        "wall_thickness": 0.004,
+        "wall_height": 0.055
+      },
+      "perturbations": [
+        "S07",
+        "S09",
+        "D03",
+        "D19"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "generated/support_riser",
+      "format": "mjcf",
+      "path": "generated/support_riser/support_riser.xml",
+      "source_asset": "scripts/generate_perturbation_primitives.py",
+      "license": "MIT",
+      "parameters": {
+        "half_extents": [
+          0.1,
+          0.1,
+          0.025
+        ]
+      },
+      "perturbations": [
+        "S03"
+      ],
+      "readiness": "ready_mjcf"
+    }
+  ],
+  "perturbation_coverage": [
+    {
+      "id": "S01",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Sample target x, y, and yaw; no new mesh is required."
+    },
+    {
+      "id": "S02",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Sample receiver x, y, and yaw; reuse the task receiver."
+    },
+    {
+      "id": "S03",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/support_riser"
+      ],
+      "local_resources": [],
+      "note": "Vary support or receiver height with collision geometry enabled."
+    },
+    {
+      "id": "S04",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Change target-receiver relative layout with existing task bodies."
+    },
+    {
+      "id": "S05",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/barrier_panel",
+        "generated/opening_frame"
+      ],
+      "local_resources": [],
+      "note": "Constrain approach corridors while retaining a validated collision-free solution."
+    },
+    {
+      "id": "S06",
+      "mechanism": "external_asset",
+      "asset_ids": [
+        "prl/can",
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/herring_tin",
+        "prl/lunchbox",
+        "prl/notebook",
+        "prl/plastic_bowl",
+        "prl/plastic_glass",
+        "prl/plastic_plate",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/recycle_bin",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "prl/wicker_tray",
+        "prl/yellow_tote",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbFoamBrick",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbHammer",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMediumClamp",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPear",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbScissors",
+        "ycb/YcbStrawberry",
+        "ycb/YcbTennisBall",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Use category-compatible PRL and YCB instances after graspability screening."
+    },
+    {
+      "id": "S07",
+      "mechanism": "external_and_parametric_assets",
+      "asset_ids": [
+        "robocasa/bar_handle",
+        "robocasa/boxed_handle",
+        "robocasa/knob_handle",
+        "generated/opening_frame"
+      ],
+      "local_resources": [],
+      "note": "Swap handle families or vary the true collision opening geometry."
+    },
+    {
+      "id": "S08",
+      "mechanism": "external_asset",
+      "asset_ids": [
+        "prl/can",
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/herring_tin",
+        "prl/lunchbox",
+        "prl/notebook",
+        "prl/plastic_bowl",
+        "prl/plastic_glass",
+        "prl/plastic_plate",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/recycle_bin",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "prl/wicker_tray",
+        "prl/yellow_tote",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbFoamBrick",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbHammer",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMediumClamp",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPear",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbScissors",
+        "ycb/YcbStrawberry",
+        "ycb/YcbTennisBall",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Use recorded dimensions for discrete scale/aspect variants; continuous variants scale both visual and collision geometry."
+    },
+    {
+      "id": "S09",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/slotted_receiver",
+        "generated/opening_frame"
+      ],
+      "local_resources": [],
+      "note": "Control actual X/Y/insertion clearance, not only the invisible goal site."
+    },
+    {
+      "id": "S10",
+      "mechanism": "external_asset",
+      "asset_ids": [
+        "prl/can",
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/herring_tin",
+        "prl/lunchbox",
+        "prl/notebook",
+        "prl/plastic_bowl",
+        "prl/plastic_glass",
+        "prl/plastic_plate",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/recycle_bin",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "prl/wicker_tray",
+        "prl/yellow_tote",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbFoamBrick",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbHammer",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMediumClamp",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPear",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbScissors",
+        "ycb/YcbStrawberry",
+        "ycb/YcbTennisBall",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Populate clutter from dimensioned objects and reject initial collisions."
+    },
+    {
+      "id": "S11",
+      "mechanism": "external_asset",
+      "asset_ids": [
+        "prl/cracker_box",
+        "ycb/YcbCrackerBox",
+        "prl/gelatin_box",
+        "ycb/YcbGelatinBox",
+        "prl/can",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Use same-category and highly similar candidates for grounding distractors."
+    },
+    {
+      "id": "S12",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/occlusion_screen",
+        "generated/barrier_panel"
+      ],
+      "local_resources": [],
+      "note": "Place persistent occluders by measured image-space coverage."
+    },
+    {
+      "id": "S13",
+      "mechanism": "external_and_existing_assets",
+      "asset_ids": [
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [
+        "libero/libero/assets/textures"
+      ],
+      "note": "Use textured objects plus material parameter variants without changing collision geometry."
+    },
+    {
+      "id": "S14",
+      "mechanism": "existing_asset",
+      "asset_ids": [],
+      "local_resources": [
+        "libero/libero/assets/textures",
+        "libero/libero/assets/scenes"
+      ],
+      "note": "LIBERO already contains table, floor, wall, and scene-style texture variants."
+    },
+    {
+      "id": "S15",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Change camera extrinsics and calibration; no mesh asset is required."
+    },
+    {
+      "id": "S16",
+      "mechanism": "observation_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Change FOV, resolution, crop, or lens distortion in the observation path."
+    },
+    {
+      "id": "S17",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Sample a collision-free robot initial configuration."
+    },
+    {
+      "id": "S18",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Inject base, TCP, joint-zero, or gripper-center calibration offsets."
+    },
+    {
+      "id": "S19",
+      "mechanism": "observation_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Apply deterministic RGB/depth degradation; no 3D asset is required."
+    },
+    {
+      "id": "S20",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Configure fixed frequencies, delays, and action windows."
+    },
+    {
+      "id": "S21",
+      "mechanism": "language_manifest",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Use audited, goal-equivalent instruction candidates rather than a 3D asset."
+    },
+    {
+      "id": "D01",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Move the existing target before contact and forward simulation afterward."
+    },
+    {
+      "id": "D02",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Move the existing loose receiver at a scheduled task phase."
+    },
+    {
+      "id": "D03",
+      "mechanism": "external_or_parametric_asset",
+      "asset_ids": [
+        "generated/slotted_receiver",
+        "prl/can",
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/herring_tin",
+        "prl/lunchbox",
+        "prl/notebook",
+        "prl/plastic_bowl",
+        "prl/plastic_glass",
+        "prl/plastic_plate",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/recycle_bin",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "prl/wicker_tray",
+        "prl/yellow_tote",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbFoamBrick",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbHammer",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMediumClamp",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPear",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbScissors",
+        "ycb/YcbStrawberry",
+        "ycb/YcbTennisBall",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Occupy the receiving region with a collision-enabled object while retaining recovery options."
+    },
+    {
+      "id": "D04",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/occlusion_screen"
+      ],
+      "local_resources": [],
+      "note": "Move a screen into and out of the relevant camera frustum on a fixed schedule."
+    },
+    {
+      "id": "D05",
+      "mechanism": "parametric_asset",
+      "asset_ids": [
+        "generated/barrier_panel",
+        "generated/opening_frame"
+      ],
+      "local_resources": [],
+      "note": "Insert collision geometry into the nominal path while preserving a validated detour."
+    },
+    {
+      "id": "D06",
+      "mechanism": "external_asset",
+      "asset_ids": [
+        "prl/can",
+        "prl/cracker_box",
+        "prl/fuze_bottle",
+        "prl/gelatin_box",
+        "prl/herring_tin",
+        "prl/lunchbox",
+        "prl/notebook",
+        "prl/plastic_bowl",
+        "prl/plastic_glass",
+        "prl/plastic_plate",
+        "prl/pocky_box",
+        "prl/pop_tarts_case",
+        "prl/recycle_bin",
+        "prl/spam_can",
+        "prl/sugar_box",
+        "prl/wicker_tray",
+        "prl/yellow_tote",
+        "ycb/YcbBanana",
+        "ycb/YcbChipsCan",
+        "ycb/YcbCrackerBox",
+        "ycb/YcbFoamBrick",
+        "ycb/YcbGelatinBox",
+        "ycb/YcbHammer",
+        "ycb/YcbMasterChefCan",
+        "ycb/YcbMediumClamp",
+        "ycb/YcbMustardBottle",
+        "ycb/YcbPear",
+        "ycb/YcbPottedMeatCan",
+        "ycb/YcbPowerDrill",
+        "ycb/YcbScissors",
+        "ycb/YcbStrawberry",
+        "ycb/YcbTennisBall",
+        "ycb/YcbTomatoSoupCan"
+      ],
+      "local_resources": [],
+      "note": "Move non-task objects from the common clutter pool without teleport overlap."
+    },
+    {
+      "id": "D07",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Schedule camera shake, drift, or a permanent pose jump."
+    },
+    {
+      "id": "D08",
+      "mechanism": "observation_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Drop and restore one camera stream; no 3D asset is required."
+    },
+    {
+      "id": "D09",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Change MuJoCo lights and exposure during rollout."
+    },
+    {
+      "id": "D10",
+      "mechanism": "observation_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Drop, repeat, or freeze deterministic image frame indices."
+    },
+    {
+      "id": "D11",
+      "mechanism": "observation_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Offset modality timestamps or freeze state observations."
+    },
+    {
+      "id": "D12",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Inject inference or observation latency peaks."
+    },
+    {
+      "id": "D13",
+      "mechanism": "runtime_configuration",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Inject control delay, timing jitter, or gripper desynchronization."
+    },
+    {
+      "id": "D14",
+      "mechanism": "action_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Drop or duplicate predetermined action command indices."
+    },
+    {
+      "id": "D15",
+      "mechanism": "action_wrapper",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Invalidate stale action chunks or interrupt replanning queues."
+    },
+    {
+      "id": "D16",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Apply a bounded takeover trajectory or reachable state displacement."
+    },
+    {
+      "id": "D17",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Inject a recoverable failed-grasp result state."
+    },
+    {
+      "id": "D18",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Place the carried object at a prevalidated reachable drop state."
+    },
+    {
+      "id": "D19",
+      "mechanism": "runtime_state",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Inject a recoverable misplacement or incomplete insertion state."
+    },
+    {
+      "id": "D21",
+      "mechanism": "language_manifest",
+      "asset_ids": [],
+      "local_resources": [],
+      "note": "Update an equivalent instruction only when the policy exposes a runtime language API."
+    }
+  ]
+}

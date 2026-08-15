@@ -1,0 +1,15 @@
+{
+  "name": "occlusion_screen",
+  "description": "Camera-side screen for controlled partial occlusion",
+  "perturbations": [
+    "S12",
+    "D04"
+  ],
+  "parameters": {
+    "half_extents": [
+      0.06,
+      0.003,
+      0.08
+    ]
+  }
+}

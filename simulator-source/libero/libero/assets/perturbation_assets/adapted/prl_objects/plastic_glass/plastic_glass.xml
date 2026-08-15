@@ -1,0 +1,18 @@
+<mujoco model="plastic_glass">
+  <compiler angle="radian" />
+  <asset>
+    <material name="plastic_glass_mat" rgba="0.72 0.72 0.72 1.0" specular="0.5" shininess="0.5" />
+    <mesh name="plastic_glass_mesh" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/plastic_glass/plastic_glass_visual.obj" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0.0855">
+        <geom name="plastic_glass_collision" type="cylinder" size="0.048 0.0855" mass="0.08" friction="0.6 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="plastic_glass_visual" type="mesh" mesh="plastic_glass_mesh" pos="0 0 -0.0855" material="plastic_glass_mat" contype="0" conaffinity="0" group="1" />
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.171" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.067882251 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

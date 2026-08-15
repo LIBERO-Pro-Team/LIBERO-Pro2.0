@@ -1,0 +1,28 @@
+name: cracker_box
+description: Cheez-It crackers box
+category: [food_package, graspable, box]
+
+mass: 0.4  # kg
+dimensions: [0.062, 0.162, 0.208]  # meters
+material: cardboard
+amazon_link: https://www.amazon.com/dp/B00THJKCUI
+
+geometric_properties:
+  type: box
+  size: [0.062, 0.162, 0.208]
+
+mujoco:
+  xml_path: cracker_box.xml
+  scale: 1.0
+  friction: [0.7, 0.005, 0.0001]
+
+perception:
+  aliases: ["cracker box", "cheez-it", "crackers"]
+
+policy:
+  grasping:
+    affordances: [lift, place]
+    preferred_grasp_type: side_grasp
+    difficulty: easy
+  manipulation:
+    stable_poses: [upright, on_side, on_back]

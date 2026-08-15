@@ -1,0 +1,30 @@
+<mujoco model="can">
+  <compiler angle="radian"/>
+
+  <asset>
+    <!-- Visual mesh -->
+    <mesh name="can_visual" file="can_visual.stl" scale="1 1 1"/>
+  </asset>
+
+  <worldbody>
+    <body name="can" pos="0 0 0.0615">
+      <freejoint name="can_joint"/>
+
+      <!-- Collision geometry - simple cylinder for efficiency -->
+      <geom name="can_collision"
+            type="cylinder"
+            size="0.033 0.0615"
+            mass="0.05"
+            friction="0.6 0.005 0.0001"
+            contype="1"
+            conaffinity="1"
+            rgba="0 0 0 0"/>  <!-- Invisible - visual mesh will show -->
+
+      <!-- Visual mesh -->
+      <geom name="can_visual"
+            type="mesh"
+            mesh="can_visual"
+            rgba="0.8 0.1 0.1 1"/>
+    </body>
+  </worldbody>
+</mujoco>

@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68,<76", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "libero-remote"
+version = "1.0.0"
+description = "Remote evaluation service and client for LIBERO-PRO"
+readme = "README.md"
+requires-python = ">=3.8,<3.13"
+dependencies = [
+  "httpx==0.24.1",
+  "msgpack==1.0.8",
+  "numpy==1.22.4; python_version < '3.10'",
+  "numpy==1.26.4; python_version >= '3.10'",
+  "pydantic==1.10.22",
+]
+
+[project.optional-dependencies]
+server = [
+  "fastapi==0.103.2",
+  "uvicorn[standard]==0.23.2",
+]
+video = [
+  "imageio==2.35.1",
+  "imageio-ffmpeg==0.5.1",
+]
+dev = [
+  "mypy==1.8.0",
+  "pytest==8.3.5",
+  "pytest-asyncio==0.23.8",
+  "ruff==0.6.9",
+]
+
+[project.scripts]
+libero-remote-server = "libero_remote.server.main:main"
+
+[tool.setuptools.packages.find]
+include = ["libero_remote*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["UP006", "UP007", "UP035"]
+
+[tool.mypy]
+python_version = "3.8"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = true
