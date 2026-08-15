@@ -20,7 +20,7 @@ for clearance, occlusion, and approach-path tests.
 All 42 adapted/generated MJCF files use LIBERO's expected nested
 `body name="object"` layout and include `bottom_site`, `top_site`, and
 `horizontal_radius_site`. See `asset_catalog.json` for dimensions, paths,
-asset sets, and the S01-S21/D01-D21 coverage mapping.
+asset sets, and the S01-S21/D01-D19/D21 coverage mapping.
 
 ## Provenance and licenses
 

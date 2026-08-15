@@ -227,8 +227,7 @@ flowchart LR
 | `ObservationCodec` | 筛选 observation 字段并编解码 NumPy 数组 |
 | `TaskCatalog` | 枚举允许调用的 suite、task 和 action/observation 元数据 |
 
-任务 manifest 通过 `base`、`S01-S21`、`D01-D19` 和 `D21` case id 选择已发布 BDDL；
-`D20` 仅保留在扰动 schema 中，当前 1680 项 active manifest 不发布该 case。固定运行时同时提供
+任务 manifest 通过 `base`、`S01-S21`、`D01-D19` 和 `D21` case id 选择已发布 BDDL。固定运行时同时提供
 `set_perturbation_seed`、`begin_perturbation_rollout` 和 `get_perturbation_plan`，并在就绪检查中拒绝缺少这些能力的旧模拟器。
 
 ## 6. 交互流程
@@ -333,8 +332,8 @@ env.close()
 }
 ```
 
-`variant` 接受 `base`、`S01-S21`、`D01-D19` 和 `D21`；`D20` 不属于当前发布版本。
-可用的 suite/task/variant 组合以 `/v1/tasks` 返回的 1680 项 manifest 为准。
+`variant` 接受 `base`、`S01-S21`、`D01-D19` 和 `D21`；可用的 suite/task/variant 组合以
+`/v1/tasks` 返回的 1680 项 manifest 为准。
 
 创建成功后返回：
 
@@ -599,7 +598,7 @@ D21
 ```
 
 服务端根据 `variant` 从 1680 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。
-客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置；`D20` 仍是预留 schema，不会出现在当前任务目录中。
+客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置。
 
 需要明确：把 BDDL 留在服务端只能提高直接获取和针对性训练的成本，不能从理论上彻底阻止通过大量查询推断评测分布。因此还需要访问配额、隐藏测试集轮换和异常查询检测。
 

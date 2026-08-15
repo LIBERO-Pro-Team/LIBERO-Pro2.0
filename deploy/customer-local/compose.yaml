@@ -26,7 +26,7 @@ services:
       LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS: "${LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS:-30}"
       LIBERO_REMOTE_SCHEDULER_DB_PATH: /opt/libero-remote/runtime/scheduler.sqlite3
       LIBERO_REMOTE_TASK_MANIFEST: /opt/libero-remote/assets/task_manifest.json
-      LIBERO_REMOTE_BDDL_ROOT: /opt/libero-remote/assets/bddl/libero-pro2.0-169-v1
+      LIBERO_REMOTE_BDDL_ROOT: /opt/libero-remote/assets/bddl/libero-pro2.0-1680-v1
       LIBERO_REMOTE_IMAGE_DIGEST: "${LIBERO_REMOTE_IMAGE_DIGEST:-}"
       MUJOCO_GL: egl
       PYOPENGL_PLATFORM: egl

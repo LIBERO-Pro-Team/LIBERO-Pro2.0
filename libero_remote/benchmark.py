@@ -350,9 +350,13 @@ def _normalize_case_id(value: Any) -> str:
             number = int(normalized[1:])
         except ValueError as exc:
             raise ValueError(f"Invalid case id {value!r}") from exc
-        if 1 <= number <= 21:
+        if normalized[0] == "S" and 1 <= number <= 21:
             return f"{normalized[0]}{number:02d}"
-    raise ValueError(f"Invalid case id {value!r}; expected base, S01-S21, or D01-D21")
+        if normalized[0] == "D" and (1 <= number <= 19 or number == 21):
+            return f"{normalized[0]}{number:02d}"
+    raise ValueError(
+        f"Invalid case id {value!r}; expected base, S01-S21, D01-D19, or D21"
+    )
 
 
 def _case_kind(case_id: str) -> str:

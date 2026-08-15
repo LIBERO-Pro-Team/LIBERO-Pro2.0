@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ENVS_ROOT = ROOT / "libero" / "libero" / "envs"
 ASSET_ROOT = ROOT / "libero" / "libero" / "assets" / "perturbation_assets"
 BDDL_ROOT = Path.home() / "Desktop" / "LIBERO-Pro2.0_4Suite_42扰动_BDDL"
+PUBLISHED_BDDL_ROOT = ROOT.parent / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 
 
 def load_module(name: str, filename: str):
@@ -36,7 +37,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
                 ROOT.parent
                 / "assets"
                 / "bddl"
-                / "libero-pro2.0-169-v1"
+                / "libero-pro2.0-1680-v1"
                 / "libero_goal"
                 / "02_dynamic"
             ).glob("D08__*.bddl")
@@ -45,7 +46,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
 
         self.assertEqual(plan.case_id, "D08")
-        self.assertEqual(plan.targets, ("robot0_eye_in_hand",))
+        self.assertEqual(plan.targets, ("agentview", "robot0_eye_in_hand"))
 
     def test_repo_d15_declares_replay_chunk_parameters(self):
         path = next(
@@ -53,7 +54,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
                 ROOT.parent
                 / "assets"
                 / "bddl"
-                / "libero-pro2.0-169-v1"
+                / "libero-pro2.0-1680-v1"
                 / "libero_goal"
                 / "02_dynamic"
             ).glob("D15__*.bddl")
@@ -83,9 +84,9 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         self.assertEqual([asset.asset_id for asset in plan.assets], ["ycb/YcbTomatoSoupCan"])
         self.assertTrue(plan.assets[0].xml_path.is_file())
 
-    def test_all_172_bddls_resolve_to_an_executable_case(self):
-        files = sorted(BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 172)
+    def test_all_published_bddls_resolve_to_an_executable_case(self):
+        files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
+        self.assertEqual(len(files), 1680)
 
         seen = set()
         for path in files:
@@ -102,7 +103,8 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         self.assertEqual(
             seen,
             {f"S{i:02d}" for i in range(1, 22)}
-            | {f"D{i:02d}" for i in range(1, 22)},
+            | {f"D{i:02d}" for i in range(1, 20)}
+            | {"D21"},
         )
 
     def test_only_the_selected_case_is_active(self):
@@ -664,7 +666,7 @@ class RuntimeBehaviorTests(unittest.TestCase):
                 ROOT.parent
                 / "assets"
                 / "bddl"
-                / "libero-pro2.0-169-v1"
+                / "libero-pro2.0-1680-v1"
                 / "libero_object"
                 / "02_dynamic"
             ).glob("D02__*.bddl")
@@ -889,221 +891,6 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertEqual(runtime.events[-1]["target"], target)
         self.assertLess(sim.data.body_xpos[0, 0], 0.25)
         self.assertGreater(sim.data.body_xpos[0, 2], 0.98)
-
-    def test_d20_regresses_a_completed_subgoal_in_a_multi_predicate_task(self):
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-            self.plan("libero_10", "02_dynamic", "D20"), seed=7
-        )
-        target = runtime.plan.targets[0]
-        goal_states = [
-            ["in", target, "microwave_1_heating_region"],
-            ["close", "microwave_1"],
-        ]
-
-        class Sim:
-            def __init__(self):
-                self.model = types.SimpleNamespace(
-                    body_pos=np.array([[0.0, 0.0, 0.9]]),
-                    body_quat=np.array([[1.0, 0.0, 0.0, 0.0]]),
-                )
-                self.data = types.SimpleNamespace(
-                    body_xpos=self.model.body_pos.copy(),
-                    body_xquat=self.model.body_quat.copy(),
-                    site_xpos=np.array([[0.4, 0.4, 1.0]]),
-                )
-
-            def forward(self):
-                self.data.body_xpos[:] = self.model.body_pos
-                self.data.body_xquat[:] = self.model.body_quat
-
-        sim = Sim()
-        env = types.SimpleNamespace(
-            obj_body_id={target: 0},
-            objects_dict={target: types.SimpleNamespace(joints=None)},
-            object_sites_dict={
-                "microwave_1_heating_region": types.SimpleNamespace(
-                    parent_name="microwave_1"
-                )
-            },
-            parsed_problem={"goal_state": goal_states},
-            workspace_offset=np.array([0.0, 0.0, 0.9]),
-            sim=sim,
-            robots=[types.SimpleNamespace(eef_site_id=0)],
-        )
-        env._eval_predicate = lambda state: (
-            bool(np.linalg.norm(sim.data.body_xpos[0, :2]) < 0.08)
-            if state[0] == "in"
-            else False
-        )
-
-        runtime.before_simulation_step(env, step=runtime.EVENT_START)
-
-        self.assertFalse(np.allclose(sim.data.body_xpos[0, :2], [0.0, 0.0]))
-        self.assertFalse(env._eval_predicate(goal_states[0]))
-        self.assertEqual(runtime.events[-1]["event"], "partial_goal_regressed")
-        self.assertTrue(runtime.events[-1]["predicate_confirmed_regressed"])
-        self.assertEqual(runtime.events[-1]["regressed_predicate"], goal_states[0])
-        self.assertEqual(runtime.events[-1]["pending_predicates"], [goal_states[1]])
-
-    def test_d20_regresses_completed_close_predicate_by_opening_joint(self):
-        plan = RUNTIME.ExecutionPlan(
-            case_id="D20",
-            schedule="dynamic",
-            operator="state_or_language_event",
-            variant="interrupt_regress_then_continue",
-            targets=("white_yellow_mug_1", "microwave_1"),
-            references=(),
-            mechanisms=("state_event",),
-            assets=(),
-        )
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
-        mug, microwave = runtime.plan.targets
-        goal_states = [
-            ["in", mug, "microwave_1_heating_region"],
-            ["close", microwave],
-        ]
-
-        class Sim:
-            def __init__(self):
-                self.model = types.SimpleNamespace(
-                    body_pos=np.array([[0.3, 0.0, 0.9], [0.0, 0.0, 0.9]]),
-                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)),
-                )
-                self.data = types.SimpleNamespace(
-                    body_xpos=self.model.body_pos.copy(),
-                    body_xquat=self.model.body_quat.copy(),
-                    site_xpos=np.array([[0.4, 0.4, 1.0]]),
-                )
-
-            def forward(self):
-                self.data.body_xpos[:] = self.model.body_pos
-                self.data.body_xquat[:] = self.model.body_quat
-
-        class MicrowaveState:
-            def __init__(self):
-                self.joint = -0.0025
-
-            def get_joint_state(self):
-                return [self.joint]
-
-            def set_joint(self, value):
-                self.joint = float(value)
-
-        microwave_object = types.SimpleNamespace(
-            joints=["microwave_door_joint"],
-            object_properties={
-                "articulation": {
-                    "default_open_ranges": [-2.094, -1.3],
-                    "default_close_ranges": [-0.005, 0.0],
-                }
-            },
-        )
-        microwave_state = MicrowaveState()
-        sim = Sim()
-        env = types.SimpleNamespace(
-            obj_body_id={mug: 0, microwave: 1},
-            objects_dict={mug: types.SimpleNamespace(joints=None)},
-            fixtures_dict={microwave: microwave_object},
-            object_states_dict={microwave: microwave_state},
-            object_sites_dict={
-                "microwave_1_heating_region": types.SimpleNamespace(
-                    parent_name=microwave
-                )
-            },
-            parsed_problem={"goal_state": goal_states},
-            workspace_offset=np.array([0.0, 0.0, 0.9]),
-            sim=sim,
-            robots=[types.SimpleNamespace(eef_site_id=0)],
-        )
-        env.get_object = lambda name: (
-            microwave_object if name == microwave else env.objects_dict.get(name)
-        )
-        env._eval_predicate = lambda state: (
-            microwave_state.joint > -0.005 if state[0] == "close" else False
-        )
-
-        runtime.before_simulation_step(env, step=runtime.EVENT_START)
-
-        self.assertFalse(env._eval_predicate(goal_states[1]))
-        self.assertEqual(runtime.events[-1]["event"], "partial_goal_regressed")
-        self.assertEqual(runtime.events[-1]["regression_mode"], "articulation_joint")
-        self.assertEqual(runtime.events[-1]["regressed_predicate"], goal_states[1])
-
-    def test_d20_does_not_report_regression_when_predicate_stays_satisfied(self):
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-            self.plan("libero_10", "02_dynamic", "D20"), seed=7
-        )
-        target = runtime.plan.targets[0]
-        goal_states = [
-            ["in", target, "microwave_1_heating_region"],
-            ["close", "microwave_1"],
-        ]
-
-        class Sim:
-            def __init__(self):
-                self.model = types.SimpleNamespace(
-                    body_pos=np.array([[0.0, 0.0, 0.9]]),
-                    body_quat=np.array([[1.0, 0.0, 0.0, 0.0]]),
-                )
-                self.data = types.SimpleNamespace(
-                    body_xpos=self.model.body_pos.copy(),
-                    body_xquat=self.model.body_quat.copy(),
-                    site_xpos=np.array([[0.4, 0.4, 1.0]]),
-                )
-
-            def forward(self):
-                self.data.body_xpos[:] = self.model.body_pos
-                self.data.body_xquat[:] = self.model.body_quat
-
-        sim = Sim()
-        env = types.SimpleNamespace(
-            obj_body_id={target: 0},
-            objects_dict={target: types.SimpleNamespace(joints=None)},
-            object_sites_dict={
-                "microwave_1_heating_region": types.SimpleNamespace(
-                    parent_name="microwave_1"
-                )
-            },
-            parsed_problem={"goal_state": goal_states},
-            workspace_offset=np.array([0.0, 0.0, 0.9]),
-            sim=sim,
-            robots=[types.SimpleNamespace(eef_site_id=0)],
-            _eval_predicate=lambda state: state[0] == "in",
-        )
-
-        with self.assertRaisesRegex(
-            RUNTIME.PerturbationValidationError,
-            "actually regresses predicate",
-        ):
-            runtime.before_simulation_step(env, step=runtime.EVENT_START)
-
-        self.assertFalse(runtime.events)
-        np.testing.assert_allclose(sim.data.body_xpos[0], [0.0, 0.0, 0.9])
-
-    def test_d20_does_not_trigger_for_a_single_predicate_task(self):
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-            self.plan("libero_goal", "02_dynamic", "D20"), seed=7
-        )
-        target = runtime.plan.targets[0]
-        env = types.SimpleNamespace(
-            obj_body_id={target: 0},
-            parsed_problem={"goal_state": [["on", target, "wine_rack_1_top_region"]]},
-            object_sites_dict={},
-            sim=types.SimpleNamespace(
-                data=types.SimpleNamespace(
-                    body_xpos=np.array([[0.0, 0.0, 0.9]]),
-                    body_xquat=np.array([[1.0, 0.0, 0.0, 0.0]]),
-                    site_xpos=np.array([[0.0, 0.0, 1.0]]),
-                )
-            ),
-            robots=[types.SimpleNamespace(eef_site_id=0)],
-            _eval_predicate=lambda state: False,
-        )
-
-        runtime.before_simulation_step(env, step=300)
-
-        self.assertFalse(runtime.events)
-        self.assertFalse(runtime._dynamic_applied)
 
     def test_dynamic_schedule_can_restart_after_environment_settling(self):
         plan = RUNTIME.ExecutionPlan(

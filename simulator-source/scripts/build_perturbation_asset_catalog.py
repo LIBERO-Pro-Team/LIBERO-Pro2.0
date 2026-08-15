@@ -217,7 +217,6 @@ COVERAGE = (
     coverage("D17", "runtime_state", note="Inject a recoverable failed-grasp result state."),
     coverage("D18", "runtime_state", note="Place the carried object at a prevalidated reachable drop state."),
     coverage("D19", "runtime_state", note="Inject a recoverable misplacement or incomplete insertion state."),
-    coverage("D20", "runtime_state", note="Break or roll back a task predicate while leaving a recovery window."),
     coverage("D21", "language_manifest", note="Update an equivalent instruction only when the policy exposes a runtime language API."),
 )
 

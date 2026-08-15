@@ -523,16 +523,6 @@
           (:interaction_mode placement)
         )
       )
-      (D20
-        (:operator state_or_language_event)
-        (:targets akita_black_bowl_1 plate_1)
-        (:trigger partial_success_or_safe_stop)
-        (:variant interrupt_regress_then_continue)
-        (:constraints delayed_termination recovery_window)
-        (:params
-          (:interaction_mode placement)
-        )
-      )
       (D21
         (:operator state_or_language_event)
         (:targets task_instruction)

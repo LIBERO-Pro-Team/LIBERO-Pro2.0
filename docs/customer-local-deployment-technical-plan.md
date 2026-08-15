@@ -80,15 +80,11 @@ python3 smoke_test.py
 
 ## 5. 任务范围
 
-当前发布 manifest 包含 1680 个有效任务组合：
+当前发布 manifest 包含 1680 个有效任务组合：四个 suite 各有 10 个官方 base task，
+每个 base task 包含 1 个 BASE、21 个静态扰动和 20 个动态扰动，共 420 项。
 
-- `libero_10`：1 个 base + 42 个扰动，共 43 项。
-- `libero_goal`：1 个 base + 41 个适用扰动，共 42 项。
-- `libero_object`：1 个 base + 41 个适用扰动，共 42 项。
-- `libero_spatial`：1 个 base + 41 个适用扰动，共 42 项。
-
-后三个 suite 已移除不适用的 D20。`GET /v1/tasks` 是有效 suite、task ID 与 variant 组合的唯一
-事实来源；客户端不得自行构造 4 x 43 的笛卡尔积。请求 manifest 外组合会稳定返回
+`GET /v1/tasks` 是有效 suite、task ID 与 variant 组合的唯一
+事实来源；客户端不得自行构造 suite 与 case 的笛卡尔积。请求 manifest 外组合会稳定返回
 `INVALID_TASK`/404，而不是启动错误任务。
 
 ## 6. 模型接入

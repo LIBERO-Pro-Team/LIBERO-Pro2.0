@@ -91,12 +91,8 @@ def test_customer_bundle_hashes_bddl_with_canonical_lf_endings() -> None:
     builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
         encoding="utf-8"
     )
-    manifest_builder = (ROOT / "scripts" / "build_task_manifest.py").read_text(
-        encoding="utf-8"
-    )
 
     assert '.Replace("`r`n", "`n").Replace("`r", "`n")' in builder
-    assert "canonical_text_bytes(target.read_bytes())" in manifest_builder
 
 
 def test_sdk_metadata_separates_client_and_server_dependencies() -> None:

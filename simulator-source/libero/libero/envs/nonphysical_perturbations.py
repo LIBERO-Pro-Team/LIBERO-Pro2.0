@@ -12,7 +12,8 @@ import numpy as np
 
 ALL_CASE_IDS = tuple(
     [f"S{index:02d}" for index in range(1, 22)]
-    + [f"D{index:02d}" for index in range(1, 22)]
+    + [f"D{index:02d}" for index in range(1, 20)]
+    + ["D21"]
 )
 
 CASE_MECHANISMS = {
@@ -56,7 +57,6 @@ CASE_MECHANISMS = {
     "D17": ("state_event",),
     "D18": ("state_event",),
     "D19": ("state_event",),
-    "D20": ("state_event",),
     "D21": ("language",),
 }
 
@@ -647,118 +647,6 @@ def _safe_offset_pose(
     )
 
 
-def _regress_predicate_with_safe_offset(
-    env: Any,
-    name: str,
-    predicate: list[Any],
-    *,
-    ignored: tuple[str, ...] = (),
-) -> np.ndarray:
-    """Move an entity to a clear pose that actually falsifies a goal predicate."""
-    before, quaternion = _entity_pose(env, name)
-    directions = (
-        np.array([-1.0, -0.8]),
-        np.array([-1.0, 0.8]),
-        np.array([1.0, -0.8]),
-        np.array([1.0, 0.8]),
-        np.array([0.0, -1.0]),
-        np.array([0.0, 1.0]),
-        np.array([-1.0, 0.0]),
-        np.array([1.0, 0.0]),
-    )
-    for distance in (0.10, 0.14, 0.18, 0.22):
-        for direction in directions:
-            unit_direction = direction / np.linalg.norm(direction)
-            candidate = before.copy()
-            candidate[:2] += unit_direction * distance
-            if not _candidate_is_clear(
-                env, name, candidate[:2], minimum_gap=0.08, ignored=ignored
-            ):
-                continue
-            _set_entity_pose(env, name, candidate, quaternion)
-            if not bool(env._eval_predicate(predicate)):
-                return candidate[:2] - before[:2]
-    _set_entity_pose(env, name, before, quaternion)
-    raise PerturbationValidationError(
-        f"No collision-clear pose actually regresses predicate {predicate!r}"
-    )
-
-
-def _joint_values_for_diagnostics(values: list[Any]) -> list[Any]:
-    diagnostics: list[Any] = []
-    for value in values:
-        array = np.asarray(value)
-        diagnostics.append(float(array) if array.ndim == 0 else array.tolist())
-    return diagnostics
-
-
-def _regress_articulation_predicate(
-    env: Any, name: str, predicate: list[Any]
-) -> dict[str, Any]:
-    predicate_name = str(predicate[0]).lower()
-    opposite_range = {
-        "open": "default_close_ranges",
-        "close": "default_open_ranges",
-        "turnon": "default_turnoff_ranges",
-        "turnoff": "default_turnon_ranges",
-    }.get(predicate_name)
-    if opposite_range is None:
-        raise PerturbationValidationError(
-            f"Predicate {predicate!r} is not an articulation predicate"
-        )
-
-    state = getattr(env, "object_states_dict", {}).get(name)
-    get_object = getattr(env, "get_object", None)
-    obj = get_object(name) if callable(get_object) else None
-    if state is None or obj is None:
-        raise PerturbationValidationError(
-            f"Cannot regress articulation predicate {predicate!r} for {name!r}"
-        )
-    ranges = (
-        getattr(obj, "object_properties", {})
-        .get("articulation", {})
-        .get(opposite_range, [])
-    )
-    if not ranges:
-        raise PerturbationValidationError(
-            f"Articulation {name!r} has no {opposite_range!r} for {predicate!r}"
-        )
-
-    before = [np.asarray(value).copy() for value in state.get_joint_state()]
-    target_joint = float(sum(float(value) for value in ranges) / len(ranges))
-    state.set_joint(target_joint)
-    env.sim.forward()
-    if bool(env._eval_predicate(predicate)):
-        for joint, value in zip(getattr(obj, "joints", ()), before):
-            env.sim.data.set_joint_qpos(joint, value)
-        env.sim.forward()
-        raise PerturbationValidationError(
-            f"No articulation state actually regresses predicate {predicate!r}"
-        )
-    after = [np.asarray(value).copy() for value in state.get_joint_state()]
-    return {
-        "regression_mode": "articulation_joint",
-        "joint_before": _joint_values_for_diagnostics(before),
-        "joint_after": _joint_values_for_diagnostics(after),
-    }
-
-
-def _regress_completed_predicate(
-    env: Any,
-    name: str,
-    predicate: list[Any],
-    *,
-    ignored: tuple[str, ...] = (),
-) -> tuple[np.ndarray, dict[str, Any]]:
-    if str(predicate[0]).lower() in {"open", "close", "turnon", "turnoff"}:
-        return np.zeros(2, dtype=np.float64), _regress_articulation_predicate(
-            env, name, predicate
-        )
-    return _regress_predicate_with_safe_offset(
-        env, name, predicate, ignored=ignored
-    ), {"regression_mode": "spatial_offset"}
-
-
 def _dynamic_pose_requested_delta(
     case_id: str, target: str, params: dict[str, Any] | None = None
 ) -> tuple[float, float]:
@@ -903,48 +791,6 @@ def _goal_articulation_targets(env: Any) -> tuple[tuple[str, list[Any]], ...]:
         if _entity_exists(env, candidate):
             targets.append((candidate, list(state)))
     return tuple(targets)
-
-
-def _partial_goal_regression(
-    env: Any, configured_targets: tuple[str, ...]
-) -> tuple[str, list[Any], tuple[list[Any], ...], tuple[list[Any], ...]] | None:
-    """Resolve a completed subgoal that can be physically regressed.
-
-    D20 is meaningful only for conjunctive tasks with an intermediate predicate.
-    A single-predicate task has no partial-success state and must remain untriggered.
-    """
-    goal_states = getattr(env, "parsed_problem", {}).get("goal_state", [])
-    if len(goal_states) < 2:
-        return None
-
-    evaluated: list[tuple[list[Any], bool]] = []
-    for raw_state in goal_states:
-        state = list(raw_state)
-        try:
-            satisfied = bool(env._eval_predicate(state))
-        except Exception as exc:
-            raise PerturbationValidationError(
-                f"Cannot evaluate D20 goal predicate {state!r}"
-            ) from exc
-        evaluated.append((state, satisfied))
-
-    completed = tuple(state for state, satisfied in evaluated if satisfied)
-    pending = tuple(state for state, satisfied in evaluated if not satisfied)
-    if not completed or not pending:
-        return None
-
-    configured = set(configured_targets)
-    sites = getattr(env, "object_sites_dict", {})
-    for state in completed:
-        for entity_name in state[1:]:
-            candidate = str(entity_name)
-            site = sites.get(candidate)
-            if site is not None:
-                candidate = str(getattr(site, "parent_name", candidate))
-            if candidate in configured and _entity_exists(env, candidate):
-                return candidate, state, completed, pending
-    return None
-
 
 class NonPhysicalPerturbationRuntime:
     """Execute one resolved perturbation through reset, action and observation hooks."""
@@ -1700,30 +1546,6 @@ class NonPhysicalPerturbationRuntime:
                 delta_xy=applied.tolist(),
                 yaw=yaw,
             )
-        elif case_id == "D20":
-            regression = _partial_goal_regression(env, self.plan.targets)
-            if regression is None:
-                raise PerturbationValidationError(
-                    "D20 triggered without a regressible partial-success predicate"
-                )
-            target, predicate, completed, pending = regression
-            ignored = tuple(
-                name for name in self.plan.targets if name != target
-            )
-            applied, regression_details = _regress_completed_predicate(
-                env, target, predicate, ignored=ignored
-            )
-            self._log_once(
-                "partial_goal_regressed",
-                step,
-                target=target,
-                delta_xy=applied.tolist(),
-                predicate_confirmed_regressed=True,
-                regressed_predicate=predicate,
-                completed_predicates=list(completed),
-                pending_predicates=list(pending),
-                **regression_details,
-            )
         elif case_id in {"D03", "D04", "D05"}:
             name = _injected_name(self.plan)
             reference_name = next(
@@ -1901,11 +1723,6 @@ class NonPhysicalPerturbationRuntime:
                 eef is not None and np.linalg.norm(eef - position) <= 0.18
             )
             return bool(transported and closing and held_near_eef)
-        if case_id == "D20":
-            return bool(
-                step >= self.EVENT_START
-                and _partial_goal_regression(env, self.plan.targets) is not None
-            )
         if self.plan.trigger == "state_change":
             if eef is None:
                 return False

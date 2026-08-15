@@ -60,7 +60,8 @@ def validate_asset_catalog(root: Path, errors: list[str]) -> tuple[int, int]:
 
     expected_coverage = {
         *(f"S{index:02d}" for index in range(1, 22)),
-        *(f"D{index:02d}" for index in range(1, 22)),
+        *(f"D{index:02d}" for index in range(1, 20)),
+        "D21",
     }
     coverage = catalog.get("perturbation_coverage", [])
     coverage_ids = [record.get("id") for record in coverage]

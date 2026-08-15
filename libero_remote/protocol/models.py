@@ -80,13 +80,18 @@ class CreateSessionRequest(BaseModel):
             return "base"
         normalized = normalized.upper()
         if len(normalized) != 3 or normalized[0] not in {"S", "D"}:
-            raise ValueError("variant must be base, S01-S21, or D01-D21")
+            raise ValueError("variant must be base, S01-S21, D01-D19, or D21")
         try:
             index = int(normalized[1:])
         except ValueError as exc:
-            raise ValueError("variant must be base, S01-S21, or D01-D21") from exc
-        if index < 1 or index > 21:
-            raise ValueError("variant must be base, S01-S21, or D01-D21")
+            raise ValueError("variant must be base, S01-S21, D01-D19, or D21") from exc
+        valid = (
+            normalized[0] == "S" and 1 <= index <= 21
+        ) or (
+            normalized[0] == "D" and (1 <= index <= 19 or index == 21)
+        )
+        if not valid:
+            raise ValueError("variant must be base, S01-S21, D01-D19, or D21")
         return normalized
 
     @validator("camera_names")

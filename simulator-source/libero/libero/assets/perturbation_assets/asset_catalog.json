@@ -4,7 +4,7 @@
     "ready_mjcf_assets": 42,
     "external_adapted_assets": 37,
     "generated_parametric_assets": 5,
-    "perturbation_directions_covered": 42
+    "perturbation_directions_covered": 41
   },
   "sources": [
     {
@@ -1180,13 +1180,6 @@
       "asset_ids": [],
       "local_resources": [],
       "note": "Inject a recoverable misplacement or incomplete insertion state."
-    },
-    {
-      "id": "D20",
-      "mechanism": "runtime_state",
-      "asset_ids": [],
-      "local_resources": [],
-      "note": "Break or roll back a task predicate while leaving a recovery window."
     },
     {
       "id": "D21",

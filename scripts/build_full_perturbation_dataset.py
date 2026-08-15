@@ -33,7 +33,8 @@ CASES = tuple(
 )
 SCHEMA_CASES = tuple(
     [f"S{i:02d}" for i in range(1, 22)]
-    + [f"D{i:02d}" for i in range(1, 22)]
+    + [f"D{i:02d}" for i in range(1, 20)]
+    + ["D21"]
 )
 
 SUITE_TASKS: Mapping[str, Tuple[str, ...]] = {
@@ -397,8 +398,6 @@ def case_entry(case_id: str, profile: TaskProfile) -> str:
         fields = [("operator", "state_or_language_event"), ("targets", primary), ("trigger", "transport"), ("variant", "reachable_collision_free_drop_state"), ("constraints", "recovery_remains_possible")]
     elif case_id == "D19":
         fields = [("operator", "state_or_language_event"), ("targets", f"{primary} {receiver}" if placement else primary), ("trigger", "place_attempt"), ("variant", "misplace_partial_insert_or_wrong_receiver_result"), ("constraints", "correction_remains_possible")]
-    elif case_id == "D20":
-        fields = [("operator", "state_or_language_event"), ("targets", f"{primary} {receiver}" if placement else primary), ("trigger", "partial_success_or_safe_stop"), ("variant", "interrupt_regress_then_continue"), ("constraints", "delayed_termination recovery_window")]
     elif case_id == "D21":
         fields = [("operator", "state_or_language_event"), ("targets", "task_instruction"), ("trigger", "task_phase"), ("variant", "equivalent_restatement_or_clarification"), ("constraints", "semantic_goal_unchanged")]
     else:
