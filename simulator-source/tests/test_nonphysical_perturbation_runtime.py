@@ -65,6 +65,24 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         self.assertEqual(plan.params["chunk_size"], 4)
         self.assertEqual(plan.params["stale_chunk_steps"], 4)
 
+    def test_generated_ycb_asset_id_survives_bddl_atom_lowercasing(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-1680-v1"
+                / "libero_object"
+                / "01_static"
+            ).glob("S06__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(plan.case_id, "S06")
+        self.assertEqual([asset.asset_id for asset in plan.assets], ["ycb/YcbTomatoSoupCan"])
+        self.assertTrue(plan.assets[0].xml_path.is_file())
+
     def test_all_172_bddls_resolve_to_an_executable_case(self):
         files = sorted(BDDL_ROOT.rglob("*.bddl"))
         self.assertEqual(len(files), 172)

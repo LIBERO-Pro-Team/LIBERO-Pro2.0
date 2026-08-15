@@ -48,7 +48,7 @@ baseline = json.loads((root / "SOURCE_BASELINE.json").read_text(encoding="utf-8"
 service_root = root / "service-source"
 simulator_root = root / "simulator-source"
 manifest = service_root / "assets" / "task_manifest.json"
-bddl_root = service_root / "assets" / "bddl" / "libero-pro2.0-169-v1"
+bddl_root = service_root / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 for required in (service_root, simulator_root, manifest, bddl_root):
     if not required.exists():
         raise SystemExit(f"Required delivery path is missing: {required}")

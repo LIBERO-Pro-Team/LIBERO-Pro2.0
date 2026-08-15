@@ -10,7 +10,7 @@ export PYOPENGL_PLATFORM=egl
 export LIBERO_PRO_ROOT=/path/to/libero-pro-conda-bundle-1.0.0/simulator-source
 export LIBERO_CONFIG_PATH=/path/to/libero-pro-conda-bundle-1.0.0/runtime/libero-config
 export LIBERO_REMOTE_TASK_MANIFEST=/path/to/libero-pro-conda-bundle-1.0.0/service-source/assets/task_manifest.json
-export LIBERO_REMOTE_BDDL_ROOT=/path/to/libero-pro-conda-bundle-1.0.0/service-source/assets/bddl/libero-pro2.0-169-v1
+export LIBERO_REMOTE_BDDL_ROOT=/path/to/libero-pro-conda-bundle-1.0.0/service-source/assets/bddl/libero-pro2.0-1680-v1
 export CUDA_VISIBLE_DEVICES=0
 export MUJOCO_EGL_DEVICE_ID=0
 ```

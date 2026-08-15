@@ -29,7 +29,7 @@ services:
       LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS: ${LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS:-false}
       LIBERO_REMOTE_LOG_LEVEL: ${LIBERO_REMOTE_LOG_LEVEL:-info}
       LIBERO_REMOTE_TASK_MANIFEST: /opt/libero-remote/assets/task_manifest.json
-      LIBERO_REMOTE_BDDL_ROOT: /opt/libero-remote/assets/bddl/libero-pro2.0-169-v1
+      LIBERO_REMOTE_BDDL_ROOT: /opt/libero-remote/assets/bddl/libero-pro2.0-1680-v1
       MUJOCO_GL: egl
       PYOPENGL_PLATFORM: egl
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}

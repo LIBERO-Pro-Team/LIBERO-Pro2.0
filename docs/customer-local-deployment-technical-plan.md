@@ -28,7 +28,7 @@
 libero-pro-bundle-1.0.0/
 |-- images/libero-pro-server-1.0.0.tar
 |-- wheels/                         # CPython 3.8-3.12 Linux x86_64 离线依赖闭包
-|-- assets/                         # 169 项 manifest、BDDL 与扰动资产
+|-- assets/                         # 1680 项 manifest、BDDL 与扰动资产
 |-- docs/                           # 本方案、adapter 契约、调度和可靠性方案
 |-- compose.yaml
 |-- configure.sh
@@ -80,7 +80,7 @@ python3 smoke_test.py
 
 ## 5. 任务范围
 
-当前发布 manifest 包含 169 个有效任务组合：
+当前发布 manifest 包含 1680 个有效任务组合：
 
 - `libero_10`：1 个 base + 42 个扰动，共 43 项。
 - `libero_goal`：1 个 base + 41 个适用扰动，共 42 项。
@@ -188,7 +188,7 @@ processor、policy seed、确定性算法并产生相同 action 序列；服务�
 | --- | --- |
 | `GET /v1/health` | readiness、容量和调度状态 |
 | `GET /v1/version` | 服务、协议、镜像和模拟器版本 |
-| `GET /v1/tasks` | 169 项有效任务目录 |
+| `GET /v1/tasks` | 1680 项有效任务目录 |
 | `POST /v1/sessions` | 创建直接环境 Session |
 | `POST /v1/sessions/{id}/reset` | 使用固定 init state 与 seed 重置 |
 | `POST /v1/sessions/{id}/step` | 幂等提交动作 |
@@ -203,7 +203,7 @@ processor、policy seed、确定性算法并产生相同 action 序列；服务�
 1.0.0 离线产物已验证：
 
 - 528 项内部 SHA-256 与外层 tar.gz SHA-256 全部匹配。
-- 镜像内 169 个 BDDL 哈希全部匹配，完整包含资产与 init states。
+- 镜像内 1680 个 BDDL 哈希全部匹配，完整包含资产与 init states。
 - CPython 3.8 和 3.12 可在无网络、无索引模式安装正式 SDK wheelhouse。
 - fake backend 下认证、非法任务 404、双账户隔离、同 seed 初态复现、跨账户结果隐藏、通用 adapter、
   签名结果和失败重试指纹一致均通过。

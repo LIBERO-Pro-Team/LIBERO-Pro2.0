@@ -1,7 +1,7 @@
 # LIBERO-PRO Remote Evaluation Service
 
 > 状态：1.0.0 发布版本
-> 当前阶段：Docker 与 Conda 离线部署包已完成本地验收，支持 169 项 manifest 任务和多账户服务
+> 当前阶段：Docker 与 Conda 离线部署包已完成本地验收，支持 1680 项 manifest 任务和多账户服务
 
 ## 1. 当前任务
 
@@ -61,8 +61,8 @@ docker compose logs -f libero-remote
 
 镜像和 Conda 离线包固定使用 `LIBERO-PRO` 的 commit
 `c02ee2c8255db1c36664fad978197c47e495f178`，并安装 Python 3.8、锁定的 PyTorch、
-robosuite、MuJoCo 和本服务。当前发布的 169 个 LIBERO-PRO BDDL 位于
-`assets/bddl/libero-pro2.0-169-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
+robosuite、MuJoCo 和本服务。当前发布的 1680 个 LIBERO-PRO BDDL 位于
+`assets/bddl/libero-pro2.0-1680-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
 仅作为历史基线保留，不属于发布 manifest。init state 仍从固定的 LIBERO-PRO commit 加载。
 
 启动后先检查廉价就绪探针：
@@ -75,7 +75,7 @@ curl http://SERVER_IP:8000/v1/tasks
 非 Docker 部署不要在线 clone `LIBERO-PRO` 或自行解析依赖。下载服务仓库 release
 [`v1.0.0-conda-r2`](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/releases/tag/v1.0.0-conda-r2)
 中的 `libero-pro-conda-bundle-1.0.0.tar.gz` 及其 SHA-256 清单，按
-`deploy/customer-conda/README.md` 安装；该包同时包含固定服务源码、完整模拟器源码、169 项
+`deploy/customer-conda/README.md` 安装；该包同时包含固定服务源码、完整模拟器源码、1680 项
 BDDL、init states 和锁定依赖。该离线包中的 `simulator-source/` 与本分支 Git LFS
 checkout 内容逐文件一致。
 
@@ -111,7 +111,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | `120` | 单次 worker 命令超时；超时后 worker 被终止 |
 | `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | `900` | session 空闲回收时间 |
 | `LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS` | `30` | 后台扫描空闲 session 的间隔 |
-| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/libero-pro2.0-169-v1` | 服务端当前使用的 169 项发布 BDDL 根目录 |
+| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/libero-pro2.0-1680-v1` | 服务端当前使用的 1680 项发布 BDDL 根目录 |
 | `NVIDIA_VISIBLE_DEVICES` | `all` | 容器可见 GPU；生产环境建议指定设备 |
 | `LIBERO_PRO_COMMIT` | 固定 commit | 构建时使用的 LIBERO-PRO 版本 |
 
@@ -125,7 +125,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `libero_remote/environment/libero.py` | 查找 suite/task/init state 并包装 `OffScreenRenderEnv` |
 | `libero_remote/environment/observations.py` | 白名单化并规范两路图像和机器人本体状态 |
 | `libero_remote/environment/readiness.py` | 不初始化 MuJoCo 的后端与基础数据就绪检查 |
-| `assets/bddl/` | 保存历史基线和当前 169 个已发布 BASE/static/dynamic BDDL |
+| `assets/bddl/` | 保存历史基线和当前 1680 个已发布 BASE/static/dynamic BDDL |
 | `libero_remote/worker/process.py` | 用 `spawn` 子进程隔离 MuJoCo/EGL，并处理超时和强制回收 |
 | `libero_remote/server/session.py` | 保存单个 session 的 episode、step、锁和幂等缓存 |
 | `libero_remote/server/session_manager.py` | 管理容量、顺序、幂等、失败、空闲过期和全局关闭 |
@@ -168,7 +168,7 @@ python -m ruff check libero_remote tests scripts
 | 第三阶段 | 接入已发布运行时动态扰动，由服务端按规则触发 | 已完成 |
 | 第四阶段 | 公网部署、并发调度、鉴权、限流、监控和排行榜 | 部分完成 |
 
-当前发布已覆盖服务闭环、169 项任务、固定 seed 复现、失败重试、多账户隔离和运行时扰动；公网运营和生产级监控仍需按部署环境单独配置。
+当前发布已覆盖服务闭环、1680 项任务、固定 seed 复现、失败重试、多账户隔离和运行时扰动；公网运营和生产级监控仍需按部署环境单独配置。
 
 ## 4. 服务目标
 
@@ -332,7 +332,7 @@ env.close()
 }
 ```
 
-`variant` 接受 `base`、`S01-S21` 和 `D01-D21`；可用的 suite/task/variant 组合以 `/v1/tasks` 返回的 169 项 manifest 为准。
+`variant` 接受 `base`、`S01-S21` 和 `D01-D21`；可用的 suite/task/variant 组合以 `/v1/tasks` 返回的 1680 项 manifest 为准。
 
 创建成功后返回：
 
@@ -595,7 +595,7 @@ S01-S21
 D01-D21
 ```
 
-服务端根据 `variant` 从 169 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置。
+服务端根据 `variant` 从 1680 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置。
 
 需要明确：把 BDDL 留在服务端只能提高直接获取和针对性训练的成本，不能从理论上彻底阻止通过大量查询推断评测分布。因此还需要访问配额、隐藏测试集轮换和异常查询检测。
 

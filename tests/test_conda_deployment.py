@@ -27,7 +27,7 @@ def test_conda_delivery_locks_the_v100_runtime() -> None:
             "sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933"
         ),
         "python_version": "3.8.10",
-        "task_count": 169,
+        "task_count": 1680,
     }
 
     requirements = (DEPLOYMENT / "requirements-lock.txt").read_text(
@@ -147,7 +147,7 @@ def test_conda_configuration_separates_server_and_client_secrets(
     shutil.copy2(DEPLOYMENT / "configure.sh", deployment)
     shutil.copy2(DEPLOYMENT / "SOURCE_BASELINE.json", deployment)
     for relative in (
-        "service-source/assets/bddl/libero-pro2.0-169-v1",
+        "service-source/assets/bddl/libero-pro2.0-1680-v1",
         "simulator-source",
     ):
         (deployment / relative).mkdir(parents=True)
@@ -206,7 +206,7 @@ permission_dir="$(mktemp -d)"
 trap 'rm -rf "$permission_dir"' EXIT
 cp configure.sh SOURCE_BASELINE.json "$permission_dir/"
 mkdir -p \
-  "$permission_dir/service-source/assets/bddl/libero-pro2.0-169-v1" \
+  "$permission_dir/service-source/assets/bddl/libero-pro2.0-1680-v1" \
   "$permission_dir/simulator-source"
 printf '{{}}\n' > "$permission_dir/service-source/assets/task_manifest.json"
 (
@@ -252,7 +252,7 @@ printf '{{}}\n' > "$permission_dir/service-source/assets/task_manifest.json"
         f"{wsl_root}/bundle/service-source/assets/task_manifest.json"
     )
     assert server["LIBERO_REMOTE_BDDL_ROOT"] == (
-        f"{wsl_root}/bundle/service-source/assets/bddl/libero-pro2.0-169-v1"
+        f"{wsl_root}/bundle/service-source/assets/bddl/libero-pro2.0-1680-v1"
     )
     assert server["LIBERO_CONFIG_PATH"] == f"{wsl_root}/bundle/runtime/libero-config"
     assert server["LIBERO_REMOTE_SCHEDULER_DB_PATH"] == (
@@ -470,7 +470,7 @@ def test_conda_builder_exports_only_the_pinned_source_commits(tmp_path: Path) ->
                 "reference_image": "reference:1.0.0",
                 "reference_image_digest": "sha256:" + "a" * 64,
                 "python_version": "3.8.10",
-                "task_count": 169,
+                "task_count": 1680,
             }
         ),
         encoding="utf-8",
@@ -591,7 +591,7 @@ def test_conda_account_provisioning_keeps_plaintext_keys_client_side(
     for filename in ("_runtime.sh", "configure.sh", "add_account.sh", "SOURCE_BASELINE.json"):
         shutil.copy2(DEPLOYMENT / filename, deployment)
     for relative in (
-        "service-source/assets/bddl/libero-pro2.0-169-v1",
+        "service-source/assets/bddl/libero-pro2.0-1680-v1",
         "simulator-source",
     ):
         (deployment / relative).mkdir(parents=True)

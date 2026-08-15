@@ -34,7 +34,7 @@ def test_production_compose_enforces_isolation_and_versioned_tasks() -> None:
     assert "LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS:-false" in compose
     assert "LIBERO_REMOTE_RESULT_SIGNING_KEY:?" in compose
     assert "/opt/libero-remote/assets/task_manifest.json" in compose
-    assert "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1" in compose
+    assert "/opt/libero-remote/assets/bddl/libero-pro2.0-1680-v1" in compose
 
 
 def test_server_image_has_no_model_runtime_configuration() -> None:
@@ -53,7 +53,7 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
     assert "cmake" in dockerfile
     bddl_setting = (
         "libero_remote_bddl_root="
-        "/opt/libero-remote/assets/bddl/libero-pro2.0-169-v1"
+        "/opt/libero-remote/assets/bddl/libero-pro2.0-1680-v1"
     )
     assert bddl_setting in dockerfile
 
@@ -538,7 +538,7 @@ def test_customer_technical_plan_matches_the_released_bundle_workflow() -> None:
     assert "LIBERO_REMOTE_MAX_SESSIONS" in technical_plan
     assert "LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER" in technical_plan
     assert "bash add_account.sh team-b" in technical_plan
-    assert "169 个有效任务组合" in technical_plan
+    assert "1680 个有效任务组合" in technical_plan
     assert "AgentAdapter" in technical_plan
     assert "GitHub 不是客户部署来源" in technical_plan
     for obsolete in (

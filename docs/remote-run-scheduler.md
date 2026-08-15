@@ -86,7 +86,7 @@ run 中的任务，不会执行其他用户的 episode。
 
 ## 调度行为
 
-- 当前筛选后的 169 个有效任务组合被保存为 169 个独立 episode job；不得重新构造 4 x 43 笛卡尔积。
+- 当前筛选后的 1680 个有效任务组合被保存为 1680 个独立 episode job；不得重新构造 4 x 43 笛卡尔积。
 - claim 成功时，调度器原子创建一个新 session 和独立 EnvWorker。
 - 用户间按活跃 claim intent 轮询，用户内部按 episode FIFO。
 - `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` 限制单用户占用。

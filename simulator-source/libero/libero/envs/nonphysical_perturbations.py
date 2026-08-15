@@ -175,7 +175,14 @@ def _asset_index(asset_root: Path) -> dict[str, dict[str, Any]]:
     if not catalog_path.is_file():
         raise PerturbationConfigurationError(f"Asset catalog not found: {catalog_path}")
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-    return {str(item["id"]): item for item in catalog.get("assets", [])}
+    index: dict[str, dict[str, Any]] = {}
+    for item in catalog.get("assets", []):
+        asset_id = str(item["id"])
+        index[asset_id] = item
+        # BDDL scanners normalize atoms to lowercase, while catalog IDs may
+        # intentionally preserve YCB/PRL capitalization.
+        index.setdefault(asset_id.casefold(), item)
+    return index
 
 
 def _resolve_asset(
@@ -187,18 +194,20 @@ def _resolve_asset(
     replacement: bool = False,
     scale: float = 1.0,
 ) -> AssetSpec:
-    if asset_id not in index:
+    item = index.get(asset_id) or index.get(str(asset_id).casefold())
+    if item is None:
         raise PerturbationConfigurationError(
             f"Perturbation asset {asset_id!r} is absent from {asset_root / 'asset_catalog.json'}"
         )
-    path = (asset_root / index[asset_id]["path"]).resolve()
+    canonical_id = str(item["id"])
+    path = (asset_root / item["path"]).resolve()
     if not path.is_file():
         raise PerturbationConfigurationError(
             f"Perturbation asset {asset_id!r} is missing its MJCF file: {path}"
         )
     if scale <= 0:
         raise PerturbationConfigurationError(f"Asset scale must be positive; got {scale}")
-    return AssetSpec(asset_id, path, staged, replacement, float(scale))
+    return AssetSpec(canonical_id, path, staged, replacement, float(scale))
 
 
 def _case_entries(config: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -262,6 +271,9 @@ def build_execution_plan(
 
     index = _asset_index(asset_root)
     staged = case_id.startswith("D")
+    params = fields.get("params", {})
+    if not isinstance(params, dict):
+        params = {}
     assets = [
         _resolve_asset(asset_id, asset_root, index, staged=staged)
         for asset_id in CASE_ASSETS.get(case_id, ())
@@ -274,6 +286,14 @@ def build_execution_plan(
             "libero_object": ("ycb/YcbTomatoSoupCan", 0.72),
             "libero_spatial": ("prl/plastic_bowl", 0.30),
         }.get(source_suite)
+        configured_asset = params.get("asset_id")
+        configured_scale = params.get("asset_scale")
+        if configured_asset:
+            try:
+                configured_scale = float(configured_scale)
+            except (TypeError, ValueError):
+                configured_scale = 1.0
+            suite_default = (str(configured_asset), configured_scale)
         if not suite_default:
             raise PerturbationConfigurationError(
                 f"No semantics-preserving {case_id} asset for suite {source_suite!r}"
@@ -290,9 +310,6 @@ def build_execution_plan(
         )
 
     constraints = _name_tuple(fields.get("constraints"))
-    params = fields.get("params", {})
-    if not isinstance(params, dict):
-        params = {}
     return ExecutionPlan(
         case_id=case_id,
         schedule="static" if case_id.startswith("S") else "dynamic",
@@ -463,9 +480,55 @@ def apply_precompile_geometry(
 
 
 def _entity_body_id(env: Any, name: str) -> int:
-    if name not in env.obj_body_id:
-        raise PerturbationValidationError(f"Scene entity {name!r} does not exist")
-    return int(env.obj_body_id[name])
+    """Resolve movable objects, fixtures, and the arena's canonical table."""
+
+    body_ids = getattr(env, "obj_body_id", {})
+    if name in body_ids:
+        return int(body_ids[name])
+    # ``main_table`` is declared by BDDL but robosuite names its arena body
+    # ``table`` and deliberately omits it from obj_body_id.
+    candidates = ("table",) if name == "main_table" else (name,)
+    model = getattr(getattr(env, "sim", None), "model", None)
+    for candidate in candidates:
+        try:
+            return int(model.body_name2id(candidate))
+        except Exception:
+            continue
+    raise PerturbationValidationError(f"Scene entity {name!r} does not exist")
+
+
+def _entity_exists(env: Any, name: str) -> bool:
+    try:
+        _entity_body_id(env, name)
+    except PerturbationValidationError:
+        return False
+    return True
+
+
+def _scene_entity_names(env: Any) -> tuple[str, ...]:
+    names = list(getattr(env, "obj_body_id", {}).keys())
+    if _entity_exists(env, "main_table") and "main_table" not in names:
+        names.append("main_table")
+    return tuple(names)
+
+
+def _entity_body_ids(env: Any, name: str) -> tuple[int, ...]:
+    """Return a body and all descendants, covering articulated fixtures."""
+
+    root = _entity_body_id(env, name)
+    model = env.sim.model
+    ids = [root]
+    changed = True
+    while changed:
+        changed = False
+        for body_id in range(int(model.nbody)):
+            if body_id in ids:
+                continue
+            parent = int(model.body_parentid[body_id])
+            if parent in ids:
+                ids.append(body_id)
+                changed = True
+    return tuple(ids)
 
 
 def _entity_pose(env: Any, name: str) -> tuple[np.ndarray, np.ndarray]:
@@ -532,7 +595,7 @@ def _candidate_is_clear(
     x_min, x_max, y_min, y_max = _workspace_bounds(env)
     if not (x_min <= candidate_xy[0] <= x_max and y_min <= candidate_xy[1] <= y_max):
         return False
-    for name in env.obj_body_id:
+    for name in _scene_entity_names(env):
         if name == moving_name or name in ignored:
             continue
         try:
@@ -752,7 +815,10 @@ def _functional_anchor(env: Any, entity_name: str) -> tuple[np.ndarray, str]:
             continue
         site_name = state[2]
         site = sites.get(site_name)
-        if site is not None and getattr(site, "parent_name", None) == entity_name:
+        region = getattr(env, "parsed_problem", {}).get("regions", {}).get(site_name, {})
+        site_parent = getattr(site, "parent_name", None) if site is not None else None
+        region_target = region.get("target") if isinstance(region, dict) else None
+        if site is not None and (site_parent == entity_name or region_target == entity_name):
             try:
                 return (
                     np.asarray(env.sim.data.get_site_xpos(site_name), dtype=np.float64).copy(),
@@ -761,7 +827,10 @@ def _functional_anchor(env: Any, entity_name: str) -> tuple[np.ndarray, str]:
             except Exception:
                 break
     for site_name, site in sites.items():
-        if getattr(site, "parent_name", None) != entity_name:
+        region = getattr(env, "parsed_problem", {}).get("regions", {}).get(site_name, {})
+        site_parent = getattr(site, "parent_name", None)
+        region_target = region.get("target") if isinstance(region, dict) else None
+        if site_parent != entity_name and region_target != entity_name:
             continue
         try:
             return (
@@ -778,13 +847,16 @@ def _goal_path_anchors(env: Any) -> tuple[str, np.ndarray, str, np.ndarray]:
     sites = getattr(env, "object_sites_dict", {})
     goal_states = getattr(env, "parsed_problem", {}).get("goal_state", [])
     for state in goal_states:
-        if len(state) < 3 or state[1] not in env.obj_body_id:
+        if len(state) < 3 or not _entity_exists(env, state[1]):
             continue
         site = sites.get(state[2])
         receiver_name = getattr(site, "parent_name", None) if site is not None else None
-        if receiver_name is None and state[2] in env.obj_body_id:
+        region = getattr(env, "parsed_problem", {}).get("regions", {}).get(state[2], {})
+        if receiver_name is None and isinstance(region, dict):
+            receiver_name = region.get("target")
+        if receiver_name is None and _entity_exists(env, state[2]):
             receiver_name = state[2]
-        if receiver_name not in env.obj_body_id:
+        if receiver_name is None or not _entity_exists(env, receiver_name):
             continue
         target, _ = _entity_pose(env, state[1])
         receiver, anchor_name = _functional_anchor(env, receiver_name)
@@ -802,11 +874,34 @@ def _goal_interaction_targets(env: Any) -> tuple[str, ...]:
         if len(state) < 2:
             continue
         candidate = str(state[1])
-        if candidate not in env.obj_body_id:
+        if not _entity_exists(env, candidate):
             site = sites.get(candidate)
             candidate = str(getattr(site, "parent_name", candidate))
-        if candidate in env.obj_body_id and candidate not in targets:
+        if _entity_exists(env, candidate) and candidate not in targets:
             targets.append(candidate)
+    return tuple(targets)
+
+
+def _goal_articulation_targets(env: Any) -> tuple[tuple[str, list[Any]], ...]:
+    """Return articulation goal predicates resolved to their fixture bodies."""
+    targets: list[tuple[str, list[Any]]] = []
+    sites = getattr(env, "object_sites_dict", {})
+    for state in getattr(env, "parsed_problem", {}).get("goal_state", []):
+        if not state or str(state[0]).lower() not in {
+            "open",
+            "close",
+            "turnon",
+            "turnoff",
+        }:
+            continue
+        if len(state) < 2:
+            continue
+        candidate = str(state[1])
+        site = sites.get(candidate)
+        if site is not None:
+            candidate = str(getattr(site, "parent_name", candidate))
+        if _entity_exists(env, candidate):
+            targets.append((candidate, list(state)))
     return tuple(targets)
 
 
@@ -846,7 +941,7 @@ def _partial_goal_regression(
             site = sites.get(candidate)
             if site is not None:
                 candidate = str(getattr(site, "parent_name", candidate))
-            if candidate in configured and candidate in env.obj_body_id:
+            if candidate in configured and _entity_exists(env, candidate):
                 return candidate, state, completed, pending
     return None
 
@@ -874,6 +969,7 @@ class NonPhysicalPerturbationRuntime:
         self._stale_gripper_index = 0
         self._logged: set[str] = set()
         self._saved_poses: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        self._saved_joint_states: dict[str, tuple[np.ndarray, ...]] = {}
         self._dynamic_applied = False
         self._dynamic_restored = False
         self._dynamic_event_step: int | None = None
@@ -921,6 +1017,7 @@ class NonPhysicalPerturbationRuntime:
         self.events.clear()
         self._clear_temporal_state()
         self._saved_poses.clear()
+        self._saved_joint_states.clear()
         self._dynamic_applied = False
         self._dynamic_restored = False
         self._dynamic_event_step = None
@@ -958,7 +1055,7 @@ class NonPhysicalPerturbationRuntime:
 
         if self._dynamic_applied:
             for name, (position, quaternion) in self._saved_poses.items():
-                if name in env.obj_body_id:
+                if _entity_exists(env, name):
                     _set_entity_pose(env, name, position, quaternion)
         self.reset()
         self._stage_dynamic_assets(env)
@@ -997,6 +1094,26 @@ class NonPhysicalPerturbationRuntime:
         if duration is None:
             duration = self._event_duration_steps()
         return self._dynamic_event_step <= step < self._dynamic_event_step + duration
+
+    def _interaction_mode(self) -> str:
+        return str(self.plan.params.get("interaction_mode", "placement")).lower()
+
+    def _articulation_progress(self, env: Any, target: str) -> float:
+        state = getattr(env, "object_states_dict", {}).get(target)
+        before = self._saved_joint_states.get(target)
+        if state is None or before is None:
+            return 0.0
+        after = tuple(np.asarray(value, dtype=np.float64) for value in state.get_joint_state())
+        if len(after) != len(before):
+            return 0.0
+        return max(
+            (float(np.linalg.norm(current - initial)) for current, initial in zip(after, before)),
+            default=0.0,
+        )
+
+    def _articulation_anchor(self, env: Any, target: str) -> np.ndarray:
+        position, _ = _functional_anchor(env, target)
+        return np.asarray(position, dtype=np.float64)
 
     @staticmethod
     def _copy_observation(observation: dict[str, Any]) -> dict[str, Any]:
@@ -1290,7 +1407,7 @@ class NonPhysicalPerturbationRuntime:
             )
         elif case_id in {"S03", "S05", "S10", "S11", "S12"}:
             name = _injected_name(self.plan)
-            if name not in env.obj_body_id:
+            if not _entity_exists(env, name):
                 raise PerturbationValidationError(
                     f"Expected injected asset {name!r} is absent from the compiled scene"
                 )
@@ -1403,7 +1520,7 @@ class NonPhysicalPerturbationRuntime:
 
     def _stage_dynamic_assets(self, env: Any) -> None:
         for name in (*self.plan.targets, *self.plan.references):
-            if name in env.obj_body_id and name not in self._saved_poses:
+            if _entity_exists(env, name) and name not in self._saved_poses:
                 self._saved_poses[name] = _entity_pose(env, name)
         try:
             goal_target, _, _, _ = _goal_path_anchors(env)
@@ -1414,9 +1531,16 @@ class NonPhysicalPerturbationRuntime:
         for target in _goal_interaction_targets(env):
             if target not in self._saved_poses:
                 self._saved_poses[target] = _entity_pose(env, target)
+        for target, _ in _goal_articulation_targets(env):
+            state = getattr(env, "object_states_dict", {}).get(target)
+            if state is not None and target not in self._saved_joint_states:
+                self._saved_joint_states[target] = tuple(
+                    np.asarray(value, dtype=np.float64).copy()
+                    for value in state.get_joint_state()
+                )
         for index, _ in enumerate(self.plan.assets):
             name = _injected_name(self.plan, index)
-            if name in env.obj_body_id:
+            if _entity_exists(env, name):
                 position, quat = _entity_pose(env, name)
                 self._saved_poses[name] = (position, quat)
                 _set_entity_pose(env, name, np.array([0.0, 0.0, -5.0]), quat)
@@ -1424,11 +1548,11 @@ class NonPhysicalPerturbationRuntime:
     def _change_appearance(self, env: Any, targets: tuple[str, ...]) -> list[str]:
         changed: list[str] = []
         for target in targets:
-            if target not in env.obj_body_id:
+            if not _entity_exists(env, target):
                 continue
-            body_id = _entity_body_id(env, target)
+            body_ids = set(_entity_body_ids(env, target))
             for geom_id in range(int(env.sim.model.ngeom)):
-                if int(env.sim.model.geom_bodyid[geom_id]) != body_id:
+                if int(env.sim.model.geom_bodyid[geom_id]) not in body_ids:
                     continue
                 rgba = np.asarray(env.sim.model.geom_rgba[geom_id]).copy()
                 rgba[:3] = np.array([0.18, 0.72, 0.38])
@@ -1508,7 +1632,29 @@ class NonPhysicalPerturbationRuntime:
             return
 
         if case_id in {"D01", "D02", "D06", "D18", "D19"}:
-            targets = [name for name in self.plan.targets if name in env.obj_body_id]
+            if self._interaction_mode() == "articulation" and case_id in {"D18", "D19"}:
+                articulation_targets = _goal_articulation_targets(env)
+                if not articulation_targets:
+                    raise PerturbationValidationError(
+                        f"{case_id} articulation fallback has no goal fixture"
+                    )
+                target, _ = articulation_targets[0]
+                _, after, applied = _safe_offset_pose(
+                    env,
+                    target,
+                    _dynamic_pose_requested_delta(case_id, target, self.plan.params),
+                )
+                self._log_once(
+                    "articulation_reachable_state_change",
+                    step,
+                    target=target,
+                    delta_xy=applied.tolist(),
+                    position=after.tolist(),
+                )
+                self._dynamic_event_step = int(step)
+                self._dynamic_applied = True
+                return
+            targets = [name for name in self.plan.targets if _entity_exists(env, name)]
             if not targets:
                 raise PerturbationValidationError(
                     f"Dynamic case {case_id} has no movable target in {self.plan.targets}"
@@ -1581,7 +1727,7 @@ class NonPhysicalPerturbationRuntime:
         elif case_id in {"D03", "D04", "D05"}:
             name = _injected_name(self.plan)
             reference_name = next(
-                (target for target in self.plan.targets if target in env.obj_body_id),
+                (target for target in self.plan.targets if _entity_exists(env, target)),
                 self.plan.references[0] if self.plan.references else None,
             )
             if reference_name is None:
@@ -1596,13 +1742,26 @@ class NonPhysicalPerturbationRuntime:
             if case_id == "D04":
                 position, quaternion = _camera_occluder_pose(env, reference_name)
             elif case_id == "D05":
-                target_name, target, anchor_name, receiver = _goal_path_anchors(env)
-                direction = receiver[:2] - target[:2]
-                length = float(np.linalg.norm(direction))
-                direction = direction / length if length >= 1e-6 else np.array([0.0, 1.0])
-                position = target + 0.62 * (receiver - target)
-                position[:2] += np.array([-direction[1], direction[0]]) * 0.025
-                quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
+                if self._interaction_mode() == "articulation":
+                    articulation_targets = _goal_articulation_targets(env)
+                    if not articulation_targets:
+                        raise PerturbationValidationError(
+                            "D05 articulation fallback has no goal fixture"
+                        )
+                    target_name, _ = articulation_targets[0]
+                    target = self._articulation_anchor(env, target_name)
+                    anchor_name = target_name
+                    position = target.copy()
+                    position[2] += 0.04
+                    quaternion = _yaw_quaternion(0.0)
+                else:
+                    target_name, target, anchor_name, receiver = _goal_path_anchors(env)
+                    direction = receiver[:2] - target[:2]
+                    length = float(np.linalg.norm(direction))
+                    direction = direction / length if length >= 1e-6 else np.array([0.0, 1.0])
+                    position = target + 0.62 * (receiver - target)
+                    position[:2] += np.array([-direction[1], direction[0]]) * 0.025
+                    quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
             else:
                 position, anchor_name = _functional_anchor(env, reference_name)
                 position = position + offset
@@ -1640,7 +1799,7 @@ class NonPhysicalPerturbationRuntime:
     def _dynamic_triggered(self, env: Any, step: int) -> bool:
         case_id = self.plan.case_id
         target = next(
-            (name for name in self.plan.targets if name in env.obj_body_id), None
+            (name for name in self.plan.targets if _entity_exists(env, name)), None
         )
         try:
             eef = np.asarray(
@@ -1654,12 +1813,31 @@ class NonPhysicalPerturbationRuntime:
             return bool(np.linalg.norm(eef - position) <= 0.12)
         if case_id == "D17" and target and eef is not None:
             position, _ = _entity_pose(env, target)
+            if self._interaction_mode() == "articulation":
+                return bool(np.linalg.norm(eef - self._articulation_anchor(env, target)) <= 0.14)
             closing = bool(
                 self.previous_action is not None
                 and self.previous_action.size
                 and self.previous_action[-1] > 0.0
             )
             return bool(closing and np.linalg.norm(eef - position) <= 0.12)
+        if (
+            self._interaction_mode() == "articulation"
+            and case_id in {"D02", "D03", "D05", "D19"}
+            and eef is not None
+        ):
+            articulation_targets = _goal_articulation_targets(env)
+            if articulation_targets:
+                target_name, _ = articulation_targets[0]
+                anchor = self._articulation_anchor(env, target_name)
+                threshold = 0.18 if case_id == "D05" else 0.16
+                if case_id == "D19":
+                    return bool(
+                        self._articulation_progress(env, target_name)
+                        >= float(self.plan.params.get("trigger_state_change_m", 0.02))
+                        and np.linalg.norm(eef - anchor) <= threshold
+                    )
+                return bool(np.linalg.norm(eef - anchor) <= threshold)
         if case_id in {"D02", "D03", "D05", "D19"}:
             try:
                 goal_target, position, _, receiver = _goal_path_anchors(env)
@@ -1693,6 +1871,19 @@ class NonPhysicalPerturbationRuntime:
                     and np.linalg.norm(eef - receiver) <= 0.16
                 )
         if case_id == "D18" and target:
+            if self._interaction_mode() == "articulation":
+                articulation_targets = _goal_articulation_targets(env)
+                if not articulation_targets or eef is None:
+                    return False
+                articulation_target, _ = articulation_targets[0]
+                return bool(
+                    self._articulation_progress(env, articulation_target)
+                    >= float(self.plan.params.get("trigger_state_change_m", 0.02))
+                    and np.linalg.norm(
+                        eef - self._articulation_anchor(env, articulation_target)
+                    )
+                    <= 0.18
+                )
             position, _ = _entity_pose(env, target)
             saved = self._saved_poses.get(target)
             if saved is None:
