@@ -152,7 +152,7 @@ class ControlEnv:
         plan = self.env.perturbation_plan
         runtime = self.env.perturbation_runtime
         return describe_execution_plan(
-            plan, runtime.seed, runtime.EVENT_START, runtime.EVENT_END
+            plan, runtime.seed, runtime.event_duration_steps
         )
 
     def set_init_state(self, init_state):

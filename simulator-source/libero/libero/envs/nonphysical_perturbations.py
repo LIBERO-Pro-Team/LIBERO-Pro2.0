@@ -106,21 +106,23 @@ class ExecutionPlan:
     references: tuple[str, ...]
     mechanisms: tuple[str, ...]
     assets: tuple[AssetSpec, ...]
+    trigger: str = "none"
     params: dict[str, Any] = field(default_factory=dict)
     constraints: tuple[str, ...] = ()
 
 
 def describe_execution_plan(
-    plan: ExecutionPlan, seed: int, event_start: int, event_end: int
+    plan: ExecutionPlan, seed: int, event_duration_steps: int
 ) -> dict[str, Any]:
     """Return the path-independent plan identity persisted by remote evaluators."""
 
     return {
-        "version": "libero_nonphysical_plan_v1",
+        "version": "libero_nonphysical_plan_v2",
         "case_id": plan.case_id,
         "schedule": plan.schedule,
         "operator": plan.operator,
         "variant": plan.variant,
+        "trigger": plan.trigger,
         "targets": list(plan.targets),
         "references": list(plan.references),
         "mechanisms": list(plan.mechanisms),
@@ -136,8 +138,7 @@ def describe_execution_plan(
         "params": dict(plan.params),
         "constraints": list(plan.constraints),
         "seed": int(seed),
-        "event_start": int(event_start),
-        "event_end": int(event_end),
+        "event_duration_steps": int(event_duration_steps),
     }
 
 
@@ -240,6 +241,7 @@ def build_execution_plan(
             references=(),
             mechanisms=("base",),
             assets=(),
+            trigger="none",
         )
     if case_id not in CASE_MECHANISMS:
         raise PerturbationConfigurationError(f"Unsupported perturbation case {case_id}")
@@ -300,6 +302,7 @@ def build_execution_plan(
         references=_name_tuple(fields.get("references")),
         mechanisms=CASE_MECHANISMS[case_id],
         assets=tuple(assets),
+        trigger=str(fields.get("trigger", "task_phase" if staged else "reset")),
         params=params,
         constraints=constraints,
     )
@@ -791,6 +794,22 @@ def _goal_path_anchors(env: Any) -> tuple[str, np.ndarray, str, np.ndarray]:
     )
 
 
+def _goal_interaction_targets(env: Any) -> tuple[str, ...]:
+    """Resolve entities the robot must approach to make task progress."""
+    targets: list[str] = []
+    sites = getattr(env, "object_sites_dict", {})
+    for state in getattr(env, "parsed_problem", {}).get("goal_state", []):
+        if len(state) < 2:
+            continue
+        candidate = str(state[1])
+        if candidate not in env.obj_body_id:
+            site = sites.get(candidate)
+            candidate = str(getattr(site, "parent_name", candidate))
+        if candidate in env.obj_body_id and candidate not in targets:
+            targets.append(candidate)
+    return tuple(targets)
+
+
 def _partial_goal_regression(
     env: Any, configured_targets: tuple[str, ...]
 ) -> tuple[str, list[Any], tuple[list[Any], ...], tuple[list[Any], ...]] | None:
@@ -952,6 +971,33 @@ class NonPhysicalPerturbationRuntime:
             {"case_id": self.plan.case_id, "event": key, "step": int(step), **details}
         )
 
+    def _event_started(self, step: int) -> bool:
+        return self._dynamic_event_step is not None and step == self._dynamic_event_step
+
+    def _event_duration_steps(self) -> int:
+        try:
+            return max(
+                1,
+                int(
+                    self.plan.params.get(
+                        "event_duration_steps", self.EVENT_END - self.EVENT_START
+                    )
+                ),
+            )
+        except (TypeError, ValueError):
+            return self.EVENT_END - self.EVENT_START
+
+    @property
+    def event_duration_steps(self) -> int:
+        return self._event_duration_steps()
+
+    def _event_active(self, step: int, duration: int | None = None) -> bool:
+        if self._dynamic_event_step is None:
+            return False
+        if duration is None:
+            duration = self._event_duration_steps()
+        return self._dynamic_event_step <= step < self._dynamic_event_step + duration
+
     @staticmethod
     def _copy_observation(observation: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -1023,7 +1069,7 @@ class NonPhysicalPerturbationRuntime:
                     degraded[..., ::8, ::8] = 0
                     out[key] = degraded
             self._log_once("sensor_degradation", step)
-        elif case_id == "D08" and self.EVENT_START <= step < self.EVENT_END:
+        elif case_id == "D08" and self._event_active(step):
             for key in self._configured_rgb_image_keys(out):
                 out[key] = np.zeros_like(out[key])
             self._log_once(
@@ -1032,7 +1078,7 @@ class NonPhysicalPerturbationRuntime:
                 targets=list(self.plan.targets),
                 image_keys=self._configured_rgb_image_keys(out),
             )
-        elif case_id == "D09" and self.EVENT_START <= step < self.EVENT_END:
+        elif case_id == "D09" and self._event_active(step):
             for key in image_keys:
                 value = out[key]
                 if np.issubdtype(value.dtype, np.integer):
@@ -1041,19 +1087,19 @@ class NonPhysicalPerturbationRuntime:
                     )
             self._log_once("exposure_change", step)
         elif case_id == "D10":
-            if self.EVENT_START <= step < self.EVENT_END and self.previous_observation:
+            if self._event_active(step) and self.previous_observation:
                 for key in image_keys:
                     if key in self.previous_observation:
                         out[key] = self.previous_observation[key].copy()
                 self._log_once("frame_freeze", step)
         elif case_id == "D11":
-            if self.EVENT_START <= step < self.EVENT_END and self.previous_observation:
+            if self._event_active(step) and self.previous_observation:
                 for key, value in list(out.items()):
                     if key in self.previous_observation and isinstance(value, np.ndarray):
                         out[key] = self.previous_observation[key].copy()
                 self._log_once("modality_state_freeze", step)
         elif case_id in {"S20", "D12"}:
-            delay = 1 if case_id == "S20" else (2 if self.EVENT_START <= step < self.EVENT_END else 0)
+            delay = 1 if case_id == "S20" else (2 if self._event_active(step) else 0)
             self.observation_queue.append(self._copy_observation(out))
             if delay and len(self.observation_queue) > delay:
                 out = self._copy_observation(list(self.observation_queue)[-delay - 1])
@@ -1072,17 +1118,17 @@ class NonPhysicalPerturbationRuntime:
             if len(self.action_queue) > 1:
                 current = list(self.action_queue)[-2].copy()
                 self._log_once("fixed_action_delay", step, delay_steps=1)
-        elif case_id == "D13" and self.EVENT_START <= step < self.EVENT_END and previous is not None:
+        elif case_id == "D13" and self._event_active(step) and previous is not None:
             current[:-1] = previous[:-1]
             self._log_once("arm_gripper_desynchronization", step)
-        elif case_id == "D14" and step == self.EVENT_START and previous is not None:
+        elif case_id == "D14" and self._event_started(step) and previous is not None:
             current = previous
             self._log_once("command_drop_repeat", step)
         elif case_id == "D15":
             chunk_size, stale_steps = self._d15_chunk_config()
-            if step < self.EVENT_START:
+            if not self._dynamic_applied:
                 self.action_queue.append(current.copy())
-            elif self.EVENT_START <= step < self.EVENT_START + stale_steps:
+            elif self._event_active(step, stale_steps):
                 if not self._stale_action_chunk:
                     self._stale_action_chunk = list(self.action_queue)[-chunk_size:]
                     self._stale_action_index = 0
@@ -1103,7 +1149,7 @@ class NonPhysicalPerturbationRuntime:
                 self.action_queue.append(current.copy())
                 self._stale_action_chunk.clear()
                 self._stale_action_index = 0
-        elif case_id == "D16" and self.EVENT_START <= step < self.EVENT_START + 6:
+        elif case_id == "D16" and self._event_active(step, 6):
             current[:] = 0.0
             if current.size:
                 current[0] = 0.12
@@ -1127,13 +1173,13 @@ class NonPhysicalPerturbationRuntime:
 
         if case_id == "S20" and previous is not None:
             current = previous
-        elif case_id == "D14" and step == self.EVENT_START and previous is not None:
+        elif case_id == "D14" and self._event_started(step) and previous is not None:
             current = previous
         elif case_id == "D15":
             chunk_size, stale_steps = self._d15_chunk_config()
-            if step < self.EVENT_START:
+            if not self._dynamic_applied:
                 self.gripper_queue.append(current)
-            elif self.EVENT_START <= step < self.EVENT_START + stale_steps:
+            elif self._event_active(step, stale_steps):
                 if not self._stale_gripper_chunk:
                     self._stale_gripper_chunk = list(self.gripper_queue)[-chunk_size:]
                     self._stale_gripper_index = 0
@@ -1154,7 +1200,7 @@ class NonPhysicalPerturbationRuntime:
                 self.gripper_queue.append(current)
                 self._stale_gripper_chunk.clear()
                 self._stale_gripper_index = 0
-        elif case_id == "D16" and self.EVENT_START <= step < self.EVENT_START + 6:
+        elif case_id == "D16" and self._event_active(step, 6):
             current = 0.0
         elif (
             case_id == "D17"
@@ -1174,7 +1220,11 @@ class NonPhysicalPerturbationRuntime:
                 raise PerturbationConfigurationError("S21 needs an equivalent language value")
             self._log_once("semantic_paraphrase", step)
             return value
-        if self.plan.case_id == "D21" and step >= self.EVENT_START:
+        if (
+            self.plan.case_id == "D21"
+            and self._dynamic_event_step is not None
+            and step >= self._dynamic_event_step
+        ):
             self._log_once("runtime_language_clarification", step)
             return f"Please continue: {original}"
         return original
@@ -1185,6 +1235,9 @@ class NonPhysicalPerturbationRuntime:
             "operator": self.plan.operator,
             "variant": self.plan.variant,
             "schedule": self.plan.schedule,
+            "trigger": self.plan.trigger,
+            "trigger_step": self._dynamic_event_step,
+            "event_duration_steps": self.event_duration_steps,
             "assets": [asset.asset_id for asset in self.plan.assets],
             "events": list(self.events),
         }
@@ -1358,6 +1411,9 @@ class NonPhysicalPerturbationRuntime:
             goal_target = None
         if goal_target is not None and goal_target not in self._saved_poses:
             self._saved_poses[goal_target] = _entity_pose(env, goal_target)
+        for target in _goal_interaction_targets(env):
+            if target not in self._saved_poses:
+                self._saved_poses[target] = _entity_pose(env, target)
         for index, _ in enumerate(self.plan.assets):
             name = _injected_name(self.plan, index)
             if name in env.obj_body_id:
@@ -1434,7 +1490,12 @@ class NonPhysicalPerturbationRuntime:
         if not case_id.startswith("D"):
             return
         if self._dynamic_applied:
-            if case_id == "D04" and not self._dynamic_restored and step >= self.EVENT_END:
+            if (
+                case_id == "D04"
+                and not self._dynamic_restored
+                and self._dynamic_event_step is not None
+                and step >= self._dynamic_event_step + self._event_duration_steps()
+            ):
                 name = _injected_name(self.plan)
                 position, quat = self._saved_poses.get(
                     name, (np.array([0.0, 0.0, -5.0]), _yaw_quaternion(0.0))
@@ -1634,7 +1695,7 @@ class NonPhysicalPerturbationRuntime:
         if case_id == "D18" and target:
             position, _ = _entity_pose(env, target)
             saved = self._saved_poses.get(target)
-            if saved is None or step < 8:
+            if saved is None:
                 return False
             transported = bool(
                 position[2] >= saved[0][2] + 0.04
@@ -1654,4 +1715,38 @@ class NonPhysicalPerturbationRuntime:
                 step >= self.EVENT_START
                 and _partial_goal_regression(env, self.plan.targets) is not None
             )
-        return step >= self.EVENT_START
+        if self.plan.trigger == "state_change":
+            if eef is None:
+                return False
+            lift_threshold = float(self.plan.params.get("trigger_lift_m", 0.025))
+            move_threshold = float(self.plan.params.get("trigger_move_m", 0.05))
+            grasp_distance = float(self.plan.params.get("grasp_distance_m", 0.18))
+            closing = bool(
+                self.previous_action is not None
+                and self.previous_action.size
+                and self.previous_action[-1] > 0.0
+            )
+            if not closing:
+                return False
+            for name in _goal_interaction_targets(env):
+                saved = self._saved_poses.get(name)
+                if saved is None:
+                    continue
+                position, _ = _entity_pose(env, name)
+                moved = bool(
+                    position[2] >= saved[0][2] + lift_threshold
+                    or np.linalg.norm(position[:2] - saved[0][:2]) >= move_threshold
+                )
+                if moved and np.linalg.norm(eef - position) <= grasp_distance:
+                    return True
+            return False
+        if self.plan.trigger == "task_phase":
+            if eef is None:
+                return False
+            threshold = float(self.plan.params.get("trigger_distance_m", 0.15))
+            for name in _goal_interaction_targets(env):
+                position, _ = _entity_pose(env, name)
+                if np.linalg.norm(eef - position) <= threshold:
+                    return True
+            return False
+        return False
