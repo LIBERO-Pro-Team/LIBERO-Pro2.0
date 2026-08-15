@@ -460,6 +460,8 @@
         (:constraints retry_remains_possible)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 40)
+          (:recovery_retreat_m 0.07)
         )
       )
       (D18

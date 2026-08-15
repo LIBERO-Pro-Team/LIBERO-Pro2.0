@@ -306,7 +306,7 @@ def params_block(values: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def case_entry(case_id: str, profile: TaskProfile) -> str:
+def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
     mode = profile.interaction_mode
     placement = mode == "placement"
     primary = profile.primary
@@ -412,6 +412,10 @@ def case_entry(case_id: str, profile: TaskProfile) -> str:
         params["offset_xy"] = (-0.12, 0.09) if receiver.startswith("basket_") else (-0.06, 0.045)
     elif case_id == "D15":
         params.update({"chunk_size": 4, "stale_chunk_steps": 4})
+    elif case_id == "D16" and active_case == "D16":
+        params["event_duration_steps"] = 6
+    elif case_id == "D17" and active_case == "D17":
+        params.update({"event_duration_steps": 40, "recovery_retreat_m": 0.07})
     elif case_id in {"D18", "D19"} and profile.interaction_mode == "articulation":
         params["trigger_state_change_m"] = 0.02
     elif case_id == "S21":
@@ -460,7 +464,7 @@ def perturbation_config(profile: TaskProfile, active_case: str) -> str:
         "    (:perturbations",
     ]
     for case_id in SCHEMA_CASES:
-        lines.append(case_entry(case_id, profile))
+        lines.append(case_entry(case_id, profile, active_case))
     lines.extend(["    )", "  )"])
     return "\n".join(lines)
 

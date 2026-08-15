@@ -819,6 +819,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_applied = False
         self._dynamic_restored = False
         self._dynamic_event_step: int | None = None
+        self._dynamic_event_origin_eef: np.ndarray | None = None
         self._baseline_model_id: int | None = None
         self._model_baseline: dict[str, np.ndarray] = {}
         self.set_seed(seed)
@@ -867,6 +868,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_applied = False
         self._dynamic_restored = False
         self._dynamic_event_step = None
+        self._dynamic_event_origin_eef = None
 
     def _clear_temporal_state(self) -> None:
         self.previous_action = None
@@ -918,17 +920,26 @@ class NonPhysicalPerturbationRuntime:
         return self._dynamic_event_step is not None and step == self._dynamic_event_step
 
     def _event_duration_steps(self) -> int:
+        if self.plan.case_id == "D14":
+            return 1
+        if self.plan.case_id == "D15":
+            _, stale_steps = self._d15_chunk_config()
+            return stale_steps
+        default_duration = {
+            "D16": 6,
+            "D17": 40,
+        }.get(self.plan.case_id, self.EVENT_END - self.EVENT_START)
         try:
             return max(
                 1,
                 int(
                     self.plan.params.get(
-                        "event_duration_steps", self.EVENT_END - self.EVENT_START
+                        "event_duration_steps", default_duration
                     )
                 ),
             )
         except (TypeError, ValueError):
-            return self.EVENT_END - self.EVENT_START
+            return default_duration
 
     @property
     def event_duration_steps(self) -> int:
@@ -1112,7 +1123,7 @@ class NonPhysicalPerturbationRuntime:
                 self.action_queue.append(current.copy())
                 self._stale_action_chunk.clear()
                 self._stale_action_index = 0
-        elif case_id == "D16" and self._event_active(step, 6):
+        elif case_id == "D16" and self._event_active(step):
             current[:] = 0.0
             if current.size:
                 current[0] = 0.12
@@ -1120,8 +1131,8 @@ class NonPhysicalPerturbationRuntime:
         elif (
             case_id == "D17"
             and self._dynamic_applied
-            and self._dynamic_event_step is not None
-            and step < self._dynamic_event_step + 40
+            and not self._dynamic_restored
+            and self._event_active(step)
         ):
             current[-1] = -1.0
             self._log_once("recoverable_grasp_failure", step)
@@ -1163,13 +1174,13 @@ class NonPhysicalPerturbationRuntime:
                 self.gripper_queue.append(current)
                 self._stale_gripper_chunk.clear()
                 self._stale_gripper_index = 0
-        elif case_id == "D16" and self._event_active(step, 6):
+        elif case_id == "D16" and self._event_active(step):
             current = 0.0
         elif (
             case_id == "D17"
             and self._dynamic_applied
-            and self._dynamic_event_step is not None
-            and step < self._dynamic_event_step + 40
+            and not self._dynamic_restored
+            and self._event_active(step)
         ):
             current = 0.0
 
@@ -1440,6 +1451,16 @@ class NonPhysicalPerturbationRuntime:
         env.sim.model.light_ambient[:] *= float(factor)
         env.sim.forward()
 
+    def _restore_lighting(self, env: Any) -> None:
+        fields = ("light_diffuse", "light_ambient")
+        if any(field not in self._model_baseline for field in fields):
+            raise PerturbationValidationError(
+                "MuJoCo lighting baseline was not captured before D09"
+            )
+        for model_field in fields:
+            getattr(env.sim.model, model_field)[:] = self._model_baseline[model_field]
+        env.sim.forward()
+
     def _offset_camera(self, env: Any, delta: np.ndarray) -> None:
         changed = False
         for camera in self.plan.targets or ("agentview",):
@@ -1460,6 +1481,36 @@ class NonPhysicalPerturbationRuntime:
         if not case_id.startswith("D"):
             return
         if self._dynamic_applied:
+            if (
+                case_id == "D09"
+                and not self._dynamic_restored
+                and not self._event_active(step)
+            ):
+                self._restore_lighting(env)
+                self._dynamic_restored = True
+                self._log_once("dynamic_lighting_restored", step)
+            if case_id == "D17" and not self._dynamic_restored:
+                try:
+                    eef = np.asarray(
+                        env.sim.data.site_xpos[env.robots[0].eef_site_id],
+                        dtype=np.float64,
+                    )
+                except Exception:
+                    eef = None
+                retreat = float(self.plan.params.get("recovery_retreat_m", 0.07))
+                retreated = (
+                    eef is not None
+                    and self._dynamic_event_origin_eef is not None
+                    and np.linalg.norm(eef - self._dynamic_event_origin_eef) >= retreat
+                )
+                expired = not self._event_active(step)
+                if retreated or expired:
+                    self._dynamic_restored = True
+                    self._log_once(
+                        "grasp_failure_window_ended",
+                        step,
+                        reason="retreated" if retreated else "duration_elapsed",
+                    )
             if (
                 case_id == "D04"
                 and not self._dynamic_restored
@@ -1605,6 +1656,9 @@ class NonPhysicalPerturbationRuntime:
             self._log_once("dynamic_lighting_change", step)
         elif case_id == "D17":
             # Opening the gripper is applied through transform_action; no pose teleport.
+            self._dynamic_event_origin_eef = np.asarray(
+                env.sim.data.site_xpos[env.robots[0].eef_site_id], dtype=np.float64
+            ).copy()
             self._log_once("grasp_failure_window_started", step)
         elif case_id == "D21":
             self._log_once("runtime_language_clarification", step)
