@@ -363,8 +363,10 @@ def inject_plan_assets(
                 str(asset.xml_path), name=target, joints="default"
             )
             replacement.category_name = getattr(original, "category_name", target)
-            replacement.rotation = getattr(original, "rotation", (0.0, 0.0))
-            replacement.rotation_axis = getattr(original, "rotation_axis", "z")
+            # Rotation metadata is asset-frame-specific. Inheriting it from the
+            # source object can turn an otherwise upright replacement on its side.
+            replacement.rotation = (0.0, 0.0)
+            replacement.rotation_axis = "z"
             replacement.object_properties = getattr(
                 original, "object_properties", {"vis_site_names": {}}
             )
@@ -605,6 +607,96 @@ def _candidate_is_clear(
         if np.linalg.norm(candidate_xy - other[:2]) < minimum_gap:
             return False
     return True
+
+
+def _point_is_in_camera_view(
+    env: Any,
+    point: np.ndarray,
+    camera_name: str = "agentview",
+    margin: float = 0.8,
+) -> bool:
+    """Check a world point against a MuJoCo camera's inner view frustum."""
+
+    try:
+        camera_id = int(env.sim.model.camera_name2id(camera_name))
+        camera_position = np.asarray(
+            env.sim.data.cam_xpos[camera_id], dtype=np.float64
+        )
+        camera_rotation = np.asarray(
+            env.sim.data.cam_xmat[camera_id], dtype=np.float64
+        ).reshape(3, 3)
+        vertical_fov = math.radians(float(env.sim.model.cam_fovy[camera_id]))
+    except Exception as exc:
+        raise PerturbationValidationError(
+            f"Camera {camera_name!r} is required for visible asset placement"
+        ) from exc
+
+    camera_point = camera_rotation.T @ (np.asarray(point) - camera_position)
+    depth = -float(camera_point[2])
+    if depth <= 0.0:
+        return False
+    half_extent = depth * math.tan(vertical_fov / 2.0) * float(margin)
+    return bool(
+        abs(float(camera_point[0])) <= half_extent
+        and abs(float(camera_point[1])) <= half_extent
+    )
+
+
+def _entity_has_penetrating_contact(
+    env: Any, name: str, tolerance: float = -1e-4
+) -> bool:
+    body_ids = set(_entity_body_ids(env, name))
+    model = env.sim.model
+    data = env.sim.data
+    for index in range(int(getattr(data, "ncon", 0))):
+        contact = data.contact[index]
+        first_body = int(model.geom_bodyid[int(contact.geom1)])
+        second_body = int(model.geom_bodyid[int(contact.geom2)])
+        if first_body not in body_ids and second_body not in body_ids:
+            continue
+        if float(contact.dist) < float(tolerance):
+            return True
+    return False
+
+
+def _visible_clutter_pose(
+    env: Any,
+    moving_name: str,
+    reference_name: str,
+    *,
+    minimum_gap: float = 0.10,
+) -> np.ndarray:
+    reference, _ = _entity_pose(env, reference_name)
+    original_position, original_quaternion = _entity_pose(env, moving_name)
+    clutter_quaternion = _yaw_quaternion(0.0)
+    base_angle = math.atan2(-0.12, 0.16)
+    candidates: list[np.ndarray] = []
+    for radius in (0.14, 0.18, 0.22, 0.26, 0.30):
+        for angle_offset in np.linspace(0.0, 2.0 * math.pi, 16, endpoint=False):
+            angle = base_angle + float(angle_offset)
+            candidate = reference.copy()
+            candidate[:2] += radius * np.array([math.cos(angle), math.sin(angle)])
+            candidate[2] += 0.03
+            candidates.append(candidate)
+
+    for candidate in candidates:
+        if not _candidate_is_clear(
+            env,
+            moving_name,
+            candidate[:2],
+            minimum_gap,
+            ignored=("main_table", "floor"),
+        ):
+            continue
+        if not _point_is_in_camera_view(env, candidate):
+            continue
+        _set_entity_pose(env, moving_name, candidate, clutter_quaternion)
+        if not _entity_has_penetrating_contact(env, moving_name):
+            return candidate
+    _set_entity_pose(env, moving_name, original_position, original_quaternion)
+    raise PerturbationValidationError(
+        f"No collision-clear agentview position for {moving_name!r} near {reference_name!r}"
+    )
 
 
 def _safe_offset_pose(
@@ -1292,8 +1384,7 @@ class NonPhysicalPerturbationRuntime:
                 position[:2] += np.array([-direction[1], direction[0]]) * 0.035
                 quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
             elif case_id == "S10":
-                # Irrelevant clutter stays away from the target while remaining visible.
-                position += np.array([0.16, -0.12, 0.03])
+                position = _visible_clutter_pose(env, name, reference_name)
             elif case_id == "S11":
                 # A same-class distractor belongs near the task target, but at a
                 # distinct location from S10 so the two cases cannot collapse.
@@ -1301,7 +1392,7 @@ class NonPhysicalPerturbationRuntime:
                 position = target_position + np.array([-0.11, 0.09, 0.025])
             else:
                 position, quaternion = _camera_occluder_pose(env, reference_name)
-            if not _candidate_is_clear(
+            if case_id != "S10" and not _candidate_is_clear(
                 env,
                 name,
                 position[:2],
