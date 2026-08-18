@@ -70,6 +70,19 @@ CASE_ASSETS = {
     "D05": ("generated/barrier_panel",),
 }
 
+# S05's barrier is 0.08 m wide on either side of its local centre line. Keep
+# the carried-object corridor clear even for the largest standard LIBERO
+# object and leave a small modelling margin for the gripper/object envelope.
+S05_BARRIER_HALF_WIDTH_M = 0.08
+S05_CARRIED_OBJECT_RADIUS_M = 0.05
+S05_TRANSPORT_MARGIN_M = 0.02
+S05_MIN_LATERAL_OFFSET_M = (
+    S05_BARRIER_HALF_WIDTH_M
+    + S05_CARRIED_OBJECT_RADIUS_M
+    + S05_TRANSPORT_MARGIN_M
+)
+S05_DEFAULT_LATERAL_OFFSET_M = S05_MIN_LATERAL_OFFSET_M
+
 REPLACEMENT_ASSETS = {
     "white_yellow_mug": "prl/plastic_glass",
     "porcelain_mug": "prl/plastic_glass",
@@ -763,6 +776,24 @@ def _dynamic_pose_requested_delta(
     }[case_id]
 
 
+def _s05_lateral_offset(plan: ExecutionPlan) -> float:
+    """Return a safe S05 barrier offset from the transport centre line."""
+
+    configured = plan.params.get("lateral_offset_m", S05_DEFAULT_LATERAL_OFFSET_M)
+    try:
+        offset = float(configured)
+    except (TypeError, ValueError) as exc:
+        raise PerturbationConfigurationError(
+            f"S05 lateral_offset_m must be numeric; got {configured!r}"
+        ) from exc
+    if not np.isfinite(offset) or offset < S05_MIN_LATERAL_OFFSET_M:
+        raise PerturbationConfigurationError(
+            "S05 lateral_offset_m must be finite and at least "
+            f"{S05_MIN_LATERAL_OFFSET_M:.3f} m"
+        )
+    return offset
+
+
 def _injected_name(plan: ExecutionPlan, index: int = 0) -> str:
     return f"perturbation_{plan.case_id.lower()}_{index}"
 
@@ -1381,7 +1412,9 @@ class NonPhysicalPerturbationRuntime:
                 else:
                     direction /= length
                 position = target + 0.58 * (receiver - target)
-                position[:2] += np.array([-direction[1], direction[0]]) * 0.035
+                position[:2] += np.array(
+                    [-direction[1], direction[0]]
+                ) * _s05_lateral_offset(self.plan)
                 quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
             elif case_id == "S10":
                 position = _visible_clutter_pose(env, name, reference_name)

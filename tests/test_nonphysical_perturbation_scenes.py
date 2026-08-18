@@ -126,3 +126,61 @@ def test_s10_clutter_is_collision_clear_and_inside_agentview() -> None:
     assert abs(camera_relative[0]) <= half_extent
     assert abs(camera_relative[1]) <= half_extent
     assert np.linalg.norm(position[:2] - env.sim.data.body_xpos[0, :2]) >= 0.10
+
+
+def test_s05_barrier_keeps_transport_corridor_clear() -> None:
+    """S05 must not put the barrier through the carried-object corridor."""
+
+    class Model(_FakeModel):
+        def __init__(self) -> None:
+            super().__init__()
+            self.body_pos = np.array(
+                [
+                    [0.05, -0.10, 0.04],  # target object
+                    [0.00, 0.26, 0.04],  # receiver
+                    [-0.15, -0.265, 0.04],  # reference object
+                    [0.00, 0.00, -5.00],  # injected barrier
+                ],
+                dtype=float,
+            )
+            self.body_quat = np.array([[1.0, 0.0, 0.0, 0.0]] * 4)
+            self.body_parentid = np.array([0, 0, 0, 0])
+            self.nbody = 4
+
+    class Data(_FakeData):
+        def __init__(self, model: Model) -> None:
+            super().__init__(model)
+            self.ncon = 0
+            self.contact = []
+
+    class Sim(_FakeSim):
+        def __init__(self) -> None:
+            self.model = Model()
+            self.data = Data(self.model)
+
+    target = "cream_cheese_1"
+    receiver = "basket_1"
+    reference = "alphabet_soup_1"
+    injected = "perturbation_s05_0"
+    env = SimpleNamespace(
+        sim=Sim(),
+        obj_body_id={target: 0, receiver: 1, reference: 2, injected: 3},
+        objects_dict={
+            target: SimpleNamespace(joints=[]),
+            receiver: SimpleNamespace(joints=[]),
+            reference: SimpleNamespace(joints=[]),
+            injected: SimpleNamespace(joints=[]),
+        },
+        object_sites_dict={},
+        parsed_problem={"goal_state": [], "regions": {}},
+        workspace_offset=np.array([0.0, 0.0, 0.9]),
+    )
+    plan = _plan("S05", targets=(target, receiver), references=(reference,))
+    PERTURBATIONS.NonPhysicalPerturbationRuntime(plan).apply_static(env)
+
+    start = env.sim.data.body_xpos[0, :2]
+    end = env.sim.data.body_xpos[1, :2]
+    barrier = env.sim.data.body_xpos[3, :2]
+    direction = (end - start) / np.linalg.norm(end - start)
+    lateral_clearance = abs(np.cross(direction, barrier - start))
+    assert lateral_clearance >= 0.14
