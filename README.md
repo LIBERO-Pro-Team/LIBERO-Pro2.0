@@ -1,7 +1,7 @@
 # LIBERO-PRO Remote Evaluation Service
 
 > 状态：1.0.0 发布版本
-> 当前阶段：Docker 与 Conda 离线部署包已完成本地验收，支持 1680 项 manifest 任务和多账户服务
+> 当前阶段：源码 manifest 支持 1760 项任务和多账户服务；1.0.0 Conda 离线包仍固定为 1680 项
 
 ## 1. 当前任务
 
@@ -61,8 +61,10 @@ docker compose logs -f libero-remote
 
 镜像和 Conda 离线包固定使用 `LIBERO-PRO` 的 commit
 `c02ee2c8255db1c36664fad978197c47e495f178`，并安装 Python 3.8、锁定的 PyTorch、
-robosuite、MuJoCo 和本服务。当前发布的 1680 个 LIBERO-PRO BDDL 位于
-`assets/bddl/libero-pro2.0-1680-v1/` 并进入镜像；`assets/bddl/00_original/bddl`
+robosuite、MuJoCo 和本服务。当前源码发布的 1760 个 LIBERO-PRO BDDL 位于
+`assets/bddl/libero-pro2.0-1680-v1/` 并进入镜像；目录名为兼容既有非 Docker
+部署路径而保留，发布版本以 `assets/task_manifest.json` 的
+`libero-pro2.0-1760-v1` 为准。`assets/bddl/00_original/bddl`
 仅作为历史基线保留，不属于发布 manifest。init state 仍从固定的 LIBERO-PRO commit 加载。
 
 启动后先检查廉价就绪探针：
@@ -111,7 +113,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `LIBERO_REMOTE_WORKER_TIMEOUT_SECONDS` | `120` | 单次 worker 命令超时；超时后 worker 被终止 |
 | `LIBERO_REMOTE_SESSION_IDLE_TIMEOUT_SECONDS` | `900` | session 空闲回收时间 |
 | `LIBERO_REMOTE_CLEANUP_INTERVAL_SECONDS` | `30` | 后台扫描空闲 session 的间隔 |
-| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/libero-pro2.0-1680-v1` | 服务端当前使用的 1680 项发布 BDDL 根目录 |
+| `LIBERO_REMOTE_BDDL_ROOT` | `assets/bddl/libero-pro2.0-1680-v1` | 服务端当前使用的 1760 项发布 BDDL 根目录 |
 | `NVIDIA_VISIBLE_DEVICES` | `all` | 容器可见 GPU；生产环境建议指定设备 |
 | `LIBERO_PRO_COMMIT` | 固定 commit | 构建时使用的 LIBERO-PRO 版本 |
 
@@ -125,7 +127,7 @@ smoke test 会真实执行 `health -> create/reset -> step -> close`。只有它
 | `libero_remote/environment/libero.py` | 查找 suite/task/init state 并包装 `OffScreenRenderEnv` |
 | `libero_remote/environment/observations.py` | 白名单化并规范两路图像和机器人本体状态 |
 | `libero_remote/environment/readiness.py` | 不初始化 MuJoCo 的后端与基础数据就绪检查 |
-| `assets/bddl/` | 保存历史基线和当前 1680 个已发布 BASE/static/dynamic BDDL |
+| `assets/bddl/` | 保存历史基线和当前 1760 个已发布 BASE/static/dynamic BDDL |
 | `libero_remote/worker/process.py` | 用 `spawn` 子进程隔离 MuJoCo/EGL，并处理超时和强制回收 |
 | `libero_remote/server/session.py` | 保存单个 session 的 episode、step、锁和幂等缓存 |
 | `libero_remote/server/session_manager.py` | 管理容量、顺序、幂等、失败、空闲过期和全局关闭 |
@@ -168,7 +170,7 @@ python -m ruff check libero_remote tests scripts
 | 第三阶段 | 接入已发布运行时动态扰动，由服务端按规则触发 | 已完成 |
 | 第四阶段 | 公网部署、并发调度、鉴权、限流、监控和排行榜 | 部分完成 |
 
-当前发布已覆盖服务闭环、1680 项任务、固定 seed 复现、失败重试、多账户隔离和运行时扰动；公网运营和生产级监控仍需按部署环境单独配置。
+当前源码发布已覆盖服务闭环、1760 项任务、固定 seed 复现、失败重试、多账户隔离和运行时扰动；公网运营和生产级监控仍需按部署环境单独配置。
 
 ## 4. 服务目标
 
@@ -227,7 +229,7 @@ flowchart LR
 | `ObservationCodec` | 筛选 observation 字段并编解码 NumPy 数组 |
 | `TaskCatalog` | 枚举允许调用的 suite、task 和 action/observation 元数据 |
 
-任务 manifest 通过 `base`、`S01-S21`、`D01-D19` 和 `D21` case id 选择已发布 BDDL。固定运行时同时提供
+任务 manifest 通过 `base`、`S01-S22` 和 `D01-D21` case id 选择已发布 BDDL。固定运行时同时提供
 `set_perturbation_seed`、`begin_perturbation_rollout` 和 `get_perturbation_plan`，并在就绪检查中拒绝缺少这些能力的旧模拟器。
 
 ## 6. 交互流程
@@ -332,8 +334,8 @@ env.close()
 }
 ```
 
-`variant` 接受 `base`、`S01-S21`、`D01-D19` 和 `D21`；可用的 suite/task/variant 组合以
-`/v1/tasks` 返回的 1680 项 manifest 为准。
+`variant` 接受 `base`、`S01-S22` 和 `D01-D21`；可用的 suite/task/variant 组合以
+`/v1/tasks` 返回的 1760 项 manifest 为准。
 
 创建成功后返回：
 
@@ -592,13 +594,15 @@ tests/
 
 ```text
 base
-S01-S21
-D01-D19
-D21
+S01-S22
+D01-D21
 ```
 
-服务端根据 `variant` 从 1680 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。
+服务端根据 `variant` 从 1760 项 manifest 选择对应 BDDL/init state 集合，并在固定运行时中执行静态或动态扰动。
 客户端只选择已发布的 case id，不接触 BDDL 文件和扰动配置。
+
+`S22` 将工作台可视表面的材质替换为仓库内置
+`table_light_wood.png`。它不改变碰撞 geom、摩擦、工作台尺寸或任务物体位姿。
 
 需要明确：把 BDDL 留在服务端只能提高直接获取和针对性训练的成本，不能从理论上彻底阻止通过大量查询推断评测分布。因此还需要访问配额、隐藏测试集轮换和异常查询检测。
 
@@ -615,6 +619,12 @@ D21
   -> 重新生成 observation
   -> 返回结果
 ```
+
+`D20` 模拟机械臂运动中受到外部碰撞后的瞬时位移。触发条件是末端相对 rollout
+起点至少移动 2.5 cm，且上一条机械臂动作范数至少为 0.05；它不依赖固定 step。
+运行时从 0.10 rad 的小关节偏移候选中搜索，要求末端位移至少 3.5 cm，并检查关节
+限位、末端姿态、工作台间隙和新增穿透接触。找不到安全候选时回滚并显式报错，不会
+使用穿模姿态继续评测；每个 episode 只触发一次。
 
 可能包含：
 

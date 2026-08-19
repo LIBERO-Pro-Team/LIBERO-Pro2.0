@@ -23,18 +23,17 @@ ORIGINAL_ROOT = ROOT / "assets" / "bddl" / "00_original" / "bddl"
 DEFAULT_OUTPUT = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 DEFAULT_MANIFEST = ROOT / "assets" / "task_manifest.json"
 ASSET_ROOT = ROOT / "simulator-source" / "libero" / "libero" / "assets" / "perturbation_assets"
+PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1760-v1"
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 CASES = tuple(
     ["BASE"]
-    + [f"S{i:02d}" for i in range(1, 22)]
-    + [f"D{i:02d}" for i in range(1, 20)]
-    + ["D21"]
+    + [f"S{i:02d}" for i in range(1, 23)]
+    + [f"D{i:02d}" for i in range(1, 22)]
 )
 SCHEMA_CASES = tuple(
-    [f"S{i:02d}" for i in range(1, 22)]
-    + [f"D{i:02d}" for i in range(1, 20)]
-    + ["D21"]
+    [f"S{i:02d}" for i in range(1, 23)]
+    + [f"D{i:02d}" for i in range(1, 22)]
 )
 
 SUITE_TASKS: Mapping[str, Tuple[str, ...]] = {
@@ -360,6 +359,16 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         fields = [("operator", "timing_or_action_fault"), ("targets", "observation inference control action"), ("variant", "fixed_rate_delay_or_action_window")]
     elif case_id == "S21":
         fields = [("operator", "state_or_language_event"), ("targets", "task_instruction"), ("variant", "semantic_paraphrase")]
+    elif case_id == "S22":
+        fields = [
+            ("operator", "asset_or_appearance"),
+            ("targets", "workspace_surface"),
+            ("variant", "support_surface_texture_replacement"),
+            (
+                "constraints",
+                "collision_geometry_unchanged friction_unchanged object_poses_unchanged",
+            ),
+        ]
     elif case_id == "D01":
         fields = [("operator", "pose_transform"), ("targets", primary), ("trigger", "approach_or_pregrasp"), ("variant", "xy_yaw_update")]
     elif case_id == "D02":
@@ -398,6 +407,17 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         fields = [("operator", "state_or_language_event"), ("targets", primary), ("trigger", "transport"), ("variant", "reachable_collision_free_drop_state"), ("constraints", "recovery_remains_possible")]
     elif case_id == "D19":
         fields = [("operator", "state_or_language_event"), ("targets", f"{primary} {receiver}" if placement else primary), ("trigger", "place_attempt"), ("variant", "misplace_partial_insert_or_wrong_receiver_result"), ("constraints", "correction_remains_possible")]
+    elif case_id == "D20":
+        fields = [
+            ("operator", "pose_transform"),
+            ("targets", "robot0"),
+            ("trigger", "robot_in_motion"),
+            ("variant", "collision_induced_reachable_joint_displacement"),
+            (
+                "constraints",
+                "single_trigger joint_limits collision_free no_self_collision workspace_clearance",
+            ),
+        ]
     elif case_id == "D21":
         fields = [("operator", "state_or_language_event"), ("targets", "task_instruction"), ("trigger", "task_phase"), ("variant", "equivalent_restatement_or_clarification"), ("constraints", "semantic_goal_unchanged")]
     else:
@@ -420,6 +440,25 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         params["trigger_state_change_m"] = 0.02
     elif case_id == "S21":
         params.update({"source": profile.language.replace(" ", "_"), "value": "please_" + profile.language.replace(" ", "_")})
+    elif case_id == "S22":
+        params.update(
+            {
+                "material_id": "s22_table_texture",
+                "texture_asset": "textures/table_light_wood.png",
+                "texture_scale": (2.0, 2.0),
+            }
+        )
+    elif case_id == "D20":
+        params.update(
+            {
+                "trigger_eef_motion_m": 0.025,
+                "trigger_action_norm": 0.05,
+                "joint_delta_rad": 0.10,
+                "min_eef_displacement_m": 0.035,
+                "min_workspace_clearance_m": 0.035,
+                "penetration_tolerance_m": 0.001,
+            }
+        )
     elif case_id == "D21":
         params["interaction_mode"] = profile.interaction_mode
 
@@ -437,7 +476,7 @@ def perturbation_config(profile: TaskProfile, active_case: str) -> str:
     kind = "base" if active_case == "BASE" else "static" if active_case.startswith("S") else "dynamic"
     lines = [
         "  (:perturbation_config",
-        "    (:schema_version 4)",
+        "    (:schema_version 5)",
         "    (:profile nonphysical_shared_operator_schema)",
         f"    (:source_suite {profile.suite})",
         f"    (:source_task {profile.task_name})",
@@ -484,9 +523,14 @@ def canonical_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
-def build(output: Path, manifest_path: Path) -> Dict[str, Any]:
-    if output.exists():
-        raise FileExistsError(f"Refusing to overwrite existing dataset: {output}")
+def build(
+    output: Path,
+    manifest_path: Path,
+    *,
+    replace_new_cases: bool = False,
+) -> Dict[str, Any]:
+    if output.exists() and not output.is_dir():
+        raise FileExistsError(f"Dataset path is not a directory: {output}")
     profiles = [
         load_profile(suite, task_id, task_name)
         for suite in SUITES
@@ -506,7 +550,11 @@ def build(output: Path, manifest_path: Path) -> Dict[str, Any]:
             folder = "00_base" if case_id == "BASE" else "01_static" if case_id.startswith("S") else "02_dynamic"
             target = output / profile.suite / folder / f"{case_id}__{profile.task_name}.bddl"
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(append_config(source, profile, case_id), encoding="utf-8")
+            is_new_case = case_id in {"S22", "D20"}
+            if not target.exists() or (is_new_case and replace_new_cases):
+                target.write_text(
+                    append_config(source, profile, case_id), encoding="utf-8"
+                )
             tasks.append(
                 {
                     "suite": profile.suite,
@@ -515,7 +563,7 @@ def build(output: Path, manifest_path: Path) -> Dict[str, Any]:
                     "case_kind": "base" if case_id == "BASE" else "static" if case_id.startswith("S") else "dynamic",
                     "bddl_path": (Path("bddl") / output.name / profile.suite / folder / target.name).as_posix(),
                     "bddl_sha256": canonical_hash(target),
-                    "task_version": output.name,
+                    "task_version": PUBLISHED_MANIFEST_VERSION,
                     "max_steps": 300,
                     "reset_stabilization_steps": 10,
                     "observation_schema_version": "libero_standard_v1",
@@ -523,7 +571,11 @@ def build(output: Path, manifest_path: Path) -> Dict[str, Any]:
                 }
             )
     tasks.sort(key=lambda item: (item["suite"], int(item["base_task_id"]), item["case_id"]))
-    manifest = {"manifest_version": output.name, "task_count": len(tasks), "tasks": tasks}
+    manifest = {
+        "manifest_version": PUBLISHED_MANIFEST_VERSION,
+        "task_count": len(tasks),
+        "tasks": tasks,
+    }
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
     return {"dataset": str(output), "manifest": str(manifest_path), "task_count": len(tasks)}
@@ -533,12 +585,26 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument(
+        "--replace-new-cases",
+        action="store_true",
+        help="Regenerate only S22 and D20 if those extension files already exist.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    print(json.dumps(build(args.output.resolve(), args.manifest.resolve()), indent=2))
+    print(
+        json.dumps(
+            build(
+                args.output.resolve(),
+                args.manifest.resolve(),
+                replace_new_cases=args.replace_new_cases,
+            ),
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

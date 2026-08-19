@@ -7,6 +7,8 @@
     <!-- ceramic table texture and material-->
     <texture file="../textures/martin_novak_wood_table.png" type="cube" name="tex-table"/>
     <material name="table_texture" reflectance="0.0" shininess="0.0" specular="0.2" texrepeat="1 1" texture="tex-table" />
+    <texture file="../textures/table_light_wood.png" type="2d" name="tex-s22-table"/>
+    <material name="s22_table_texture" reflectance="0.0" shininess="0.0" specular="0.15" texrepeat="2 2" texture="tex-s22-table" texuniform="true"/>
     <!-- steel legs -->
     <texture file="../textures/martin_novak_wood_table.png" type="cube" name="tex-table-legs"/>
     <material name="table_legs" reflectance="0.8" shininess="0.8" texrepeat="1 1" texture="tex-table-legs" />
@@ -22,6 +24,7 @@
     <!-- <mesh file="wall_frames.stl" name="wall_frames" scale="0.2 0.1 0.1" /> -->
   </asset>
   <worldbody>
+    <geom name="s22_material_carrier" pos="0 0 -10" size="0.001" type="sphere" contype="0" conaffinity="0" group="1" material="s22_table_texture"/>
     <!-- Floor -->
     <geom condim="3" group="1" material="floorplane" name="floor" pos="0 0 0" size="3 3 .125" type="plane"/>
     <!-- Walls (visual only) -->

@@ -19,14 +19,14 @@ def test_published_bddl_tree_excludes_legacy_perturbation_categories() -> None:
     assert not any(name.startswith(legacy_prefixes) for name in directory_names)
 
 
-def test_published_manifest_contains_all_40_tasks_and_41_perturbations() -> None:
+def test_published_manifest_contains_all_40_tasks_and_43_perturbations() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 
-    assert manifest.version == "libero-pro2.0-1680-v1"
-    assert len(manifest.entries) == 1680
+    assert manifest.version == "libero-pro2.0-1760-v1"
+    assert len(manifest.entries) == 1760
     assert sum(entry["case_id"] == "BASE" for entry in manifest.entries) == 40
-    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 840
-    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 800
+    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 880
+    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 840
     assert {
         (entry["suite"], entry["base_task_id"])
         for entry in manifest.entries

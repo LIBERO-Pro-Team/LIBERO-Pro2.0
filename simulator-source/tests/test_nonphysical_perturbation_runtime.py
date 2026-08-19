@@ -121,7 +121,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1680)
+        self.assertEqual(len(files), 1760)
 
         seen = set()
         for path in files:
@@ -137,9 +137,8 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
         self.assertEqual(
             seen,
-            {f"S{i:02d}" for i in range(1, 22)}
-            | {f"D{i:02d}" for i in range(1, 20)}
-            | {"D21"},
+            {f"S{i:02d}" for i in range(1, 23)}
+            | {f"D{i:02d}" for i in range(1, 22)},
         )
 
     def test_only_the_selected_case_is_active(self):
