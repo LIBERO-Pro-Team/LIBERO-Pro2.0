@@ -49,6 +49,9 @@ observation 和 action 原样转发；它不生成 `pixels`、`robot_state`、do
 模型输入映射必须留在被包装的专用 adapter 内。例如 xVLA 的 LeRobot 字段、processor、姿态矩阵
 和 action 转换只属于 `libero_remote.runner.xvla.XVLAPolicyAdapter`，不属于通用记录或调度接口。
 
+记录产物按 `suite/task_NN/case/init_NNN/seed_N/` 隔离。通用批量入口从 manifest 读取任务，
+可运行旧 1680 集合、当前完整集合，或按 case 过滤后的子集；兼容性按服务器实际发布的任务键校验。
+
 ## Adapter 负责的语义
 
 - 根据模型训练约定处理相机方向、裁剪、resize、颜色空间和归一化。

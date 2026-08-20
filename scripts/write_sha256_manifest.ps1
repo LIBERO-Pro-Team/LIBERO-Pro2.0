@@ -6,13 +6,26 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+function Get-Sha256Hex([string]$LiteralPath) {
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $hasher.ComputeHash($stream)
+    } finally {
+        $stream.Dispose()
+        $hasher.Dispose()
+    }
+    return (([BitConverter]::ToString($digest) -replace '-', '').ToLowerInvariant())
+}
+
 $rootPath = (Resolve-Path -LiteralPath $Root).Path
 $outputPath = [IO.Path]::GetFullPath($OutputFile)
 $files = Get-ChildItem -LiteralPath $rootPath -Recurse -File | Where-Object {
     $_.FullName -ne $outputPath
 } | Sort-Object FullName
 $lines = foreach ($file in $files) {
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant()
+    $hash = Get-Sha256Hex -LiteralPath $file.FullName
     $relative = $file.FullName.Substring($rootPath.Length + 1).Replace('\', '/')
     "$hash  $relative"
 }

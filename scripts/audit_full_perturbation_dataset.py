@@ -18,15 +18,18 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MANIFEST = ROOT / "assets" / "task_manifest.json"
-CASE_IDS = {
-    "BASE",
-    *(f"S{i:02d}" for i in range(1, 22)),
-    *(f"D{i:02d}" for i in range(1, 20)),
-    "D21",
-}
+LEGACY_CASE_IDS = frozenset(
+    {
+        "BASE",
+        *(f"S{i:02d}" for i in range(1, 22)),
+        *(f"D{i:02d}" for i in range(1, 20)),
+        "D21",
+    }
+)
+EXTENDED_CASE_IDS = LEGACY_CASE_IDS | {"S22", "D20"}
+SUPPORTED_CASE_SETS = (LEGACY_CASE_IDS, EXTENDED_CASE_IDS)
 META_TARGETS = {
     "action",
     "action_chunk",
@@ -56,7 +59,9 @@ def _tokens(source: str) -> list[str]:
     # tokenizer deliberately small makes this audit independent of simulator
     # packages and therefore runnable in CI.
     normalized = source.replace("\r\n", "\n").replace("\r", "\n")
-    return [token for token in re.split(r"(\(|\)|\s+)", normalized) if token and not token.isspace()]
+    return [
+        token for token in re.split(r"(\(|\)|\s+)", normalized) if token and not token.isspace()
+    ]
 
 
 def _parse_list(tokens: list[str], index: int = 0) -> tuple[list[Any], int]:
@@ -149,11 +154,7 @@ def _declared_entity_types(section: list[Any] | None) -> dict[str, str]:
 def _nested_named(section: list[Any] | None) -> dict[str, list[Any]]:
     if not section:
         return {}
-    return {
-        str(item[0]): item
-        for item in section[1:]
-        if isinstance(item, list) and item
-    }
+    return {str(item[0]): item for item in section[1:] if isinstance(item, list) and item}
 
 
 def _field(case: list[Any], name: str) -> list[str]:
@@ -181,7 +182,11 @@ def _config(root: list[Any]) -> tuple[str, str, dict[str, list[Any]]]:
     active = _field(config, ":active_cases")
     case_id = _field(config, ":case_id")
     perturbations = next(
-        (item for item in config[1:] if isinstance(item, list) and item and item[0] == ":perturbations"),
+        (
+            item
+            for item in config[1:]
+            if isinstance(item, list) and item and item[0] == ":perturbations"
+        ),
         None,
     )
     cases = {
@@ -206,19 +211,30 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
     def add(code: str, path: str, detail: str) -> None:
         findings.append({"code": code, "path": path, "detail": detail})
 
-    if payload.get("task_count") != len(entries) or len(entries) != 1680:
-        add("MANIFEST_COUNT", str(manifest_path), f"expected 1680, got {len(entries)}")
+    if payload.get("task_count") != len(entries):
+        add(
+            "MANIFEST_COUNT",
+            str(manifest_path),
+            f"declared {payload.get('task_count')}, contains {len(entries)}",
+        )
 
-    expected_cases = CASE_IDS
+    manifest_cases = frozenset(str(entry.get("case_id", "")).upper() for entry in entries)
+    if manifest_cases not in SUPPORTED_CASE_SETS:
+        add(
+            "MANIFEST_CASE_SET",
+            str(manifest_path),
+            f"unsupported cases {sorted(manifest_cases)}",
+        )
+    expected_cases = manifest_cases
     # This workspace intentionally retains only task-level BDDL changes named
     # by the current human-review scope. Baseline BDDL files still carry the
     # historical catalog, so semantic perturbation checks apply only to files
     # changed in the working tree; coverage, parsing, and hashes remain global.
     try:
         changed_paths = {
-            path.replace('\\', '/')
+            path.replace("\\", "/")
             for path in subprocess.check_output(
-                ['git', 'diff', '--name-only', '--', 'assets/bddl'],
+                ["git", "diff", "--name-only", "--", "assets/bddl"],
                 cwd=ROOT,
                 text=True,
             ).splitlines()
@@ -234,7 +250,7 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
         if key in seen:
             add("DUPLICATE_ENTRY", str(manifest_path), repr(key))
         seen.add(key)
-        if case_id not in expected_cases:
+        if case_id not in EXTENDED_CASE_IDS:
             add("UNKNOWN_CASE", str(manifest_path), repr(key))
             continue
         rel = str(entry.get("bddl_path", ""))
@@ -251,19 +267,24 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             add("BDDL_PARSE", rel, str(exc))
             continue
 
-        if str((ROOT / "assets" / rel).as_posix()).split('/assets/', 1)[-1] not in {
-            p.split('assets/', 1)[-1] for p in changed_paths
+        if str((ROOT / "assets" / rel).as_posix()).split("/assets/", 1)[-1] not in {
+            p.split("assets/", 1)[-1] for p in changed_paths
         }:
             continue
 
-        expected_kind = "base" if case_id == "BASE" else "static" if case_id.startswith("S") else "dynamic"
+        expected_kind = (
+            "base" if case_id == "BASE" else "static" if case_id.startswith("S") else "dynamic"
+        )
         normalized_active = "BASE" if active == "NONE" else active
         if normalized_active != case_id or declared != case_id:
             add("ACTIVE_CASE", rel, f"filename={case_id}, active={active}, declared={declared}")
-        if expected_kind != ("base" if case_id == "BASE" else "static" if active.startswith("S") else "dynamic"):
+        if expected_kind != (
+            "base" if case_id == "BASE" else "static" if active.startswith("S") else "dynamic"
+        ):
             add("CASE_KIND", rel, f"unexpected kind for {case_id}")
-        if set(cases) != expected_cases - {"BASE"}:
-            add("CASE_CATALOG", rel, f"expected 41 cases, got {sorted(cases)}")
+        case_catalog = frozenset(cases) | {"BASE"}
+        if case_catalog not in SUPPORTED_CASE_SETS:
+            add("CASE_CATALOG", rel, f"unsupported cases {sorted(cases)}")
 
         object_types = _declared_entity_types(_section(root, ":objects"))
         objects = set(object_types)
@@ -276,7 +297,11 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             continue
         targets = _field(case, ":targets")
         references = _field(case, ":references")
-        unknown = [name for name in (*targets, *references) if name not in entities and name not in META_TARGETS]
+        unknown = [
+            name
+            for name in (*targets, *references)
+            if name not in entities and name not in META_TARGETS
+        ]
         if unknown:
             add("UNKNOWN_ENTITY", rel, f"{case_id}: {unknown}")
         if case_id == "S04":
@@ -285,7 +310,11 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             allow_fixture_swap = case_params.get(":allow_fixture_swap", ["false"])[0] == "true"
             if mode == "articulation":
                 if len(targets) != 1 or targets[0] not in fixtures:
-                    add("S04_ARTICULATION_TARGET", rel, f"targets={targets}, fixtures={sorted(fixtures)}")
+                    add(
+                        "S04_ARTICULATION_TARGET",
+                        rel,
+                        f"targets={targets}, fixtures={sorted(fixtures)}",
+                    )
                 if _field(case, ":variant") != ["articulation_fixture_pose_offset"]:
                     add("S04_ARTICULATION_VARIANT", rel, f"variant={_field(case, ':variant')}")
             else:
@@ -297,23 +326,24 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                     and sum(name in objects for name in targets) == 1
                 ):
                     add("S04_NON_OBJECT", rel, f"targets={targets}, objects={sorted(objects)}")
-                elif (
-                    object_types.get(targets[0]) == object_types.get(targets[1])
-                    and any(
-                        name not in set(targets) | set(_field(case, ":references"))
-                        and name != "main_table"
-                        and object_type != object_types.get(targets[0])
-                        for name, object_type in object_types.items()
-                    )
+                elif object_types.get(targets[0]) == object_types.get(targets[1]) and any(
+                    name not in set(targets) | set(_field(case, ":references"))
+                    and name != "main_table"
+                    and object_type != object_types.get(targets[0])
+                    for name, object_type in object_types.items()
                 ):
                     add(
                         "S04_SAME_TYPE",
                         rel,
-                            f"targets={targets}, type={object_types.get(targets[0])}",
+                        f"targets={targets}, type={object_types.get(targets[0])}",
                     )
         if case_id == "S03":
             params = _params(case)
-            if len(targets) != 2 or targets[0] in {"main_table", "floor"} or targets[0] == targets[1]:
+            if (
+                len(targets) != 2
+                or targets[0] in {"main_table", "floor"}
+                or targets[0] == targets[1]
+            ):
                 add("S03_INVALID_SUPPORT_TARGET", rel, f"targets={targets}")
             try:
                 height_delta = float(params.get(":height_delta_m", ["0"])[0])
@@ -337,7 +367,11 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                 or not params.get(":asset_id")
                 or not scales
             ):
-                add("ASSET_REPLACEMENT_CONFIG", rel, f"{case_id}: targets={targets}, params={params}")
+                add(
+                    "ASSET_REPLACEMENT_CONFIG",
+                    rel,
+                    f"{case_id}: targets={targets}, params={params}",
+                )
         if case_id == "D02":
             offsets = _params(case).get(":offset_xy", [])
             try:
@@ -346,7 +380,11 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                 offset = []
             if len(offset) != 2:
                 add("D02_OFFSET_CONFIG", rel, f"offset_xy={offsets}")
-            elif targets and targets[0].startswith("basket_") and sum(value * value for value in offset) < 0.15**2:
+            elif (
+                targets
+                and targets[0].startswith("basket_")
+                and sum(value * value for value in offset) < 0.15**2
+            ):
                 add("D02_BASKET_CLEARANCE", rel, f"target={targets[0]}, offset_xy={offsets}")
         if case_id == "D03":
             params = _params(case)
@@ -372,14 +410,29 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                     add("D15_CONFIG", rel, f"missing positive {key}")
 
     expected_keys = {
-        (str(entry.get("suite")), int(entry.get("base_task_id", -1)), str(entry.get("case_id", "")).upper())
+        (
+            str(entry.get("suite")),
+            int(entry.get("base_task_id", -1)),
+            str(entry.get("case_id", "")).upper(),
+        )
         for entry in entries
     }
-    for suite in {str(entry.get("suite")) for entry in entries}:
-        for task_id in range(10):
-            for case_id in expected_cases:
-                if (suite, task_id, case_id) not in expected_keys:
-                    add("COVERAGE", str(manifest_path), f"missing {(suite, task_id, case_id)}")
+    base_tasks = {
+        (suite, task_id) for suite, task_id, case_id in expected_keys if case_id == "BASE"
+    }
+    if len(base_tasks) != 40:
+        add("BASE_TASK_COUNT", str(manifest_path), f"expected 40, got {len(base_tasks)}")
+    expected_count = len(base_tasks) * len(expected_cases)
+    if len(entries) != expected_count:
+        add(
+            "MANIFEST_MATRIX_COUNT",
+            str(manifest_path),
+            f"expected {expected_count}, got {len(entries)}",
+        )
+    for suite, task_id in sorted(base_tasks):
+        for case_id in expected_cases:
+            if (suite, task_id, case_id) not in expected_keys:
+                add("COVERAGE", str(manifest_path), f"missing {(suite, task_id, case_id)}")
     return findings
 
 
@@ -389,7 +442,11 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(list(argv) if argv is not None else None)
     findings = audit(args.manifest.resolve())
-    print(json.dumps({"finding_count": len(findings), "findings": findings}, indent=2, ensure_ascii=True))
+    print(
+        json.dumps(
+            {"finding_count": len(findings), "findings": findings}, indent=2, ensure_ascii=True
+        )
+    )
     return 1 if args.strict and findings else 0
 
 

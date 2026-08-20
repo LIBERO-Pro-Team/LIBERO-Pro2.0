@@ -71,7 +71,9 @@ class RolloutVideoRecorder:
         self._episode_dir = (
             self.output_root
             / str(spec["suite"])
+            / f"task_{int(spec['task_id']):02d}"
             / case_id
+            / f"init_{int(spec.get('init_state_id', 0)):03d}"
             / f"seed_{int(spec['seed'])}"
         )
         self._episode_dir.mkdir(parents=True, exist_ok=True)
@@ -82,9 +84,7 @@ class RolloutVideoRecorder:
 
     def record(self, observation: Dict[str, Any]) -> None:
         if self.image_field not in observation:
-            raise ValueError(
-                f"Observation is missing recorded image field {self.image_field!r}"
-            )
+            raise ValueError(f"Observation is missing recorded image field {self.image_field!r}")
         rgb = np.ascontiguousarray(observation[self.image_field], dtype=np.uint8)
         if rgb.ndim != 3 or rgb.shape[2] != 3:
             raise ValueError(f"Expected HWC RGB frame, got {rgb.shape}")

@@ -11,7 +11,7 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -19,6 +19,15 @@ from libero_remote import RemoteRunClient
 from libero_remote.runner import run_scheduled_run
 from libero_remote.runner.recording import RecordingAgentAdapter, RolloutVideoRecorder
 from libero_remote.runner.xvla import XVLAPolicyAdapter
+
+LEGACY_CASE_IDS = frozenset(
+    {
+        "BASE",
+        *(f"S{index:02d}" for index in range(1, 22)),
+        *(f"D{index:02d}" for index in range(1, 20)),
+        "D21",
+    }
+)
 
 
 def _http_json(base_url: str, api_key: str, path: str) -> Dict[str, Any]:
@@ -57,14 +66,36 @@ def _load_policy(
 
 
 def _episodes_from_manifest(
-    path: Path, seed: int, camera_size: int
+    path: Path,
+    seed: int,
+    camera_size: int,
+    *,
+    task_profile: str = "manifest",
+    case_ids: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if int(payload["task_count"]) != 1680 or len(payload["tasks"]) != 1680:
-        raise ValueError("The local manifest must contain exactly 1680 tasks")
+    tasks = payload.get("tasks")
+    if not isinstance(tasks, list) or int(payload.get("task_count", -1)) != len(tasks):
+        raise ValueError("The local manifest task_count does not match its tasks list")
+    if task_profile not in {"manifest", "legacy-1680"}:
+        raise ValueError("task_profile must be 'manifest' or 'legacy-1680'")
+    selected_cases = {
+        "BASE" if value.strip().upper() == "BASE" else value.strip().upper()
+        for value in (case_ids or [])
+        if value.strip()
+    }
     episodes = []
-    for entry in payload["tasks"]:
+    seen: set[tuple[str, int, str]] = set()
+    for entry in tasks:
         case_id = str(entry["case_id"]).upper()
+        key = (str(entry["suite"]), int(entry["base_task_id"]), case_id)
+        if key in seen:
+            raise ValueError(f"Duplicate local manifest task: {key}")
+        seen.add(key)
+        if task_profile == "legacy-1680" and case_id not in LEGACY_CASE_IDS:
+            continue
+        if selected_cases and case_id not in selected_cases:
+            continue
         episodes.append(
             {
                 "suite": str(entry["suite"]),
@@ -79,7 +110,37 @@ def _episodes_from_manifest(
                 "max_steps": int(entry.get("max_steps", 300)),
             }
         )
+    if not episodes:
+        raise ValueError("No manifest tasks match the selected profile and cases")
     return episodes
+
+
+def _validate_server_catalog(catalog: Dict[str, Any], episodes: List[Dict[str, Any]]) -> None:
+    tasks = catalog.get("tasks")
+    if not isinstance(tasks, list) or int(catalog.get("task_count", -1)) != len(tasks):
+        raise RuntimeError("Server task catalog is missing or internally inconsistent")
+    available = {
+        (
+            str(entry["suite"]),
+            int(entry["task_id"]),
+            str(entry.get("case_id", "BASE")).upper(),
+        )
+        for entry in tasks
+    }
+    requested = {
+        (
+            str(episode["suite"]),
+            int(episode["task_id"]),
+            str(episode.get("variant", "base")).upper(),
+        )
+        for episode in episodes
+    }
+    missing = sorted(requested - available)
+    if missing:
+        preview = ", ".join(repr(key) for key in missing[:5])
+        raise RuntimeError(
+            f"Server catalog does not publish {len(missing)} selected tasks: {preview}"
+        )
 
 
 def _write_server_results(output_root: Path, payload: Dict[str, Any]) -> None:
@@ -93,7 +154,21 @@ def _write_server_results(output_root: Path, payload: Dict[str, Any]) -> None:
         ).upper()
         case = "BASE" if case == "BASE" else case
         seed = int(spec.get("seed", result.get("seed", record.get("seed", 142))))
-        directory = output_root / suite / case / f"seed_{seed}"
+        task_id = int(spec.get("task_id", result.get("task_id", record.get("task_id"))))
+        init_state_id = int(
+            spec.get(
+                "init_state_id",
+                result.get("init_state_id", record.get("init_state_id", 0)),
+            )
+        )
+        directory = (
+            output_root
+            / suite
+            / f"task_{task_id:02d}"
+            / case
+            / f"init_{init_state_id:03d}"
+            / f"seed_{seed}"
+        )
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "result.json").write_text(
             json.dumps(record, indent=2, ensure_ascii=True) + "\n",
@@ -115,6 +190,17 @@ def main() -> int:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument("--run-id", default="")
+    parser.add_argument(
+        "--task-profile",
+        choices=("manifest", "legacy-1680"),
+        default="manifest",
+        help="Run every manifest entry or the original 1680-task case subset.",
+    )
+    parser.add_argument(
+        "--cases",
+        default="",
+        help="Optional comma-separated case ids, for example S22,D20.",
+    )
     args = parser.parse_args()
 
     model_path = Path(args.model_path).expanduser().resolve()
@@ -125,13 +211,16 @@ def main() -> int:
 
     health = _http_json(args.base_url, args.api_key, "/v1/health")
     catalog = _http_json(args.base_url, args.api_key, "/v1/tasks")
-    if int(catalog.get("task_count", -1)) != 1680:
-        raise RuntimeError(
-            f"Server catalog is not the 1680-task release: {catalog.get('task_count')}"
-        )
-    episodes = _episodes_from_manifest(manifest_path, args.seed, args.camera_size)
+    episodes = _episodes_from_manifest(
+        manifest_path,
+        args.seed,
+        args.camera_size,
+        task_profile=args.task_profile,
+        case_ids=args.cases.split(","),
+    )
     if args.limit:
         episodes = episodes[: args.limit]
+    _validate_server_catalog(catalog, episodes)
 
     started = time.perf_counter()
     adapter = _load_policy(

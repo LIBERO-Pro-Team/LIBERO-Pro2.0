@@ -78,9 +78,7 @@ def test_recording_adapter_preserves_model_neutral_observation() -> None:
     assert recorder.closed is True
 
 
-def test_rollout_recorder_writes_model_neutral_episode_artifacts(
-    tmp_path, monkeypatch
-) -> None:
+def test_rollout_recorder_writes_model_neutral_episode_artifacts(tmp_path, monkeypatch) -> None:
     writers = []
 
     class FakeWriter:
@@ -140,7 +138,7 @@ def test_rollout_recorder_writes_model_neutral_episode_artifacts(
     recorder.record({"custom_camera_image": frame})
     recorder.close()
 
-    episode_dir = tmp_path / "libero_goal" / "D03" / "seed_142"
+    episode_dir = tmp_path / "libero_goal" / "task_02" / "D03" / "init_000" / "seed_142"
     metadata = json.loads((episode_dir / "adapter.json").read_text(encoding="utf-8"))
     assert len(writers) == 1
     assert writers[0].size == (5, 4)

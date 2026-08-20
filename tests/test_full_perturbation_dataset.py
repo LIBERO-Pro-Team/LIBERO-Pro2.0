@@ -1,5 +1,5 @@
-import json
 import importlib.util
+import json
 import runpy
 from pathlib import Path
 
@@ -15,14 +15,7 @@ audit = _AUDIT_MODULE.audit
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "assets" / "task_manifest.json"
-ASSET_ROOT = (
-    ROOT
-    / "simulator-source"
-    / "libero"
-    / "libero"
-    / "assets"
-    / "perturbation_assets"
-)
+ASSET_ROOT = ROOT / "simulator-source" / "libero" / "libero" / "assets" / "perturbation_assets"
 ASSET_CATALOG = ASSET_ROOT / "asset_catalog.json"
 
 
@@ -38,14 +31,27 @@ def test_full_manifest_covers_40_base_tasks_and_43_perturbations() -> None:
         *(f"S{i:02d}" for i in range(1, 23)),
         *(f"D{i:02d}" for i in range(1, 22)),
     }
-    assert all(
-        entry["bddl_path"].startswith("bddl/libero-pro2.0-1680-v1/")
-        for entry in entries
-    )
+    assert all(entry["bddl_path"].startswith("bddl/libero-pro2.0-1680-v1/") for entry in entries)
 
 
 def test_full_bddl_audit_has_no_semantic_findings() -> None:
     findings = audit(MANIFEST)
+    assert findings == []
+
+
+def test_full_bddl_audit_accepts_the_legacy_1680_profile(tmp_path: Path) -> None:
+    payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    payload["manifest_version"] = "libero-pro2.0-1680-v1"
+    payload["tasks"] = [
+        entry for entry in payload["tasks"] if entry["case_id"] not in {"S22", "D20"}
+    ]
+    payload["task_count"] = len(payload["tasks"])
+    legacy_manifest = tmp_path / "task_manifest.json"
+    legacy_manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    findings = audit(legacy_manifest)
+
+    assert payload["task_count"] == 1680
     assert findings == []
 
 

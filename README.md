@@ -724,6 +724,15 @@ JSONL、CSV 和按 suite/variant/group/seed 汇总的 JSON。该层不识别或�
 runner 可调用 `run_grouped_benchmark()` 一次执行计划中的剩余 rollout。完整用法见
 `docs/grouped-benchmark.md`。
 
+通用 scheduled xVLA 入口 `scripts/run_generic_xvla_scheduled.py` 不再绑定固定任务总数。
+默认 `--task-profile manifest` 运行传入 manifest 的全部任务，因此旧 1680 manifest 和当前
+1760 manifest 都可直接使用；在当前 manifest 上传入 `--task-profile legacy-1680` 可精确选择
+原 1680 项，传入 `--cases S22,D20` 可只选择新增的 80 项。提交前会逐一确认所选
+`suite/task_id/case_id` 均由服务器 catalog 发布，不再用总数相等代替兼容性检查。
+
+通用记录器与结果导出使用
+`suite/task_NN/case/init_NNN/seed_N/`，所以同一 suite 下的不同任务或 init state 不会覆盖彼此。
+
 ### 21.1 本机 xVLA 参考 runner
 
 计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。

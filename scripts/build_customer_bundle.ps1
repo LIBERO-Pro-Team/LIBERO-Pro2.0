@@ -25,6 +25,18 @@ function Convert-ToWslPath([string]$WindowsPath) {
     return "/mnt/$drive/$relative"
 }
 
+function Get-Sha256Hex([string]$LiteralPath) {
+    $stream = [IO.File]::OpenRead($LiteralPath)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $hasher.ComputeHash($stream)
+    } finally {
+        $stream.Dispose()
+        $hasher.Dispose()
+    }
+    return (([BitConverter]::ToString($digest) -replace '-', '').ToLowerInvariant())
+}
+
 function Assert-ManifestBddlHashes($Manifest, [string]$AssetsRoot) {
     foreach ($task in $Manifest.tasks) {
         $bddl = Join-Path $AssetsRoot ($task.bddl_path -replace '/', '\')
@@ -67,8 +79,8 @@ if ($LASTEXITCODE -ne 0) { throw "Simulator Git LFS verification failed" }
 
 $manifestPath = Join-Path $repoRoot "assets\task_manifest.json"
 $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
-if ($manifest.task_count -ne 1760 -or $manifest.tasks.Count -ne 1760) {
-    throw "Expected exactly 1760 published BDDL entries"
+if ($manifest.task_count -ne $manifest.tasks.Count -or $manifest.task_count -notin @(1680, 1760)) {
+    throw "Expected a self-consistent 1680- or 1760-task published manifest"
 }
 Assert-ManifestBddlHashes $manifest (Split-Path $manifestPath)
 
@@ -213,7 +225,7 @@ Move-Item -LiteralPath $staging -Destination $bundleRoot
 tar -czf $archive -C $output $bundleName
 if ($LASTEXITCODE -ne 0) { throw "Bundle archive creation failed" }
 
-$archiveHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+$archiveHash = Get-Sha256Hex -LiteralPath $archive
 $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
 [IO.File]::WriteAllText(
     "$archive.sha256",
