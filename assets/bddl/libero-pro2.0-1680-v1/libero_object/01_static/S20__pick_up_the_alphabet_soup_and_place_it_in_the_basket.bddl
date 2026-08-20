@@ -285,7 +285,10 @@
         (:variant fixed_rate_delay_or_action_window)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:observation_delay_steps 3)
+          (:action_delay_steps 3)
+          (:gripper_delay_steps 3))
       )
       (S21
         (:operator state_or_language_event)

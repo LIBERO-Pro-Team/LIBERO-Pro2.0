@@ -7,6 +7,7 @@ import numpy as np
 import pytest
 
 from libero_remote.runner.report import build_run_manifest
+from libero_remote.runner.scheduled import AgentContext
 from libero_remote.runner.xvla import (
     EpisodeResult,
     EpisodeSpec,
@@ -402,6 +403,50 @@ def test_xvla_adapter_uses_lerobot_processing_order() -> None:
         "policy_postprocessor",
         "env_postprocessor",
     ]
+
+
+def test_xvla_adapter_satisfies_model_neutral_agent_interface() -> None:
+    events = []
+
+    class Policy:
+        def reset(self) -> None:
+            events.append("reset")
+
+        def select_action(self, observation):
+            events.append(("policy", observation))
+            return "policy_action"
+
+    adapter = XVLAPolicyAdapter(
+        policy=Policy(),
+        preprocess_observation=lambda raw: {"raw": raw},
+        env_preprocessor=lambda observation: observation,
+        policy_preprocessor=lambda observation: observation,
+        policy_postprocessor=lambda action: action,
+        env_postprocessor=lambda transition: {
+            "action": np.arange(7, dtype=np.float32)[None, :]
+        },
+        inference_context=nullcontext,
+    )
+    context = AgentContext(
+        run_id="run-test",
+        job_id="job-test",
+        job_index=0,
+        episode_spec={"suite": "libero_goal", "task_id": 0, "seed": 142},
+        reproducibility={"job_fingerprint": "job-hash"},
+        language_instruction="pick up the bowl",
+        action_schema={"shape": [7], "low": [-1.0] * 7, "high": [1.0] * 7},
+        observation_schema_version="libero_standard_v1",
+    )
+    observation = {**_xvla_observation(), "instruction": "pick up the bowl"}
+
+    adapter.reset(context)
+    action = adapter.act(observation)
+    adapter.close()
+
+    np.testing.assert_array_equal(action, np.arange(7, dtype=np.float32))
+    assert events[0] == "reset"
+    assert events[1][0] == "policy"
+    assert events[1][1]["task"] == ["pick up the bowl"]
 
 
 def _xvla_observation():

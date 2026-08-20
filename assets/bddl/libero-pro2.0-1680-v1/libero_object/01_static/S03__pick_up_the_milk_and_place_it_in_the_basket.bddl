@@ -137,13 +137,15 @@
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode placement)
-        )
+          (:height_delta_m 0.06)
+
+          (:asset_scale 1.20))
       )
       (S04
         (:operator pose_transform)
         (:targets milk_1 cream_cheese_1)
         (:variant planar_object_position_swap)
-        (:constraints same_support_surface collision_free task_completable)
+        (:constraints collision_free task_completable)
         (:params
           (:interaction_mode placement)
         )

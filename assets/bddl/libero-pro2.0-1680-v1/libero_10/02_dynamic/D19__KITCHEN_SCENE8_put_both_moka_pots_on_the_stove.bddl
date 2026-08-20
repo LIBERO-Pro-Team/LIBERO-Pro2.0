@@ -454,7 +454,9 @@
         (:constraints correction_remains_possible)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:receiver_approach_distance_m 0.24)
+          (:misplacement_distance_m 0.07))
       )
       (D21
         (:operator state_or_language_event)

@@ -40,6 +40,15 @@ class AgentAdapter:
 这是结构化接口，不要求继承基类。adapter 可以封装 PyTorch、JAX、TensorFlow、ONNX、
 远端私有推理 API、传统规划器或人工控制逻辑。
 
+## 通用记录包装
+
+需要保存 rollout 视频时，可使用 `libero_remote.runner.recording.RecordingAgentAdapter`
+包装任意模型 adapter。记录层只读取配置的标准 observation 图像字段，并将原始 `AgentContext`、
+observation 和 action 原样转发；它不生成 `pixels`、`robot_state`、domain id 或任何模型专用字段。
+
+模型输入映射必须留在被包装的专用 adapter 内。例如 xVLA 的 LeRobot 字段、processor、姿态矩阵
+和 action 转换只属于 `libero_remote.runner.xvla.XVLAPolicyAdapter`，不属于通用记录或调度接口。
+
 ## Adapter 负责的语义
 
 - 根据模型训练约定处理相机方向、裁剪、resize、颜色空间和归一化。

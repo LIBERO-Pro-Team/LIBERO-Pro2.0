@@ -333,7 +333,11 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode placement)
-        )
+          (:asset_scale 1.35)
+
+          (:event_duration_steps 18)
+          (:receiver_trigger_distance_m 0.24)
+          (:receiver_approach_distance_m 0.24))
       )
       (D04
         (:operator occlusion_or_obstacle)

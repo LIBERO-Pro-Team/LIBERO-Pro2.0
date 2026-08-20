@@ -49,3 +49,35 @@ if loaded:
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_recording_adapter_import_does_not_load_model_or_vision_dependencies() -> None:
+    script = """
+import sys
+import libero_remote.runner.recording
+
+blocked = (
+    "libero_remote.runner.xvla",
+    "libero_remote.runner.pi0",
+    "torch",
+    "lerobot",
+    "cv2",
+)
+loaded = sorted(
+    name
+    for name in sys.modules
+    if any(name == prefix or name.startswith(prefix + ".") for prefix in blocked)
+)
+if loaded:
+    raise SystemExit(f"recording adapter loaded specialized dependencies: {loaded}")
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).parents[1],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr

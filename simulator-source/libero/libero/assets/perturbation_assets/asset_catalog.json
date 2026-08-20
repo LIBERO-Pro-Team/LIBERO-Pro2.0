@@ -1,8 +1,8 @@
 {
   "format_version": 1,
   "summary": {
-    "ready_mjcf_assets": 42,
-    "external_adapted_assets": 37,
+    "ready_mjcf_assets": 46,
+    "external_adapted_assets": 41,
     "generated_parametric_assets": 5,
     "perturbation_directions_covered": 41
   },
@@ -48,6 +48,9 @@
       "prl/sugar_box",
       "prl/wicker_tray",
       "prl/yellow_tote",
+      "libero/porcelain_mug",
+      "libero/red_coffee_mug",
+      "libero/white_porcelain_mug",
       "ycb/YcbBanana",
       "ycb/YcbChipsCan",
       "ycb/YcbCrackerBox",
@@ -72,7 +75,10 @@
       "ycb/YcbGelatinBox",
       "prl/can",
       "ycb/YcbMasterChefCan",
-      "ycb/YcbTomatoSoupCan"
+      "ycb/YcbTomatoSoupCan",
+      "libero/porcelain_mug",
+      "libero/red_coffee_mug",
+      "libero/white_porcelain_mug"
     ],
     "textured_objects": [
       "prl/cracker_box",
@@ -109,6 +115,57 @@
         1.852,
         0.741,
         0.735
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/porcelain_mug",
+      "format": "mjcf",
+      "path": "adapted/libero_objects/porcelain_mug/porcelain_mug.xml",
+      "source_asset": "libero/assets/turbosquid_objects/porcelain_mug",
+      "license": "MIT",
+      "dimensions_m": [
+        0.13,
+        0.09,
+        0.12
+      ],
+      "perturbations": [
+        "S06",
+        "S11"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/red_coffee_mug",
+      "format": "mjcf",
+      "path": "adapted/libero_objects/red_coffee_mug/red_coffee_mug.xml",
+      "source_asset": "libero/assets/turbosquid_objects/red_coffee_mug",
+      "license": "MIT",
+      "dimensions_m": [
+        0.12,
+        0.11,
+        0.13
+      ],
+      "perturbations": [
+        "S06",
+        "S11"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/white_porcelain_mug",
+      "format": "mjcf",
+      "path": "adapted/libero_objects/white_porcelain_mug/white_porcelain_mug.xml",
+      "source_asset": "libero/assets/turbosquid_objects/white_porcelain_mug",
+      "license": "MIT",
+      "dimensions_m": [
+        0.13,
+        0.09,
+        0.12
+      ],
+      "perturbations": [
+        "S06",
+        "S11"
       ],
       "readiness": "ready_mjcf"
     },
@@ -676,6 +733,23 @@
         "S03"
       ],
       "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/yellow_moka_pot",
+      "format": "mjcf",
+      "path": "adapted/libero_objects/yellow_moka_pot/yellow_moka_pot.xml",
+      "source_asset": "libero/assets/turbosquid_objects/yellow_moka_pot",
+      "license": "MIT",
+      "dimensions_m": [
+        0.18,
+        0.18,
+        0.15
+      ],
+      "perturbations": [
+        "S06",
+        "S11"
+      ],
+      "readiness": "ready_mjcf"
     }
   ],
   "perturbation_coverage": [
@@ -740,6 +814,9 @@
         "prl/sugar_box",
         "prl/wicker_tray",
         "prl/yellow_tote",
+        "libero/porcelain_mug",
+        "libero/red_coffee_mug",
+        "libero/white_porcelain_mug",
         "ycb/YcbBanana",
         "ycb/YcbChipsCan",
         "ycb/YcbCrackerBox",
@@ -874,7 +951,10 @@
         "ycb/YcbGelatinBox",
         "prl/can",
         "ycb/YcbMasterChefCan",
-        "ycb/YcbTomatoSoupCan"
+        "ycb/YcbTomatoSoupCan",
+        "libero/porcelain_mug",
+        "libero/red_coffee_mug",
+        "libero/white_porcelain_mug"
       ],
       "local_resources": [],
       "note": "Use same-category and highly similar candidates for grounding distractors."

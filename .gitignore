@@ -9,6 +9,7 @@ dist/
 .coverage
 htmlcov/
 runtime/
+runs/
 # The bundled simulator has a tracked runtime helper; keep it in the source tree.
 !simulator-source/runtime/
 !simulator-source/runtime/**

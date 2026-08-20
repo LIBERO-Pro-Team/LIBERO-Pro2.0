@@ -234,7 +234,9 @@
         (:constraints real_collision_geometry full_containment positive_clearance insertion_depth)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:target_geometry_factors 1.15 1.15 1.15)
+          (:receiver_geometry_factors 0.88 0.88 0.88))
       )
       (S10
         (:operator asset_or_appearance)

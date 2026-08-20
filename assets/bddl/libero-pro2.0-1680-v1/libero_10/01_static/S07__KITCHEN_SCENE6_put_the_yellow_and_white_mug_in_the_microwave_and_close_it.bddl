@@ -166,7 +166,8 @@
         (:variant functional_part_geometry)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:geometry_factors 1.0 0.72 1.18))
       )
       (S08
         (:operator geometry_variant)

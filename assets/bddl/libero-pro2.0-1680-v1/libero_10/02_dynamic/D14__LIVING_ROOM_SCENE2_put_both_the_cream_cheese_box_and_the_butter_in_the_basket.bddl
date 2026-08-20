@@ -468,7 +468,8 @@
         (:variant command_drop_or_repeat)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:event_duration_steps 4))
       )
       (D15
         (:operator timing_or_action_fault)

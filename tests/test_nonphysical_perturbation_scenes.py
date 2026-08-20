@@ -5,6 +5,7 @@ import math
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 import numpy as np
 
@@ -45,6 +46,23 @@ def _plan(case_id: str, *, targets: tuple[str, ...], references: tuple[str, ...]
     )
 
 
+def test_scene_entity_names_include_arena_floor_support() -> None:
+    class Model:
+        def body_name2id(self, name: str) -> int:
+            return {"table": 1, "floor": 2}[name]
+
+    env = SimpleNamespace(
+        obj_body_id={"target": 3},
+        sim=SimpleNamespace(model=Model()),
+    )
+
+    assert PERTURBATIONS._scene_entity_names(env) == (
+        "target",
+        "main_table",
+        "floor",
+    )
+
+
 def test_s06_replacement_uses_the_replacement_assets_upright_frame() -> None:
     original = SimpleNamespace(
         category_name="alphabet_soup",
@@ -62,6 +80,73 @@ def test_s06_replacement_uses_the_replacement_assets_upright_frame() -> None:
 
     assert replacement.rotation == (0.0, 0.0)
     assert replacement.rotation_axis == "z"
+
+
+def test_s06_reapplies_upright_quaternion_after_init_state_load() -> None:
+    plan = _plan("S06", targets=("target",), references=())
+
+    class Model:
+        body_pos = np.array([[0.10, -0.05, 0.12]], dtype=float)
+        body_quat = np.array([[0.0, 1.0, 0.0, 0.0]], dtype=float)
+
+    class Data:
+        def __init__(self, model):
+            self.body_xpos = model.body_pos.copy()
+            self.body_xquat = model.body_quat.copy()
+
+    class Sim:
+        def __init__(self):
+            self.model = Model()
+            self.data = Data(self.model)
+
+        def forward(self):
+            self.data.body_xpos[:] = self.model.body_pos
+            self.data.body_xquat[:] = self.model.body_quat
+
+    env = SimpleNamespace(
+        sim=Sim(),
+        obj_body_id={"target": 0},
+        objects_dict={},
+    )
+    PERTURBATIONS.NonPhysicalPerturbationRuntime(plan).apply_static(env)
+
+    np.testing.assert_allclose(env.sim.data.body_xpos[0], [0.10, -0.05, 0.12])
+    np.testing.assert_allclose(env.sim.data.body_xquat[0], [1.0, 0.0, 0.0, 0.0])
+
+
+def test_s04_articulation_uses_a_fixture_offset_instead_of_a_self_swap() -> None:
+    plan = PERTURBATIONS.ExecutionPlan(
+        case_id="S04",
+        schedule="static",
+        operator="pose_transform",
+        variant="articulation_fixture_pose_offset",
+        targets=("goal_fixture",),
+        references=(),
+        mechanisms=("pose",),
+        assets=(),
+        params={"interaction_mode": "articulation"},
+    )
+    model = _FakeModel()
+    model.body_pos = np.array([[0.05, 0.10, 0.40]], dtype=float)
+    model.body_quat = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=float)
+    model.nbody = 1
+    sim = _FakeSim()
+    sim.model = model
+    sim.data = _FakeData(model)
+    env = SimpleNamespace(
+        sim=sim,
+        obj_body_id={"goal_fixture": 0},
+        objects_dict={},
+        workspace_offset=np.array([0.0, 0.0, 0.9]),
+    )
+
+    PERTURBATIONS.NonPhysicalPerturbationRuntime(plan).apply_static(env)
+
+    assert not np.allclose(sim.data.body_xpos[0, :2], [0.05, 0.10])
+    assert sim.data.body_xpos[0, 2] == 0.40
+    assert PERTURBATIONS.NonPhysicalPerturbationRuntime(plan).plan.targets == (
+        "goal_fixture",
+    )
 
 
 class _FakeModel:
@@ -182,5 +267,62 @@ def test_s05_barrier_keeps_transport_corridor_clear() -> None:
     end = env.sim.data.body_xpos[1, :2]
     barrier = env.sim.data.body_xpos[3, :2]
     direction = (end - start) / np.linalg.norm(end - start)
-    lateral_clearance = abs(np.cross(direction, barrier - start))
+    lateral_clearance = abs(
+        np.cross(np.r_[direction, 0.0], np.r_[barrier - start, 0.0])[-1]
+    )
     assert lateral_clearance >= 0.14
+
+
+def test_s05_detour_ignores_the_carried_object_on_every_segment() -> None:
+    carried = "wine_bottle_1"
+    barrier = "perturbation_s05_0"
+    target_position = np.array([0.00, 0.00, 0.90])
+    receiver_position = np.array([0.14, 0.00, 0.90])
+    env = SimpleNamespace(objects_dict={carried: SimpleNamespace(joints=["free_joint"])})
+
+    with (
+        mock.patch.object(PERTURBATIONS, "_entity_xy_radius", return_value=0.05),
+        mock.patch.object(
+            PERTURBATIONS,
+            "_entity_pose",
+            return_value=(
+                np.array([0.00, 0.00, -5.00]),
+                np.array([1.00, 0.00, 0.00, 0.00]),
+            ),
+        ),
+        mock.patch.object(PERTURBATIONS, "_candidate_is_clear", return_value=True),
+        mock.patch.object(
+            PERTURBATIONS, "_candidate_is_clear_of_objects", return_value=True
+        ),
+        mock.patch.object(
+            PERTURBATIONS, "_candidate_is_clear_of_eef", return_value=True
+        ),
+        mock.patch.object(
+            PERTURBATIONS,
+            "_ground_entity_on_support",
+            side_effect=lambda _env, _name, candidate, _quaternion: (
+                candidate,
+                "main_table",
+            ),
+        ),
+        mock.patch.object(
+            PERTURBATIONS, "_entity_has_penetrating_contact", return_value=False
+        ),
+        mock.patch.object(
+            PERTURBATIONS, "_scene_entity_names", return_value=(carried, barrier)
+        ),
+        mock.patch.object(PERTURBATIONS, "_entity_is_movable", return_value=True),
+        mock.patch.object(
+            PERTURBATIONS, "_transport_detour_exists", return_value=True
+        ) as detour_exists,
+    ):
+        PERTURBATIONS._safe_transport_barrier_pose(
+            env,
+            barrier,
+            target_position,
+            receiver_position,
+            requested_lateral_offset=0.15,
+            carried_object_name=carried,
+        )
+
+    assert carried in detour_exists.call_args.kwargs["ignored_entities"]

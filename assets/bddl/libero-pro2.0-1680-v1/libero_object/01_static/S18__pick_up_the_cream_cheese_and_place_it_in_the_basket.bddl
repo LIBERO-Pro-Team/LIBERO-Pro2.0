@@ -269,7 +269,8 @@
         (:variant base_tcp_joint_zero_or_grasp_center_calibration)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:calibration_offset_m 0.012 -0.008 0.006))
       )
       (S19
         (:operator observation_fault)

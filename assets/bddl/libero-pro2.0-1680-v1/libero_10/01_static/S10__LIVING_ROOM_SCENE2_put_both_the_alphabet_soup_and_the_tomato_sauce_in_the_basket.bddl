@@ -243,7 +243,10 @@
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:asset_scale 1.20)
+          (:clutter_radius_m 0.10)
+          (:clutter_minimum_gap_m 0.06))
       )
       (S11
         (:operator asset_or_appearance)

@@ -143,10 +143,11 @@
         (:operator pose_transform)
         (:targets alphabet_soup_1 salad_dressing_1)
         (:variant planar_object_position_swap)
-        (:constraints same_support_surface collision_free task_completable)
+        (:constraints collision_free task_completable)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:layout_offset_xy 0.16 0.10))
       )
       (S05
         (:operator geometry_variant)

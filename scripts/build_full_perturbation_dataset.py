@@ -162,7 +162,17 @@ def resolve_entity(value: str, entities: Iterable[str]) -> str:
 
 def asset_for_type(object_type: str) -> Tuple[str, float]:
     value = object_type.lower()
-    if any(token in value for token in ("mug", "glass")):
+    if "moka_pot" in value or value.endswith("_pot"):
+        # LIBERO's moka-pot tasks need a true same-class instance. Mapping a
+        # pot to a gelatin box is visually and physically a different task.
+        return "libero/yellow_moka_pot", 1.0
+    if value == "porcelain_mug":
+        return "libero/white_porcelain_mug", 1.0
+    if value == "red_coffee_mug":
+        return "libero/porcelain_mug", 1.0
+    if value == "white_yellow_mug":
+        return "libero/red_coffee_mug", 1.0
+    if "glass" in value:
         return "prl/plastic_glass", 0.70
     if "bowl" in value:
         return "prl/plastic_bowl", 0.45
@@ -291,6 +301,23 @@ def atom_list(values: Sequence[str]) -> str:
     return " ".join(str(value) for value in values)
 
 
+def s04_distractor(profile: TaskProfile, primary: str, receiver: str) -> str:
+    """Choose a movable distractor with a different object class when possible."""
+
+    type_by_name = dict(profile.objects)
+    primary_type = type_by_name.get(primary)
+    candidates = [
+        name
+        for name, object_type in profile.objects
+        if name not in {primary, receiver}
+        and name != profile.primary
+        and object_type != primary_type
+    ]
+    if candidates:
+        return candidates[0]
+    return profile.secondary
+
+
 def params_block(values: Mapping[str, Any]) -> str:
     if not values:
         return ""
@@ -317,20 +344,42 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
     elif case_id == "S02":
         fields = [("operator", "pose_transform"), ("targets", receiver), ("variant", "xy_yaw")]
     elif case_id == "S03":
-        fields = [("operator", "geometry_variant"), ("targets", f"{receiver} {profile.support}"), ("variant", "receiver_or_support_height")]
+        # The arena table cannot be translated as a body. For table-backed
+        # goals, raise the goal object on a local support riser instead.
+        s03_target = receiver if receiver != "main_table" else profile.primary_object
+        s03_support = profile.support if profile.support != s03_target else receiver
+        fields = [("operator", "geometry_variant"), ("targets", f"{s03_target} {s03_support}"), ("variant", "receiver_or_support_height")]
     elif case_id == "S04":
-        first = profile.primary_object if profile.primary_object else secondary
-        fields = [("operator", "pose_transform"), ("targets", f"{first} {secondary}"), ("variant", "planar_object_position_swap"), ("constraints", "same_support_surface collision_free task_completable")]
+        if mode == "articulation":
+            # Articulation tasks may contain only one movable distractor. A
+            # self-swap is a no-op, so perturb the goal fixture by a small
+            # collision-checked workspace offset instead.
+            fields = [
+                ("operator", "pose_transform"),
+                ("targets", primary),
+                ("variant", "articulation_fixture_pose_offset"),
+                ("constraints", "collision_free task_completable"),
+            ]
+        else:
+            first = profile.primary_object if profile.primary_object else secondary
+            second = s04_distractor(profile, first, receiver)
+            fields = [("operator", "pose_transform"), ("targets", f"{first} {second}"), ("variant", "planar_object_position_swap"), ("constraints", "collision_free task_completable")]
     elif case_id == "S05":
         targets = f"{primary} {receiver}" if placement else f"{secondary} {primary}"
         fields = [("operator", "geometry_variant"), ("targets", targets), ("references", secondary), ("variant", "restricted_approach_or_path"), ("constraints", "initial_collision_free ik_reachable full_path_exists")]
     elif case_id == "S06":
-        fields = [("operator", "asset_or_appearance"), ("targets", profile.primary_object if profile.primary_object else secondary), ("variant", "same_class_or_unseen_instance")]
+        s06_target = primary if mode == "articulation" else (
+            profile.primary_object if profile.primary_object else secondary
+        )
+        fields = [("operator", "asset_or_appearance"), ("targets", s06_target), ("variant", "same_class_or_unseen_instance")]
     elif case_id == "S07":
         geometry_target = receiver if placement and receiver != "main_table" else primary
         fields = [("operator", "geometry_variant"), ("targets", geometry_target), ("parts", "opening rim contain_region"), ("variant", "functional_part_geometry")]
     elif case_id == "S08":
-        fields = [("operator", "geometry_variant"), ("targets", profile.primary_object if profile.primary_object else primary), ("variant", "scale_or_aspect_ratio")]
+        s08_target = primary if mode == "articulation" else (
+            profile.primary_object if profile.primary_object else primary
+        )
+        fields = [("operator", "geometry_variant"), ("targets", s08_target), ("variant", "scale_or_aspect_ratio")]
     elif case_id == "S09":
         geometry_receiver = receiver if receiver != "main_table" else primary
         targets = f"{profile.primary_object} {geometry_receiver}" if placement else f"{secondary} {primary}"
@@ -425,9 +474,19 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
 
     params: Dict[str, Any] = {"interaction_mode": profile.interaction_mode}
     if case_id == "S06":
-        params.update({"asset_id": profile.s06_asset, "asset_scale": profile.s06_scale})
+        if mode == "articulation":
+            params.update({"fixture_variant": True, "geometry_factors": (1.08, 1.08, 1.0)})
+        else:
+            params.update({"asset_id": profile.s06_asset, "asset_scale": profile.s06_scale})
     elif case_id == "S11":
         params.update({"asset_id": profile.s11_asset, "asset_scale": profile.s11_scale})
+    elif case_id == "S03" and active_case == "S03":
+        params["height_delta_m"] = 0.05
+    elif case_id == "D03" and active_case == "D03":
+        # A receiver blocker must cover the functional opening; the unscaled
+        # foam brick can leave a gap large enough for the goal object to fall
+        # through and produce a false success.
+        params["asset_scale"] = 1.35
     elif case_id == "D02":
         params["offset_xy"] = (-0.12, 0.09) if receiver.startswith("basket_") else (-0.06, 0.045)
     elif case_id == "D15":

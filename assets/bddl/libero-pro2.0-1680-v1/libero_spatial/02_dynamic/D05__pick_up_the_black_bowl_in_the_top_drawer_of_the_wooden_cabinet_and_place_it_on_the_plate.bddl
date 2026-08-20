@@ -389,7 +389,12 @@
         (:constraints alternate_collision_free_path_exists)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:asset_scale 1.35)
+          (:lateral_offset_m 0.04)
+          (:path_progress_min_fraction 0.18)
+          (:path_progress_max_fraction 0.95)
+          (:path_progress_tolerance_m 0.22))
       )
       (D06
         (:operator pose_transform)

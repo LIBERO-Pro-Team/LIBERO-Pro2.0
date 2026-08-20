@@ -253,7 +253,9 @@
         (:variant intrinsics_fov_resolution_crop_or_distortion)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:fov_scale 1.20)
+          (:image_shift_fraction 0.08))
       )
       (S17
         (:operator state_or_language_event)

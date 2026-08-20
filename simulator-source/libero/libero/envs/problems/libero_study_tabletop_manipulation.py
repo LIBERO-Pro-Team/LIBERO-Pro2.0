@@ -145,6 +145,8 @@ class Libero_Study_Tabletop_Manipulation(BDDLBaseDomain):
         #     if not result:
         #         return False
         # return True
+        if result and not self.perturbation_runtime.success_allowed(self):
+            return False
         return result
 
     def _eval_predicate(self, state):

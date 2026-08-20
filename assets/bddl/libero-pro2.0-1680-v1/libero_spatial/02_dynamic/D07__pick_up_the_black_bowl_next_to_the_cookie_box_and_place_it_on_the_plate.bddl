@@ -406,7 +406,8 @@
         (:variant shake_drift_or_persistent_offset)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:camera_offset_m 0.045 -0.032 0.020))
       )
       (D08
         (:operator observation_fault)

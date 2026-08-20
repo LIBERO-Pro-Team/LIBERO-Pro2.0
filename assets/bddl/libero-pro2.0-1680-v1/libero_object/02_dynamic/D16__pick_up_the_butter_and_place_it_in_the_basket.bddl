@@ -447,8 +447,9 @@
         (:constraints no_physical_contact)
         (:params
           (:interaction_mode placement)
-          (:event_duration_steps 6)
-        )
+          (:event_duration_steps 12)
+
+          (:takeover_action_value 0.18))
       )
       (D17
         (:operator state_or_language_event)

@@ -6,9 +6,12 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Mapping, Optional, Protocol
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from .scheduled import AgentContext
 
 REPORT_SCHEMA_VERSION = "1.0"
 LIBERO_EEF_SITE_TO_CONTROLLER_ROTATION = np.array(
@@ -102,6 +105,7 @@ class XVLAPolicyAdapter:
         model_path: str,
         device: str = "cuda",
         tokenizer_path: str = "",
+        local_files_only: bool = False,
     ) -> "XVLAPolicyAdapter":
         """Load xVLA and its official LeRobot processors only when requested."""
 
@@ -117,7 +121,10 @@ class XVLAPolicyAdapter:
         if device.startswith("cuda") and not torch.cuda.is_available():
             raise RuntimeError("CUDA was requested but PyTorch cannot access a CUDA device")
 
-        policy = XVLAPolicy.from_pretrained(model_path)
+        policy = XVLAPolicy.from_pretrained(
+            model_path,
+            local_files_only=local_files_only,
+        )
         _normalize_declared_image_views(policy)
         policy.config.device = device
         policy.to(device)
@@ -163,10 +170,20 @@ class XVLAPolicyAdapter:
             action_key=ACTION,
         )
 
-    def reset(self) -> None:
+    def reset(self, context: Optional["AgentContext"] = None) -> None:
+        del context
         reset = getattr(self._policy, "reset", None)
         if callable(reset):
             reset()
+
+    def act(self, observation: Dict[str, Any]) -> np.ndarray:
+        instruction = str(observation["instruction"])
+        return self.select_action(observation, instruction)
+
+    def close(self) -> None:
+        close = getattr(self._policy, "close", None)
+        if callable(close):
+            close()
 
     def select_action(
         self, remote_observation: Dict[str, np.ndarray], instruction: str

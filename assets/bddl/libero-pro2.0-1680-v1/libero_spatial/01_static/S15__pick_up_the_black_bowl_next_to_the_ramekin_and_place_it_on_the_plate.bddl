@@ -288,7 +288,8 @@
         (:variant fixed_extrinsics_or_cross_camera_calibration)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:camera_offset_m 0.065 -0.050 0.035))
       )
       (S16
         (:operator camera_transform)

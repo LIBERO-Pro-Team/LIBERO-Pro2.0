@@ -164,8 +164,8 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_glass)
-          (:asset_scale 0.7)
+          (:asset_id libero/white_porcelain_mug)
+          (:asset_scale 1.0)
         )
       )
       (S07
@@ -210,8 +210,8 @@
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_glass)
-          (:asset_scale 0.7)
+          (:asset_id libero/white_porcelain_mug)
+          (:asset_scale 1.0)
         )
       )
       (S12

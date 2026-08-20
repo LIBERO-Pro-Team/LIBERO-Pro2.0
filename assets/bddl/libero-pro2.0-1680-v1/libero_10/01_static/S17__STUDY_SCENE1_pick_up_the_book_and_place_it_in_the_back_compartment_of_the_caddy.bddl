@@ -257,7 +257,8 @@
         (:variant initial_joints_eef_orientation_or_gripper_opening)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:joint_offset 0.060 -0.045 0.035 0 0 0 0))
       )
       (S18
         (:operator state_or_language_event)

@@ -408,7 +408,9 @@
         (:variant transient_latency_spike)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:event_duration_steps 36)
+          (:observation_delay_steps 6))
       )
       (D13
         (:operator timing_or_action_fault)

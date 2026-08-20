@@ -207,8 +207,10 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/notebook)
-          (:asset_scale 0.7)
-        )
+          (:asset_scale 0.78)
+
+          (:distractor_offset_xy 0.07 0.04)
+          (:distractor_minimum_gap_m 0.05))
       )
       (S12
         (:operator occlusion_or_obstacle)

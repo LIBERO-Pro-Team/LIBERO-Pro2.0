@@ -141,8 +141,8 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/gelatin_box)
-          (:asset_scale 0.7)
+          (:asset_id libero/yellow_moka_pot)
+          (:asset_scale 1.0)
         )
       )
       (S07
@@ -187,9 +187,11 @@
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/gelatin_box)
-          (:asset_scale 0.7)
-        )
+          (:asset_id libero/yellow_moka_pot)
+          (:asset_scale 0.78)
+
+          (:distractor_offset_xy 0.07 0.04)
+          (:distractor_minimum_gap_m 0.05))
       )
       (S12
         (:operator occlusion_or_obstacle)

@@ -138,6 +138,8 @@ class Libero_Coffee_Table_Manipulation(BDDLBaseDomain):
         result = True
         for state in goal_state:
             result = self._eval_predicate(state) and result
+        if result and not self.perturbation_runtime.success_allowed(self):
+            return False
         return result
 
     def _eval_predicate(self, state):

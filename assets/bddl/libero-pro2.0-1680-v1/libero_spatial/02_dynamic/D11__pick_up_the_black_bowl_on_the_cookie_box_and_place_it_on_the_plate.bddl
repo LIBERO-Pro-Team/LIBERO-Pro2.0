@@ -442,7 +442,8 @@
         (:variant timestamp_offset_or_state_freeze)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:event_duration_steps 36))
       )
       (D12
         (:operator timing_or_action_fault)

@@ -390,7 +390,8 @@
         (:variant drop_repeat_or_freeze_frames)
         (:params
           (:interaction_mode placement)
-        )
+
+          (:event_duration_steps 36))
       )
       (D11
         (:operator observation_fault)
