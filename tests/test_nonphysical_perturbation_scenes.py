@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -80,6 +81,20 @@ def test_s06_replacement_uses_the_replacement_assets_upright_frame() -> None:
 
     assert replacement.rotation == (0.0, 0.0)
     assert replacement.rotation_axis == "z"
+
+
+def test_injected_asset_vector_scaling_separates_footprint_and_height() -> None:
+    root = ET.fromstring(
+        '<body><geom pos="0 0 0.025" size="0.1 0.1 0.025" />'
+        '<site pos="0.141421356 0 0" /></body>'
+    )
+    obj = SimpleNamespace(worldbody=root, get_obj=lambda: root)
+
+    PERTURBATIONS._scale_mujoco_object_vector(obj, (0.75, 0.75, 2.0))
+
+    assert root.find("geom").get("size") == "0.07500000000000001 0.07500000000000001 0.05"
+    assert root.find("geom").get("pos") == "0.0 0.0 0.05"
+    assert root.find("site").get("pos") == "0.106066017 0.0 0.0"
 
 
 def test_s06_reapplies_upright_quaternion_after_init_state_load() -> None:
@@ -326,3 +341,30 @@ def test_s05_detour_ignores_the_carried_object_on_every_segment() -> None:
         )
 
     assert carried in detour_exists.call_args.kwargs["ignored_entities"]
+
+
+def test_s09_duplicate_target_receiver_keeps_the_stronger_geometry_factor() -> None:
+    target = SimpleNamespace(
+        worldbody=ET.fromstring('<body><geom size="1 1 1" /></body>')
+    )
+    plan = PERTURBATIONS.ExecutionPlan(
+        case_id="S09",
+        schedule="static",
+        operator="geometry",
+        variant="test",
+        targets=("plate_1", "plate_1"),
+        references=(),
+        mechanisms=("geometry",),
+        assets=(),
+        params={
+            "target_geometry_factors": (1.25, 1.25, 1.25),
+            "receiver_geometry_factors": (0.80, 0.80, 0.80),
+        },
+    )
+
+    changed = PERTURBATIONS.apply_precompile_geometry(
+        {"plate_1": target}, {}, plan
+    )
+
+    assert changed == ("plate_1",)
+    assert target.worldbody.find("geom").get("size") == "1.25 1.25 1.25"

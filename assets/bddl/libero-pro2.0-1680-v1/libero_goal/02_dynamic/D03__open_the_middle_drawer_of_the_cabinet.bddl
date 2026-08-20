@@ -359,6 +359,12 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 72)
+          (:asset_id prl/fuze_bottle)
+          (:asset_scale 0.75)
+          (:allow_compact_asset true)
+          (:obstacle_part handle)
+          (:articulation_obstacle_offset_xy 0.0 -0.12)
         )
       )
       (D04

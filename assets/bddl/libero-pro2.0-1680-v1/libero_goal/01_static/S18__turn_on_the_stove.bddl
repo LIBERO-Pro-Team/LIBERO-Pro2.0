@@ -304,6 +304,7 @@
         (:variant base_tcp_joint_zero_or_grasp_center_calibration)
         (:params
           (:interaction_mode articulation)
+          (:calibration_offset_m 0.055 -0.042 0.030)
         )
       )
       (S19

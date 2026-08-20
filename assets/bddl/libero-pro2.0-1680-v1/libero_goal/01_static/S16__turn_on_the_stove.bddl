@@ -288,6 +288,8 @@
         (:variant intrinsics_fov_resolution_crop_or_distortion)
         (:params
           (:interaction_mode articulation)
+          (:fov_scale 1.30)
+          (:image_shift_fraction 0.14)
         )
       )
       (S17

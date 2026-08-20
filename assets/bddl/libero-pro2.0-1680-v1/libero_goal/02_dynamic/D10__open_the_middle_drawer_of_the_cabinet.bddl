@@ -425,6 +425,7 @@
         (:variant drop_repeat_or_freeze_frames)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 72)
         )
       )
       (D11

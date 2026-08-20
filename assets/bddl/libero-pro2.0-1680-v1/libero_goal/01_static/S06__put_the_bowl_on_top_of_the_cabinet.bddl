@@ -200,8 +200,8 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.45)
+          (:asset_id libero/red_akita_black_bowl)
+          (:asset_scale 1.0)
         )
       )
       (S07

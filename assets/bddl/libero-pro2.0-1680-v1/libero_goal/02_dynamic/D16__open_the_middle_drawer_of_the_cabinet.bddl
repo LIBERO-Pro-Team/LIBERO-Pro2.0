@@ -482,7 +482,9 @@
         (:constraints no_physical_contact)
         (:params
           (:interaction_mode articulation)
-          (:event_duration_steps 6)
+          (:event_duration_steps 16)
+          (:takeover_action_value 0.26)
+          (:trigger_distance_m 0.22)
         )
       )
       (D17

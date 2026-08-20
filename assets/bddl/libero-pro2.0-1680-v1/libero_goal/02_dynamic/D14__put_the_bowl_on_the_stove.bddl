@@ -462,6 +462,8 @@
         (:variant command_drop_or_repeat)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 12)
+          (:trigger_distance_m 0.22)
         )
       )
       (D15

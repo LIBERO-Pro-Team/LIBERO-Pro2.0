@@ -398,6 +398,8 @@
         (:variant shake_drift_or_persistent_offset)
         (:params
           (:interaction_mode articulation)
+          (:camera_offset_m 0.08 -0.065 0.045)
+          (:trigger_distance_m 0.22)
         )
       )
       (D08

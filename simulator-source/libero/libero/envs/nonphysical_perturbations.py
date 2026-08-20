@@ -493,6 +493,21 @@ def inject_plan_assets(
         obj.rotation_axis = "z"
         obj.object_properties = {"vis_site_names": {}}
         _scale_mujoco_object(obj, asset.scale)
+        if plan.case_id == "S03" and "asset_geometry_factors" in plan.params:
+            raw_factors = np.asarray(
+                plan.params["asset_geometry_factors"], dtype=np.float64
+            )
+            if (
+                raw_factors.shape != (3,)
+                or not np.all(np.isfinite(raw_factors))
+                or np.any(raw_factors <= 0.0)
+            ):
+                raise PerturbationConfigurationError(
+                    "S03 asset_geometry_factors must contain three positive finite values"
+                )
+            _scale_mujoco_object_vector(
+                obj, tuple(float(value) for value in raw_factors)
+            )
         root = obj.get_obj() if hasattr(obj, "get_obj") else None
         if root is not None:
             root.set("pos", "0 0 -5")
@@ -531,6 +546,34 @@ def _scale_mujoco_object(obj: Any, factor: float) -> None:
         for geom in root.findall(".//geom"):
             if geom.get("size"):
                 geom.set("size", _scale_xml_values(geom.get("size"), factor))
+
+
+def _scale_mujoco_object_vector(
+    obj: Any, factors: tuple[float, float, float]
+) -> None:
+    """Scale one injected primitive anisotropically before MuJoCo compiles it."""
+
+    if hasattr(obj, "asset"):
+        for mesh in obj.asset.findall("mesh"):
+            mesh.set(
+                "scale", _scale_xml_vector(mesh.get("scale", "1 1 1"), factors)
+            )
+    roots: list[Any] = []
+    worldbody = getattr(obj, "worldbody", None)
+    if worldbody is not None:
+        roots.append(worldbody)
+    try:
+        compiled_root = obj.get_obj()
+    except Exception:
+        compiled_root = None
+    if compiled_root is not None and all(compiled_root is not root for root in roots):
+        roots.append(compiled_root)
+    for root in roots:
+        for element in root.findall(".//*[@pos]"):
+            element.set("pos", _scale_xml_vector(element.get("pos"), factors))
+        for geom in root.findall(".//geom"):
+            if geom.get("size"):
+                geom.set("size", _scale_xml_vector(geom.get("size"), factors))
 
 
 def _scale_xml_values(raw: str | None, factor: float) -> str | None:
@@ -586,10 +629,18 @@ def apply_precompile_geometry(
     else:
         target_factors = factors_for("target_geometry_factors", (1.12, 1.12, 1.12))
         receiver_factors = factors_for("receiver_geometry_factors", (0.90, 0.90, 0.90))
-        transforms = {
-            name: (target_factors if index == 0 else receiver_factors)
-            for index, name in enumerate(plan.targets)
-        }
+        transforms: dict[str, tuple[float, float, float]] = {}
+        for index, name in enumerate(plan.targets):
+            factors = target_factors if index == 0 else receiver_factors
+            if name in transforms:
+                # Some LIBERO goals name the same body as both target and
+                # receiver. Keep the stronger target geometry instead of
+                # silently overwriting it with the receiver shrink factor.
+                factors = tuple(
+                    max(previous, current)
+                    for previous, current in zip(transforms[name], factors)
+                )
+            transforms[name] = factors
     receiver_name = plan.targets[-1] if plan.case_id == "S09" else None
     for name, factors in transforms.items():
         obj = entities.get(name)
@@ -1729,7 +1780,7 @@ def _rearrange_unrelated_objects(
         (-0.11, 0.10),
         (0.08, 0.13),
     ),
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], int]:
     """Move up to three non-goal tabletop objects to grounded safe poses."""
 
     excluded_set = set(excluded) | {"main_table", "floor"}
@@ -1739,8 +1790,12 @@ def _rearrange_unrelated_objects(
         if name not in excluded_set and _entity_exists(env, name) and _entity_is_movable(env, name)
     ]
     moved: list[dict[str, Any]] = []
-    for index, name in enumerate(candidates[:3]):
-        requested = requested_offsets[min(index, len(requested_offsets) - 1)]
+    requested_count = min(3, len(candidates))
+    required_count = min(2, len(candidates))
+    for name in candidates:
+        if len(moved) >= requested_count:
+            break
+        requested = requested_offsets[min(len(moved), len(requested_offsets) - 1)]
         try:
             before, after, delta, support_name = _safe_grounded_layout_offset(
                 env, name, requested
@@ -1756,7 +1811,7 @@ def _rearrange_unrelated_objects(
                 "support_geom": support_name,
             }
         )
-    return moved
+    return moved, required_count
 
 
 def _safe_planar_object_swap(
@@ -2771,10 +2826,13 @@ class NonPhysicalPerturbationRuntime:
                 image_keys=self._configured_rgb_image_keys(out),
             )
         elif case_id == "D09" and self._event_active(step):
+            lighting_factor = _plan_positive_float(
+                self.plan, "lighting_factor", 0.48
+            )
             for key in image_keys:
                 value = out[key]
                 if np.issubdtype(value.dtype, np.integer):
-                    out[key] = np.clip(value.astype(np.float32) * 0.45, 0, 255).astype(
+                    out[key] = np.clip(value.astype(np.float32) * lighting_factor, 0, 255).astype(
                         value.dtype
                     )
             self._log_once("exposure_change", step)
@@ -3309,28 +3367,27 @@ class NonPhysicalPerturbationRuntime:
                         target_position=raised.tolist(),
                     )
                 else:
-                    # A table is an arena body; never translate it. For a
-                    # fixture-backed articulation goal retain the old local
-                    # support behavior without moving the whole scene.
-                    raised = reference.copy()
-                    raised[2] += height_delta
-                    _set_entity_pose(env, reference_name, raised)
-                    moved_contents = (
-                        []
-                        if self._interaction_mode() == "articulation"
-                        else _lift_receiver_contents(
-                            env,
-                            reference_name,
-                            reference,
-                            height_delta,
-                            excluded=(
-                                self.plan.targets[1:]
-                                if len(self.plan.targets) > 1
-                                else ()
-                            ),
-                        )
+                    # Fixed fixtures and arena bodies cannot be lifted safely:
+                    # moving their root moves attached furniture through the
+                    # scene.  Use a visible grounded support near the target
+                    # instead, preserving every original fixture pose.
+                    anchor, anchor_name = _functional_anchor(env, reference_name)
+                    position, support_name = _safe_grounded_asset_near_point(
+                        env,
+                        riser_name,
+                        anchor,
+                        _plan_xy_pair(
+                            self.plan, "fixture_riser_offset_xy", (0.18, -0.12)
+                        ),
                     )
-                    position = reference.copy()
+                    self._log_once(
+                        "fixture_support_riser_placed",
+                        0,
+                        receiver=reference_name,
+                        anchor=anchor_name,
+                        support_geom=support_name,
+                        height_delta_m=height_delta,
+                    )
                 self._log_once(
                     "receiver_height_changed",
                     0,
@@ -3339,26 +3396,57 @@ class NonPhysicalPerturbationRuntime:
                     moved_contents=moved_contents,
                 )
             elif case_id == "S05":
-                receiver_name = self.plan.targets[-1]
-                receiver, anchor_name = _functional_anchor(env, receiver_name)
-                target_name = self.plan.targets[0]
-                target, _ = _entity_pose(env, target_name)
-                position, quaternion, lateral = _safe_transport_barrier_pose(
-                    env,
-                    name,
-                    target,
-                    receiver,
-                    requested_lateral_offset=_s05_lateral_offset(self.plan),
-                    carried_object_name=target_name,
-                    receiver_name=receiver_name,
-                )
-                self._log_once(
-                    "static_transport_detour_validated",
-                    0,
-                    target=target_name,
-                    receiver=anchor_name,
-                    lateral_offset_m=lateral,
-                )
+                if (
+                    self._interaction_mode() == "articulation"
+                    and "obstacle_part" in self.plan.params
+                ):
+                    articulation_targets = _goal_articulation_targets(env)
+                    if not articulation_targets:
+                        raise PerturbationValidationError(
+                            "S05 articulation task has no goal fixture"
+                        )
+                    target_name, _ = articulation_targets[0]
+                    part = str(self.plan.params["obstacle_part"])
+                    anchor = _articulation_part_anchor(env, target_name, part)
+                    position, support_name = _safe_grounded_asset_near_point(
+                        env,
+                        name,
+                        anchor,
+                        _plan_xy_pair(
+                            self.plan,
+                            "articulation_obstacle_offset_xy",
+                            (0.0, -0.12),
+                        ),
+                    )
+                    anchor_name = f"{target_name}:{part}"
+                    self._log_once(
+                        "static_articulation_detour_validated",
+                        0,
+                        target=target_name,
+                        part=part,
+                        support_geom=support_name,
+                    )
+                else:
+                    receiver_name = self.plan.targets[-1]
+                    receiver, anchor_name = _functional_anchor(env, receiver_name)
+                    target_name = self.plan.targets[0]
+                    target, _ = _entity_pose(env, target_name)
+                    position, quaternion, lateral = _safe_transport_barrier_pose(
+                        env,
+                        name,
+                        target,
+                        receiver,
+                        requested_lateral_offset=_s05_lateral_offset(self.plan),
+                        carried_object_name=target_name,
+                        receiver_name=receiver_name,
+                    )
+                    self._log_once(
+                        "static_transport_detour_validated",
+                        0,
+                        target=target_name,
+                        receiver=anchor_name,
+                        lateral_offset_m=lateral,
+                    )
             elif case_id == "S10":
                 position = _visible_clutter_pose(
                     env,
@@ -3544,25 +3632,14 @@ class NonPhysicalPerturbationRuntime:
                 target in getattr(env, "fixtures_dict", {}) for target in self.plan.targets
             ):
                 target = self.plan.targets[0]
-                before, _ = _entity_pose(env, target)
+                before, quaternion = _entity_pose(env, target)
+                grounded, support_name = _ground_entity_on_support(
+                    env, target, before, quaternion
+                )
                 adjusted = False
-                if not _candidate_is_clear_of_objects(
-                    env, target, before[:2], extra_gap=0.005
-                ):
-                    clearance = _entity_xy_radius(env, target) + max(
-                        (
-                            _entity_xy_radius(env, other_name)
-                            for other_name in getattr(env, "objects_dict", {})
-                            if other_name != target and _entity_exists(env, other_name)
-                        ),
-                        default=0.0,
-                    ) + 0.005
-                    _, after, delta = _safe_offset_pose(
-                        env,
-                        target,
-                        (0.035, 0.0),
-                        minimum_gap=clearance,
-                        keep_support=True,
+                if _entity_has_penetrating_contact(env, target):
+                    _, after, delta, support_name = _safe_grounded_layout_offset(
+                        env, target, (0.10, 0.0)
                     )
                     adjusted = True
                     self._log_once(
@@ -3573,6 +3650,7 @@ class NonPhysicalPerturbationRuntime:
                         clearance_xy_m=float(
                             np.linalg.norm(after[:2] - before[:2])
                         ),
+                        support_geom=support_name,
                     )
                 else:
                     self._log_once(
@@ -3580,6 +3658,8 @@ class NonPhysicalPerturbationRuntime:
                         0,
                         target=target,
                         adjusted=adjusted,
+                        support_geom=support_name,
+                        vertical_grounding_m=float(grounded[2] - before[2]),
                     )
             self._log_once("precompiled_geometry_changed", 0, targets=list(self.plan.targets))
 
@@ -3769,20 +3849,31 @@ class NonPhysicalPerturbationRuntime:
                     + list(_goal_interaction_targets(env))
                 )
             )
-            moved = _rearrange_unrelated_objects(
+            moved, expected_count = _rearrange_unrelated_objects(
                 env,
                 excluded=excluded,
                 requested_offsets=(
                     _plan_xy_pair(self.plan, "offset_xy", (0.12, -0.09)),
-                    (-0.11, 0.10),
-                    (0.08, 0.13),
+                    _plan_xy_pair(
+                        self.plan, "secondary_offset_xy", (-0.11, 0.10)
+                    ),
+                    _plan_xy_pair(
+                        self.plan, "tertiary_offset_xy", (0.08, 0.13)
+                    ),
                 ),
             )
-            if len(moved) < 3:
+            if len(moved) < expected_count:
                 raise PerturbationValidationError(
-                    f"D06 could only safely rearrange {len(moved)} unrelated objects; expected 3"
+                    f"D06 could only safely rearrange {len(moved)} unrelated objects; "
+                    f"expected {expected_count} from this scene"
                 )
-            self._log_once("distractors_rearranged", step, moved=moved)
+            self._log_once(
+                "distractors_rearranged",
+                step,
+                moved=moved,
+                expected_count=expected_count,
+                requested_count=3,
+            )
             self._dynamic_event_step = int(step)
             self._dynamic_applied = True
             return
@@ -4055,7 +4146,9 @@ class NonPhysicalPerturbationRuntime:
             )
             self._log_once("dynamic_camera_offset", step)
         elif case_id == "D09":
-            self._set_lighting(env, 0.48)
+            self._set_lighting(
+                env, _plan_positive_float(self.plan, "lighting_factor", 0.48)
+            )
             self._log_once("dynamic_lighting_change", step)
         elif case_id == "D17":
             # Opening the gripper is applied through transform_action; no pose teleport.

@@ -176,11 +176,13 @@
       )
       (S04
         (:operator pose_transform)
-        (:targets akita_black_bowl_1 akita_black_bowl_1)
+        (:targets flat_stove_1 cream_cheese_1)
         (:variant planar_object_position_swap)
         (:constraints same_support_surface collision_free task_completable)
         (:params
-          (:interaction_mode articulation)
+          (:interaction_mode placement)
+          (:allow_fixture_swap true)
+          (:layout_offset_xy 0.20 0.14)
         )
       )
       (S05

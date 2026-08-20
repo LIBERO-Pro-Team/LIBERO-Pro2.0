@@ -339,6 +339,8 @@
         (:variant xy_yaw_update)
         (:params
           (:interaction_mode articulation)
+          (:approach_trigger_distance_m 0.20)
+          (:joint_offset -0.06)
         )
       )
       (D02

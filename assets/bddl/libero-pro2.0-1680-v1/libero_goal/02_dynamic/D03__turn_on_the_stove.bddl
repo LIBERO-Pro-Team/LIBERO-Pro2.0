@@ -359,6 +359,11 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 72)
+          (:asset_scale 0.70)
+          (:allow_compact_asset true)
+          (:obstacle_part button)
+          (:articulation_obstacle_offset_xy 0.0 -0.08)
         )
       )
       (D04

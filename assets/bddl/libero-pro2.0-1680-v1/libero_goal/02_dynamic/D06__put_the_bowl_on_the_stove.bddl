@@ -390,6 +390,10 @@
         (:variant distractor_move_or_local_rearrangement)
         (:params
           (:interaction_mode placement)
+          (:offset_xy 0.18 -0.14)
+          (:secondary_offset_xy -0.17 0.15)
+          (:tertiary_offset_xy 0.14 0.19)
+          (:trigger_distance_m 0.22)
         )
       )
       (D07

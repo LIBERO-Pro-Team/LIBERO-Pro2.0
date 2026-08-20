@@ -380,6 +380,10 @@
         (:constraints alternate_collision_free_path_exists)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 72)
+          (:asset_scale 0.85)
+          (:obstacle_part handle)
+          (:articulation_obstacle_offset_xy 0.0 -0.14)
         )
       )
       (D06

@@ -172,6 +172,9 @@
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode articulation)
+          (:height_delta_m 0.10)
+          (:asset_scale 1.0)
+          (:asset_geometry_factors 0.75 0.75 2.0)
         )
       )
       (S04

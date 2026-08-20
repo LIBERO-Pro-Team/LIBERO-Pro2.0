@@ -492,8 +492,9 @@
         (:constraints retry_remains_possible)
         (:params
           (:interaction_mode articulation)
-          (:event_duration_steps 40)
+          (:event_duration_steps 48)
           (:recovery_retreat_m 0.07)
+          (:grasp_trigger_distance_m 0.20)
         )
       )
       (D18

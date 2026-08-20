@@ -280,6 +280,7 @@
         (:variant fixed_extrinsics_or_cross_camera_calibration)
         (:params
           (:interaction_mode articulation)
+          (:camera_offset_m 0.10 -0.08 0.055)
         )
       )
       (S16

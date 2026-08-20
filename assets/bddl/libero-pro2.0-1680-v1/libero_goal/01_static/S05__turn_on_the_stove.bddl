@@ -191,6 +191,9 @@
         (:constraints initial_collision_free ik_reachable full_path_exists)
         (:params
           (:interaction_mode articulation)
+          (:asset_scale 1.10)
+          (:obstacle_part button)
+          (:articulation_obstacle_offset_xy 0.0 -0.14)
         )
       )
       (S06

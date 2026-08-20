@@ -1,8 +1,8 @@
 {
   "format_version": 1,
   "summary": {
-    "ready_mjcf_assets": 46,
-    "external_adapted_assets": 41,
+    "ready_mjcf_assets": 47,
+    "external_adapted_assets": 42,
     "generated_parametric_assets": 5,
     "perturbation_directions_covered": 41
   },
@@ -166,6 +166,22 @@
       "perturbations": [
         "S06",
         "S11"
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/red_akita_black_bowl",
+      "format": "mjcf",
+      "path": "../stable_scanned_objects/red_akita_black_bowl/red_akita_black_bowl.xml",
+      "source_asset": "libero/assets/stable_scanned_objects/red_akita_black_bowl",
+      "license": "MIT",
+      "dimensions_m": [
+        0.10,
+        0.10,
+        0.07
+      ],
+      "perturbations": [
+        "S06"
       ],
       "readiness": "ready_mjcf"
     },

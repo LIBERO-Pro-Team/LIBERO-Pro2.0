@@ -94,7 +94,7 @@
 
   (:fixtures
     main_table - table
-    wooden_cabinet_1 - wooden_cabinet
+    wooden_cabinet_1 - yellow_cabinet
     flat_stove_1 - flat_stove
     wine_rack_1 - wine_rack
   )
@@ -195,12 +195,14 @@
       )
       (S06
         (:operator asset_or_appearance)
-        (:targets akita_black_bowl_1)
+        (:targets wooden_cabinet_1)
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode articulation)
           (:asset_id prl/plastic_bowl)
           (:asset_scale 0.45)
+          (:fixture_variant true)
+          (:geometry_factors 1.10 0.92 1.05)
         )
       )
       (S07

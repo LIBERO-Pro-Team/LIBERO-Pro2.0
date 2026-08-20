@@ -360,6 +360,9 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 72)
+          (:asset_scale 0.75)
+          (:allow_compact_asset true)
         )
       )
       (D04
