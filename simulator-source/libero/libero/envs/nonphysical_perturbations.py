@@ -76,6 +76,10 @@ CASE_ASSETS = {
     "D05": ("generated/barrier_panel",),
 }
 
+S22_COMPILED_TEXTURES = {
+    "s22_table_texture": "textures/table_light_wood.png",
+}
+
 # S05's barrier is 0.08 m wide on either side of its local centre line. Keep
 # the carried-object corridor clear even for the largest standard LIBERO
 # object and leave a small modelling margin for the gripper/object envelope.
@@ -2789,17 +2793,15 @@ class NonPhysicalPerturbationRuntime:
                     out[key] = np.roll(value, shift=(shift, -shift), axis=(-3, -2))
             self._log_once("intrinsics_distortion", step)
         elif case_id == "S18":
+            calibration = _plan_vector(
+                self.plan,
+                "calibration_offset_m",
+                (0.006, -0.004, 0.003),
+                length=3,
+            )
             for key, value in list(out.items()):
-                if isinstance(value, np.ndarray) and (
-                    "eef_pos" in key or "joint_pos" in key
-                ):
+                if isinstance(value, np.ndarray) and "eef_pos" in key:
                     offset = np.zeros_like(value, dtype=np.float64)
-                    calibration = _plan_vector(
-                        self.plan,
-                        "calibration_offset_m",
-                        (0.006, -0.004, 0.003),
-                        length=3,
-                    )
                     offset.flat[: min(3, offset.size)] = calibration[: min(3, offset.size)]
                     out[key] = value + offset
             self._log_once("calibration_offset", step)
@@ -3059,6 +3061,26 @@ class NonPhysicalPerturbationRuntime:
 
     def _apply_workspace_texture(self, env: Any) -> None:
         material_name = str(self.plan.params.get("material_id", "s22_table_texture"))
+        expected_texture = S22_COMPILED_TEXTURES.get(material_name)
+        configured_texture = str(
+            self.plan.params.get("texture_asset", expected_texture or "")
+        )
+        if expected_texture is None:
+            raise PerturbationConfigurationError(
+                f"S22 material_id {material_name!r} has no registered compiled texture"
+            )
+        if configured_texture != expected_texture:
+            raise PerturbationConfigurationError(
+                f"S22 texture_asset {configured_texture!r} does not match compiled "
+                f"material {material_name!r} ({expected_texture!r})"
+            )
+        texture_scale = _plan_vector(
+            self.plan, "texture_scale", (2.0, 2.0), length=2
+        )
+        if np.any(texture_scale <= 0.0):
+            raise PerturbationConfigurationError(
+                "S22 texture_scale must contain two positive finite values"
+            )
         try:
             material_id = _model_named_id(env.sim.model, "mat", material_name)
         except Exception as exc:
@@ -3071,12 +3093,19 @@ class NonPhysicalPerturbationRuntime:
                 f"S22 found no visual work-surface geom for "
                 f"{getattr(env, 'workspace_name', None)!r}"
             )
+        if not hasattr(env.sim.model, "mat_texrepeat"):
+            raise PerturbationValidationError(
+                "S22 cannot apply texture_scale because MuJoCo exposes no mat_texrepeat"
+            )
+        env.sim.model.mat_texrepeat[material_id] = texture_scale
         env.sim.model.geom_matid[list(geom_ids)] = material_id
         env.sim.forward()
         self._log_once(
             "workspace_texture_replaced",
             0,
             material=material_name,
+            texture_asset=configured_texture,
+            texture_scale=texture_scale.tolist(),
             visual_geom_ids=list(geom_ids),
         )
 
@@ -3827,7 +3856,7 @@ class NonPhysicalPerturbationRuntime:
                         reason="retreated" if retreated else "duration_elapsed",
                     )
             if (
-                case_id in {"D03", "D04", "D05"}
+                case_id in {"D03", "D04"}
                 and not self._dynamic_restored
                 and self._dynamic_event_step is not None
                 and step >= self._dynamic_event_step + self._event_duration_steps()
@@ -4458,6 +4487,19 @@ class NonPhysicalPerturbationRuntime:
         if self.plan.trigger == "state_change":
             if eef is None:
                 return False
+            if self._interaction_mode() == "articulation":
+                articulation_targets = _goal_articulation_targets(env)
+                for name, _ in articulation_targets:
+                    if (
+                        self._articulation_progress(env, name)
+                        >= float(self.plan.params.get("trigger_state_change_m", 0.02))
+                        and np.linalg.norm(
+                            eef - self._articulation_anchor(env, name)
+                        )
+                        <= float(self.plan.params.get("trigger_distance_m", 0.18))
+                    ):
+                        self._active_dynamic_target = name
+                        return True
             lift_threshold = float(self.plan.params.get("trigger_lift_m", 0.025))
             move_threshold = float(self.plan.params.get("trigger_move_m", 0.05))
             grasp_distance = float(self.plan.params.get("grasp_distance_m", 0.18))

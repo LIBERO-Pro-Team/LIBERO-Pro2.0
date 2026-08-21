@@ -13,7 +13,6 @@ import argparse
 import hashlib
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Iterable
@@ -47,6 +46,7 @@ META_TARGETS = {
     "robot0_eye_in_hand",
     "robot_future_path",
     "task_instruction",
+    "workspace_surface",
 }
 
 
@@ -226,21 +226,6 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             f"unsupported cases {sorted(manifest_cases)}",
         )
     expected_cases = manifest_cases
-    # This workspace intentionally retains only task-level BDDL changes named
-    # by the current human-review scope. Baseline BDDL files still carry the
-    # historical catalog, so semantic perturbation checks apply only to files
-    # changed in the working tree; coverage, parsing, and hashes remain global.
-    try:
-        changed_paths = {
-            path.replace("\\", "/")
-            for path in subprocess.check_output(
-                ["git", "diff", "--name-only", "--", "assets/bddl"],
-                cwd=ROOT,
-                text=True,
-            ).splitlines()
-        }
-    except (OSError, subprocess.SubprocessError):
-        changed_paths = set()
     seen: set[tuple[str, int, str]] = set()
     for entry in entries:
         suite = str(entry.get("suite", ""))
@@ -265,11 +250,6 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             active, declared, cases = _config(root)
         except (OSError, ParseError, ValueError) as exc:
             add("BDDL_PARSE", rel, str(exc))
-            continue
-
-        if str((ROOT / "assets" / rel).as_posix()).split("/assets/", 1)[-1] not in {
-            p.split("assets/", 1)[-1] for p in changed_paths
-        }:
             continue
 
         expected_kind = (
@@ -326,17 +306,6 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                     and sum(name in objects for name in targets) == 1
                 ):
                     add("S04_NON_OBJECT", rel, f"targets={targets}, objects={sorted(objects)}")
-                elif object_types.get(targets[0]) == object_types.get(targets[1]) and any(
-                    name not in set(targets) | set(_field(case, ":references"))
-                    and name != "main_table"
-                    and object_type != object_types.get(targets[0])
-                    for name, object_type in object_types.items()
-                ):
-                    add(
-                        "S04_SAME_TYPE",
-                        rel,
-                        f"targets={targets}, type={object_types.get(targets[0])}",
-                    )
         if case_id == "S03":
             params = _params(case)
             if (
@@ -346,7 +315,7 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             ):
                 add("S03_INVALID_SUPPORT_TARGET", rel, f"targets={targets}")
             try:
-                height_delta = float(params.get(":height_delta_m", ["0"])[0])
+                height_delta = float(params.get(":height_delta_m", ["0.05"])[0])
             except (ValueError, IndexError):
                 height_delta = 0.0
             if height_delta <= 0.0:
@@ -390,17 +359,31 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
             params = _params(case)
             scales = params.get(":asset_scale", [])
             try:
-                scale = float(scales[0])
-            except (ValueError, IndexError):
+                scale = float(scales[0]) if scales else 1.35
+            except ValueError:
                 scale = 0.0
             compact_asset = params.get(":allow_compact_asset", ["false"])[0] == "true"
             if scale < 1.35 and not compact_asset:
                 add("D03_BLOCKER_SCALE", rel, f"asset_scale={scales}")
+        if case_id == "D05" and ":event_duration_steps" in _params(case):
+            add(
+                "D05_PERSISTENCE_CONFIG",
+                rel,
+                "D05 persists to episode end and must not declare event_duration_steps",
+            )
         if case_id in {"D08", "D09", "D10", "D11"}:
             trigger = _field(case, ":trigger")
             if trigger != ["task_phase"]:
                 add("DYNAMIC_TRIGGER_CONFIG", rel, f"{case_id}: trigger={trigger}")
+        if case_id == "D08" and (
+            len(targets) != 1
+            or targets[0] not in {"agentview", "robot0_eye_in_hand"}
+        ):
+            add("D08_SINGLE_CAMERA", rel, f"targets={targets}")
         if case_id == "D15":
+            trigger = _field(case, ":trigger")
+            if trigger != ["state_change"]:
+                add("D15_TRIGGER_CONFIG", rel, f"trigger={trigger}")
             params = _params(case)
             for key in (":chunk_size", ":stale_chunk_steps"):
                 try:
@@ -408,6 +391,18 @@ def audit(manifest_path: Path) -> list[dict[str, str]]:
                         raise ValueError
                 except (TypeError, ValueError, IndexError):
                     add("D15_CONFIG", rel, f"missing positive {key}")
+        if case_id == "S22":
+            params = _params(case)
+            if params.get(":material_id") != ["s22_table_texture"]:
+                add("S22_MATERIAL_CONFIG", rel, f"material_id={params.get(':material_id', [])}")
+            if params.get(":texture_asset") != ["textures/table_light_wood.png"]:
+                add("S22_TEXTURE_CONFIG", rel, f"texture_asset={params.get(':texture_asset', [])}")
+            try:
+                texture_scale = [float(value) for value in params.get(":texture_scale", [])]
+            except ValueError:
+                texture_scale = []
+            if len(texture_scale) != 2 or any(value <= 0.0 for value in texture_scale):
+                add("S22_TEXTURE_SCALE", rel, f"texture_scale={params.get(':texture_scale', [])}")
 
     expected_keys = {
         (

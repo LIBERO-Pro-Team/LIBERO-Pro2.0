@@ -381,7 +381,6 @@
         (:constraints alternate_collision_free_path_exists)
         (:params
           (:interaction_mode placement)
-          (:event_duration_steps 72)
           (:asset_scale 1.10)
           (:lateral_offset_m 0.06)
         )

@@ -53,6 +53,7 @@ def test_s22_changes_only_the_workspace_visual_material() -> None:
             self.geom_friction = np.array([[1.0, 0.005, 0.0001]] * 2)
             self.geom_contype = np.array([0, 1], dtype=int)
             self.geom_conaffinity = np.array([0, 1], dtype=int)
+            self.mat_texrepeat = np.ones((8, 2), dtype=float)
 
         @staticmethod
         def geom_name2id(name: str) -> int:
@@ -76,14 +77,53 @@ def test_s22_changes_only_the_workspace_visual_material() -> None:
     collision_before = model.geom_size.copy(), model.geom_friction.copy()
 
     runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-        _plan("S22", material_id="s22_table_texture"), seed=11
+        _plan(
+            "S22",
+            material_id="s22_table_texture",
+            texture_asset="textures/table_light_wood.png",
+            texture_scale=(2.0, 2.0),
+        ),
+        seed=11,
     )
     runtime.apply_static(env)
 
     assert model.geom_matid.tolist() == [7, 3]
     np.testing.assert_array_equal(model.geom_size, collision_before[0])
     np.testing.assert_array_equal(model.geom_friction, collision_before[1])
+    np.testing.assert_array_equal(model.mat_texrepeat[7], [2.0, 2.0])
     assert runtime.events[-1]["event"] == "workspace_texture_replaced"
+
+
+def test_s22_rejects_a_texture_asset_that_disagrees_with_the_compiled_material() -> None:
+    def lookup(name: str, expected: str, value: int) -> int:
+        if name != expected:
+            raise KeyError(name)
+        return value
+
+    model = SimpleNamespace(
+        geom_matid=np.array([2], dtype=int),
+        geom_contype=np.array([0], dtype=int),
+        geom_conaffinity=np.array([0], dtype=int),
+        mat_texrepeat=np.ones((8, 2), dtype=float),
+        geom_name2id=lambda name: lookup(name, "table_visual", 0),
+        material_name2id=lambda name: lookup(name, "s22_table_texture", 7),
+    )
+    env = SimpleNamespace(
+        workspace_name="main_table",
+        sim=SimpleNamespace(model=model, forward=lambda: None),
+    )
+    runtime = RUNTIME.NonPhysicalPerturbationRuntime(
+        _plan(
+            "S22",
+            material_id="s22_table_texture",
+            texture_asset="textures/not_the_compiled_texture.png",
+            texture_scale=(2.0, 2.0),
+        ),
+        seed=11,
+    )
+
+    with pytest.raises(RUNTIME.PerturbationConfigurationError, match="texture_asset"):
+        runtime.apply_static(env)
 
 
 class _D20Model:

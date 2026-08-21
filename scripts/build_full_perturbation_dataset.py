@@ -433,7 +433,7 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
     elif case_id == "D07":
         fields = [("operator", "camera_transform"), ("targets", "agentview robot0_eye_in_hand"), ("trigger", "task_phase"), ("variant", "shake_drift_or_persistent_offset")]
     elif case_id == "D08":
-        fields = [("operator", "observation_fault"), ("targets", "agentview robot0_eye_in_hand"), ("trigger", "task_phase"), ("variant", "camera_dropout_then_restore")]
+        fields = [("operator", "observation_fault"), ("targets", "agentview"), ("trigger", "task_phase"), ("variant", "camera_dropout_then_restore")]
     elif case_id == "D09":
         fields = [("operator", "observation_fault"), ("targets", "rgb"), ("trigger", "task_phase"), ("variant", "light_shadow_or_exposure_change")]
     elif case_id == "D10":

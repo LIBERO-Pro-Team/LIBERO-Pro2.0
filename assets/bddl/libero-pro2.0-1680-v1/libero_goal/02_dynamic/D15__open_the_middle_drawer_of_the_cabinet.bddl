@@ -466,13 +466,12 @@
       (D15
         (:operator timing_or_action_fault)
         (:targets action_chunk replan)
-        (:trigger task_phase)
+        (:trigger state_change)
         (:variant stale_chunk_late_chunk_or_replan_interrupt)
         (:params
           (:interaction_mode articulation)
           (:chunk_size 12)
           (:stale_chunk_steps 16)
-          (:trigger_distance_m 0.22)
         )
       )
       (D16

@@ -33,39 +33,27 @@ RUNTIME = load_module("libero_pro_nonphysical_runtime", "nonphysical_perturbatio
 
 class SchemaExecutionPlanTests(unittest.TestCase):
     def test_repo_d08_declares_one_camera_target(self):
-        path = next(
-            (
-                ROOT.parent
-                / "assets"
-                / "bddl"
-                / "libero-pro2.0-1680-v1"
-                / "libero_goal"
-                / "02_dynamic"
-            ).glob("D08__*.bddl")
-        )
-        config = PARSER.parse_bddl_perturbation_config(path)
-        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+        paths = sorted(PUBLISHED_BDDL_ROOT.glob("*/02_dynamic/D08__*.bddl"))
 
-        self.assertEqual(plan.case_id, "D08")
-        self.assertEqual(plan.targets, ("agentview", "robot0_eye_in_hand"))
+        self.assertEqual(len(paths), 40)
+        for path in paths:
+            config = PARSER.parse_bddl_perturbation_config(path)
+            plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+            self.assertEqual(plan.case_id, "D08")
+            self.assertEqual(len(plan.targets), 1, path)
+            self.assertIn(plan.targets[0], {"agentview", "robot0_eye_in_hand"})
 
     def test_repo_d15_declares_replay_chunk_parameters(self):
-        path = next(
-            (
-                ROOT.parent
-                / "assets"
-                / "bddl"
-                / "libero-pro2.0-1680-v1"
-                / "libero_goal"
-                / "02_dynamic"
-            ).glob("D15__*.bddl")
-        )
-        config = PARSER.parse_bddl_perturbation_config(path)
-        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+        paths = sorted(PUBLISHED_BDDL_ROOT.glob("*/02_dynamic/D15__*.bddl"))
 
-        self.assertEqual(plan.case_id, "D15")
-        self.assertEqual(plan.params["chunk_size"], 4)
-        self.assertEqual(plan.params["stale_chunk_steps"], 4)
+        self.assertEqual(len(paths), 40)
+        for path in paths:
+            config = PARSER.parse_bddl_perturbation_config(path)
+            plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+            self.assertEqual(plan.case_id, "D15")
+            self.assertEqual(plan.trigger, "state_change", path)
+            self.assertGreater(plan.params["chunk_size"], 0)
+            self.assertGreater(plan.params["stale_chunk_steps"], 0)
 
     def test_repo_d03_declares_scaled_receiver_blocker(self):
         path = next(
@@ -121,21 +109,18 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         self.assertEqual(plan.params["recovery_retreat_m"], 0.07)
 
     def test_repo_d16_declares_bounded_action_takeover_duration(self):
-        path = next(
-            (
-                ROOT.parent
-                / "assets"
-                / "bddl"
-                / "libero-pro2.0-1680-v1"
-                / "libero_goal"
-                / "02_dynamic"
-            ).glob("D16__*.bddl")
-        )
-        config = PARSER.parse_bddl_perturbation_config(path)
-        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+        paths = sorted(PUBLISHED_BDDL_ROOT.glob("*/02_dynamic/D16__*.bddl"))
 
-        self.assertEqual(plan.case_id, "D16")
-        self.assertEqual(plan.params["event_duration_steps"], 6)
+        self.assertEqual(len(paths), 40)
+        durations = set()
+        for path in paths:
+            config = PARSER.parse_bddl_perturbation_config(path)
+            plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+            self.assertEqual(plan.case_id, "D16")
+            duration = int(plan.params["event_duration_steps"])
+            self.assertIn(duration, {6, 12, 16}, path)
+            durations.add(duration)
+        self.assertEqual(durations, {6, 12, 16})
 
     def test_generated_ycb_asset_id_survives_bddl_atom_lowercasing(self):
         path = next(
@@ -489,10 +474,15 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertGreaterEqual(distance, 0.12)
         self.assertEqual(runtime.events[-1]["event"], "static_pose_transform")
 
-    def test_s03_carries_contents_when_raising_a_receiver(self):
-        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
-            self.plan("libero_spatial", "01_static", "S03"), seed=7
+    def test_s03_raises_a_movable_receiver_on_a_support_riser(self):
+        path = next(
+            (PUBLISHED_BDDL_ROOT / "libero_spatial" / "01_static").glob(
+                "S03__*.bddl"
+            )
         )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
 
         class Sim:
             def __init__(self):
@@ -529,7 +519,7 @@ class RuntimeBehaviorTests(unittest.TestCase):
         env = types.SimpleNamespace(
             obj_body_id={receiver: 0, content: 1, "main_table": 2, injected: 3},
             objects_dict={
-                receiver: types.SimpleNamespace(joints=None),
+                receiver: types.SimpleNamespace(joints=["receiver_joint"]),
                 content: types.SimpleNamespace(joints=["content_joint"]),
                 "main_table": types.SimpleNamespace(joints=None),
                 injected: types.SimpleNamespace(joints=None),
@@ -539,8 +529,9 @@ class RuntimeBehaviorTests(unittest.TestCase):
         )
 
         def set_joint_qpos(joint, qpos):
-            sim.model.body_pos[1] = qpos[:3]
-            sim.model.body_quat[1] = qpos[3:]
+            body_id = 0 if joint == "receiver_joint" else 1
+            sim.model.body_pos[body_id] = qpos[:3]
+            sim.model.body_quat[body_id] = qpos[3:]
             sim.forward()
 
         sim.data.set_joint_qpos = set_joint_qpos
@@ -548,10 +539,15 @@ class RuntimeBehaviorTests(unittest.TestCase):
         content_before = sim.data.body_xpos[1, 2]
         runtime.apply_static(env)
 
-        self.assertAlmostEqual(sim.data.body_xpos[0, 2], receiver_before + 0.05)
-        self.assertAlmostEqual(sim.data.body_xpos[1, 2], content_before + 0.05)
+        self.assertGreater(sim.data.body_xpos[0, 2], receiver_before)
+        self.assertAlmostEqual(sim.data.body_xpos[1, 2], content_before)
         self.assertAlmostEqual(sim.data.body_xpos[3, 2], receiver_before)
-        self.assertTrue(any(event["event"] == "receiver_height_changed" for event in runtime.events))
+        self.assertTrue(
+            any(event["event"] == "support_riser_coupled_layout" for event in runtime.events)
+        )
+        self.assertTrue(
+            any(event["event"] == "receiver_height_changed" for event in runtime.events)
+        )
 
     def test_s11_places_same_class_distractor_close_and_grounded(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
@@ -1091,6 +1087,58 @@ class RuntimeBehaviorTests(unittest.TestCase):
             any(event["event"] == "dynamic_asset_restored" for event in runtime.events)
         )
 
+    def test_d05_path_obstacle_persists_after_its_legacy_event_window(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D05",
+            schedule="dynamic",
+            operator="occlusion_or_obstacle",
+            variant="obstacle_enters_path",
+            targets=("robot_future_path",),
+            references=("receiver",),
+            mechanisms=("asset", "dynamic_pose"),
+            assets=(),
+            trigger="transport",
+            params={"event_duration_steps": 2},
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        injected = "perturbation_d05_0"
+
+        class Sim:
+            def __init__(self):
+                self.model = types.SimpleNamespace(
+                    body_pos=np.array([[0.10, 0.05, 0.95]], dtype=float),
+                    body_quat=np.array([[1.0, 0.0, 0.0, 0.0]], dtype=float),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={injected: 0},
+            objects_dict={injected: types.SimpleNamespace(joints=None)},
+            sim=sim,
+        )
+        runtime._saved_poses[injected] = (
+            np.array([0.0, 0.0, -5.0]),
+            np.array([1.0, 0.0, 0.0, 0.0]),
+        )
+        runtime._dynamic_event_step = 10
+        runtime._dynamic_applied = True
+
+        runtime.before_simulation_step(env, step=12)
+
+        np.testing.assert_allclose(sim.data.body_xpos[0], [0.10, 0.05, 0.95])
+        self.assertFalse(runtime._dynamic_restored)
+        self.assertNotIn(
+            "dynamic_asset_restored", {event["event"] for event in runtime.events}
+        )
+
     def test_d03_occupies_the_second_active_goal_receiver(self):
         first = "white_mug_1"
         second = "yellow_white_mug_1"
@@ -1281,6 +1329,34 @@ class RuntimeBehaviorTests(unittest.TestCase):
 
         self.assertFalse(np.array_equal(changed["agentview_image"], image))
         self.assertTrue(np.all(image == 128))
+
+    def test_s18_meter_calibration_offset_does_not_change_joint_angles(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S18",
+            schedule="static",
+            operator="state_or_language_event",
+            variant="base_tcp_joint_zero_or_grasp_center_calibration",
+            targets=("robot0",),
+            references=(),
+            mechanisms=("calibration",),
+            assets=(),
+            params={"calibration_offset_m": (0.006, -0.004, 0.003)},
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        eef_position = np.array([0.10, -0.20, 0.90])
+        joint_positions = np.arange(7, dtype=np.float64) * 0.1
+        observation = {
+            "robot0_eef_pos": eef_position,
+            "robot0_joint_pos": joint_positions,
+        }
+
+        changed = runtime.transform_observation(observation, step=0)
+
+        np.testing.assert_allclose(
+            changed["robot0_eef_pos"],
+            eef_position + np.array([0.006, -0.004, 0.003]),
+        )
+        np.testing.assert_array_equal(changed["robot0_joint_pos"], joint_positions)
 
     def test_runtime_seed_can_be_replayed_for_identical_observation_noise(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
@@ -1674,6 +1750,49 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertEqual(runtime.events[-1]["event"], "stale_action_chunk")
         self.assertEqual(runtime.events[-1]["chunk_length"], 4)
         self.assertEqual(runtime.events[-1]["step"], 97)
+
+    def test_d15_state_change_trigger_supports_articulation_tasks(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D15",
+            schedule="dynamic",
+            operator="timing_or_action_fault",
+            variant="stale_chunk_late_chunk_or_replan_interrupt",
+            targets=("action_chunk", "replan"),
+            references=(),
+            mechanisms=("action_timing",),
+            assets=(),
+            trigger="state_change",
+            params={
+                "interaction_mode": "articulation",
+                "chunk_size": 4,
+                "stale_chunk_steps": 4,
+            },
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        runtime._saved_joint_states["wooden_cabinet_1"] = (np.array([0.0]),)
+        state = types.SimpleNamespace(
+            get_joint_state=lambda: (np.array([0.03]),)
+        )
+        env = types.SimpleNamespace(
+            object_states_dict={"wooden_cabinet_1": state},
+            sim=types.SimpleNamespace(
+                data=types.SimpleNamespace(site_xpos=np.array([[0.0, 0.0, 1.0]]))
+            ),
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+
+        with mock.patch.object(
+            RUNTIME,
+            "_goal_articulation_targets",
+            return_value=(("wooden_cabinet_1", []),),
+        ), mock.patch.object(
+            runtime,
+            "_articulation_anchor",
+            return_value=np.array([0.0, 0.0, 1.08]),
+        ), mock.patch.object(
+            RUNTIME, "_goal_interaction_targets", return_value=()
+        ):
+            self.assertTrue(runtime._dynamic_triggered(env, step=17))
 
     def test_d14_and_d15_diagnostics_report_their_effective_action_steps(self):
         plans = (
@@ -2120,20 +2239,19 @@ class RuntimeBehaviorTests(unittest.TestCase):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
         env = types.SimpleNamespace()
 
-        with (
-            mock.patch.object(runtime, "_dynamic_triggered", return_value=True),
-            mock.patch.object(
-                RUNTIME,
-                "_goal_articulation_targets",
-                return_value=(("wooden_cabinet_1", []),),
-            ),
-            mock.patch.object(
-                RUNTIME,
-                "_offset_goal_articulation_joint",
-                return_value=("middle_drawer", 0.12, 0.085),
-            ) as joint_offset,
-            mock.patch.object(RUNTIME, "_safe_offset_pose") as fixture_offset,
-        ):
+        with mock.patch.object(
+            runtime, "_dynamic_triggered", return_value=True
+        ), mock.patch.object(
+            RUNTIME,
+            "_goal_articulation_targets",
+            return_value=(("wooden_cabinet_1", []),),
+        ), mock.patch.object(
+            RUNTIME,
+            "_offset_goal_articulation_joint",
+            return_value=("middle_drawer", 0.12, 0.085),
+        ) as joint_offset, mock.patch.object(
+            RUNTIME, "_safe_offset_pose"
+        ) as fixture_offset:
             runtime.before_simulation_step(env, step=23)
 
         joint_offset.assert_called_once_with(

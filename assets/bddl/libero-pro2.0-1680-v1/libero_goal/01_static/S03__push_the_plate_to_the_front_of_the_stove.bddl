@@ -169,7 +169,7 @@
       )
       (S03
         (:operator geometry_variant)
-        (:targets main_table main_table)
+        (:targets plate_1 main_table)
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode placement)
