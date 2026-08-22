@@ -11,6 +11,10 @@ import numpy as np
 
 
 ALL_CASE_IDS = tuple(
+    [f"S{index:02d}" for index in range(1, 23)]
+    + [f"D{index:02d}" for index in range(1, 22)]
+)
+LEGACY_CASE_IDS = tuple(
     [f"S{index:02d}" for index in range(1, 22)]
     + [f"D{index:02d}" for index in range(1, 20)]
     + ["D21"]
@@ -38,6 +42,7 @@ CASE_MECHANISMS = {
     "S19": ("observation",),
     "S20": ("action_timing", "observation_timing"),
     "S21": ("language",),
+    "S22": ("appearance",),
     "D01": ("dynamic_pose",),
     "D02": ("dynamic_pose",),
     "D03": ("asset", "dynamic_pose"),
@@ -57,6 +62,7 @@ CASE_MECHANISMS = {
     "D17": ("state_event",),
     "D18": ("state_event",),
     "D19": ("state_event",),
+    "D20": ("robot_state",),
     "D21": ("language",),
 }
 
@@ -256,7 +262,12 @@ def build_execution_plan(
         raise PerturbationConfigurationError(f"Unsupported perturbation case {case_id}")
 
     entries = _case_entries(config)
-    missing = set(ALL_CASE_IDS) - set(entries)
+    try:
+        schema_version = int(config.get("schema_version", 4))
+    except (TypeError, ValueError):
+        schema_version = 4
+    required_cases = ALL_CASE_IDS if schema_version >= 5 else LEGACY_CASE_IDS
+    missing = set(required_cases) - set(entries)
     if missing:
         raise PerturbationConfigurationError(
             f"Schema is missing perturbation definitions: {sorted(missing)}"
@@ -607,6 +618,156 @@ def _candidate_is_clear(
     return True
 
 
+def _model_named_id(model: Any, kind: str, name: str) -> int:
+    method_names = [f"{kind}_name2id", f"{kind}name2id"]
+    if kind == "mat":
+        method_names.append("material_name2id")
+    for method_name in method_names:
+        method = getattr(model, method_name, None)
+        if callable(method):
+            return int(method(name))
+    accessor = getattr(model, kind, None)
+    if callable(accessor):
+        return int(accessor(name).id)
+    raise KeyError(name)
+
+
+def _workspace_visual_geom_ids(env: Any) -> tuple[int, ...]:
+    """Resolve the visual-only geom that represents the active work surface."""
+
+    model = env.sim.model
+    geom_ids: list[int] = []
+    for name in ("workspace_surface_visual", "table_visual"):
+        try:
+            geom_id = _model_named_id(model, "geom", name)
+        except Exception:
+            continue
+        if geom_id not in geom_ids:
+            geom_ids.append(geom_id)
+    if geom_ids:
+        return tuple(geom_ids)
+    if str(getattr(env, "workspace_name", "")) == "floor":
+        try:
+            return (_model_named_id(model, "geom", "floor"),)
+        except Exception:
+            return ()
+
+    workspace_body = {
+        "main_table": "table",
+        "kitchen_table": "table",
+        "living_room_table": "living_room_table",
+        "study_table": "study_table",
+        "coffee_table": "coffee_table",
+    }.get(str(getattr(env, "workspace_name", "")))
+    if workspace_body is None:
+        return ()
+    try:
+        root_body = int(model.body_name2id(workspace_body))
+    except Exception:
+        return ()
+
+    descendants = {root_body}
+    parent_ids = np.asarray(getattr(model, "body_parentid", ()), dtype=int)
+    changed = True
+    while changed:
+        changed = False
+        for body_id, parent_id in enumerate(parent_ids):
+            if parent_id in descendants and body_id not in descendants:
+                descendants.add(body_id)
+                changed = True
+    geom_body_ids = np.asarray(getattr(model, "geom_bodyid", ()), dtype=int)
+    geom_groups = np.asarray(
+        getattr(model, "geom_group", np.zeros(len(geom_body_ids), dtype=int)), dtype=int
+    )
+    geom_contype = np.asarray(
+        getattr(model, "geom_contype", np.zeros(len(geom_body_ids), dtype=int)), dtype=int
+    )
+    return tuple(
+        geom_id
+        for geom_id, body_id in enumerate(geom_body_ids)
+        if body_id in descendants
+        and (geom_groups[geom_id] == 1 or geom_contype[geom_id] == 0)
+    )
+
+
+def _robot_body_ids(env: Any) -> set[int]:
+    model = env.sim.model
+    robot = env.robots[0]
+    root_name = str(getattr(getattr(robot, "robot_model", None), "root_body", ""))
+    try:
+        root_id = _model_named_id(model, "body", root_name)
+    except Exception:
+        return set()
+    body_ids = {root_id}
+    parent_ids = np.asarray(getattr(model, "body_parentid", ()), dtype=int)
+    changed = True
+    while changed:
+        changed = False
+        for body_id, parent_id in enumerate(parent_ids):
+            if parent_id in body_ids and body_id not in body_ids:
+                body_ids.add(body_id)
+                changed = True
+    return body_ids
+
+
+def _robot_contacts(env: Any) -> dict[tuple[int, int], float]:
+    """Return robot-involved contact distances keyed by the geom pair."""
+
+    model = env.sim.model
+    data = env.sim.data
+    robot_bodies = _robot_body_ids(env)
+    contacts: dict[tuple[int, int], float] = {}
+    geom_body_ids = np.asarray(getattr(model, "geom_bodyid", ()), dtype=int)
+    for index in range(int(getattr(data, "ncon", 0))):
+        contact = data.contact[index]
+        geom1, geom2 = int(contact.geom1), int(contact.geom2)
+        if geom1 >= len(geom_body_ids) or geom2 >= len(geom_body_ids):
+            continue
+        if (
+            int(geom_body_ids[geom1]) not in robot_bodies
+            and int(geom_body_ids[geom2]) not in robot_bodies
+        ):
+            continue
+        pair = tuple(sorted((geom1, geom2)))
+        contacts[pair] = min(float(contact.dist), contacts.get(pair, float("inf")))
+    return contacts
+
+
+def _has_new_robot_penetration(
+    before: dict[tuple[int, int], float],
+    after: dict[tuple[int, int], float],
+    tolerance: float,
+) -> bool:
+    for pair, distance in after.items():
+        if distance >= -tolerance:
+            continue
+        baseline = before.get(pair)
+        if baseline is None or distance < baseline - tolerance:
+            return True
+    return False
+
+
+def _arm_joint_limits(model: Any, qpos_indices: list[int]) -> tuple[np.ndarray, np.ndarray]:
+    lower = np.full(len(qpos_indices), -np.inf, dtype=np.float64)
+    upper = np.full(len(qpos_indices), np.inf, dtype=np.float64)
+    qpos_to_joint = {
+        int(address): joint_id
+        for joint_id, address in enumerate(
+            np.asarray(getattr(model, "jnt_qposadr", ()), dtype=int)
+        )
+    }
+    ranges = np.asarray(getattr(model, "jnt_range", ()), dtype=np.float64)
+    limited = np.asarray(
+        getattr(model, "jnt_limited", np.ones(len(ranges), dtype=int)), dtype=int
+    )
+    for offset, qpos_index in enumerate(qpos_indices):
+        joint_id = qpos_to_joint.get(int(qpos_index))
+        if joint_id is None or joint_id >= len(ranges) or not bool(limited[joint_id]):
+            continue
+        lower[offset], upper[offset] = ranges[joint_id]
+    return lower, upper
+
+
 def _safe_offset_pose(
     env: Any,
     name: str,
@@ -820,6 +981,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_restored = False
         self._dynamic_event_step: int | None = None
         self._dynamic_event_origin_eef: np.ndarray | None = None
+        self._initial_eef_position: np.ndarray | None = None
         self._baseline_model_id: int | None = None
         self._model_baseline: dict[str, np.ndarray] = {}
         self.set_seed(seed)
@@ -850,6 +1012,7 @@ class NonPhysicalPerturbationRuntime:
             "cam_quat",
             "cam_fovy",
             "geom_rgba",
+            "geom_matid",
             "light_diffuse",
             "light_ambient",
         )
@@ -869,6 +1032,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_restored = False
         self._dynamic_event_step = None
         self._dynamic_event_origin_eef = None
+        self._initial_eef_position = None
 
     def _clear_temporal_state(self) -> None:
         self.previous_action = None
@@ -907,6 +1071,16 @@ class NonPhysicalPerturbationRuntime:
                     _set_entity_pose(env, name, position, quaternion)
         self.reset()
         self._stage_dynamic_assets(env)
+        if self.plan.case_id == "D20":
+            try:
+                self._initial_eef_position = np.asarray(
+                    env.sim.data.site_xpos[env.robots[0].eef_site_id],
+                    dtype=np.float64,
+                ).copy()
+            except Exception as exc:
+                raise PerturbationValidationError(
+                    "D20 requires a valid robot end-effector site"
+                ) from exc
 
     def _log_once(self, key: str, step: int, **details: Any) -> None:
         if key in self._logged:
@@ -1216,6 +1390,129 @@ class NonPhysicalPerturbationRuntime:
             "events": list(self.events),
         }
 
+    def _apply_workspace_texture(self, env: Any) -> None:
+        material_name = str(self.plan.params.get("material_id", "s22_table_texture"))
+        try:
+            material_id = _model_named_id(env.sim.model, "mat", material_name)
+        except Exception as exc:
+            raise PerturbationValidationError(
+                f"S22 material {material_name!r} is not compiled into the scene"
+            ) from exc
+        geom_ids = _workspace_visual_geom_ids(env)
+        if not geom_ids:
+            raise PerturbationValidationError(
+                f"S22 found no visual work-surface geom for "
+                f"{getattr(env, 'workspace_name', None)!r}"
+            )
+        env.sim.model.geom_matid[list(geom_ids)] = material_id
+        env.sim.forward()
+        self._log_once(
+            "workspace_texture_replaced",
+            0,
+            material=material_name,
+            visual_geom_ids=list(geom_ids),
+        )
+
+    def _apply_safe_robot_displacement(self, env: Any, step: int) -> None:
+        robot = env.robots[0]
+        qpos_indices = [int(index) for index in robot._ref_joint_pos_indexes]
+        qvel_indices = [int(index) for index in robot._ref_joint_vel_indexes]
+        if not qpos_indices:
+            raise PerturbationValidationError("D20 robot has no controllable arm joints")
+
+        data = env.sim.data
+        before_qpos = np.asarray(data.qpos[qpos_indices], dtype=np.float64).copy()
+        before_qvel = np.asarray(data.qvel[qvel_indices], dtype=np.float64).copy()
+        before_eef = np.asarray(
+            data.site_xpos[robot.eef_site_id], dtype=np.float64
+        ).copy()
+        baseline_contacts = _robot_contacts(env)
+        lower, upper = _arm_joint_limits(env.sim.model, qpos_indices)
+        magnitude = float(self.plan.params.get("joint_delta_rad", 0.10))
+        min_displacement = float(
+            self.plan.params.get("min_eef_displacement_m", 0.035)
+        )
+        contact_tolerance = abs(
+            float(self.plan.params.get("penetration_tolerance_m", 0.001))
+        )
+        clearance = float(self.plan.params.get("min_workspace_clearance_m", 0.035))
+        workspace_offset = np.asarray(
+            getattr(env, "workspace_offset", (0.0, 0.0, 0.0)), dtype=np.float64
+        )
+        workspace_z = float(workspace_offset[2]) if workspace_offset.size >= 3 else 0.0
+
+        patterns: list[np.ndarray] = []
+        for joint_offset in range(min(4, len(qpos_indices))):
+            for sign in (1.0, -1.0):
+                delta = np.zeros(len(qpos_indices), dtype=np.float64)
+                delta[joint_offset] = sign * magnitude
+                patterns.append(delta)
+        if len(qpos_indices) >= 3:
+            for sign in (1.0, -1.0):
+                delta = np.zeros(len(qpos_indices), dtype=np.float64)
+                delta[0] = sign * magnitude
+                delta[2] = -sign * magnitude * 0.5
+                patterns.append(delta)
+
+        try:
+            for candidate_index, delta in enumerate(patterns):
+                candidate = before_qpos + delta
+                if not np.all(np.isfinite(candidate)):
+                    continue
+                if np.any(candidate < lower + 1e-5) or np.any(
+                    candidate > upper - 1e-5
+                ):
+                    continue
+                data.qpos[qpos_indices] = candidate
+                data.qvel[qvel_indices] = 0.0
+                env.sim.forward()
+                after_eef = np.asarray(
+                    data.site_xpos[robot.eef_site_id], dtype=np.float64
+                ).copy()
+                if not np.all(np.isfinite(after_eef)):
+                    continue
+                displacement = float(np.linalg.norm(after_eef - before_eef))
+                if (
+                    displacement < min_displacement
+                    or after_eef[2] < workspace_z + clearance
+                ):
+                    continue
+                if hasattr(data, "site_xmat"):
+                    orientation = np.asarray(
+                        data.site_xmat[robot.eef_site_id], dtype=np.float64
+                    ).reshape(3, 3)
+                    if not np.all(np.isfinite(orientation)) or not np.isclose(
+                        np.linalg.det(orientation), 1.0, atol=0.08
+                    ):
+                        continue
+                candidate_contacts = _robot_contacts(env)
+                if _has_new_robot_penetration(
+                    baseline_contacts, candidate_contacts, contact_tolerance
+                ):
+                    continue
+                self._log_once(
+                    "robot_collision_displacement",
+                    step,
+                    candidate_index=candidate_index,
+                    joint_delta_rad=delta.tolist(),
+                    eef_before=before_eef.tolist(),
+                    eef_after=after_eef.tolist(),
+                    eef_displacement_m=displacement,
+                )
+                return
+        except Exception:
+            data.qpos[qpos_indices] = before_qpos
+            data.qvel[qvel_indices] = before_qvel
+            env.sim.forward()
+            raise
+
+        data.qpos[qpos_indices] = before_qpos
+        data.qvel[qvel_indices] = before_qvel
+        env.sim.forward()
+        raise PerturbationValidationError(
+            "No collision-free D20 robot displacement satisfies the configured limits"
+        )
+
     def apply_static(self, env: Any) -> None:
         case_id = self.plan.case_id
         if not case_id.startswith("S"):
@@ -1355,6 +1652,8 @@ class NonPhysicalPerturbationRuntime:
             self._log_once("robot_initial_state_changed", 0, joint_offset=offset.tolist())
         elif case_id == "S21":
             self.language_instruction("", 0)
+        elif case_id == "S22":
+            self._apply_workspace_texture(env)
         elif case_id == "S06":
             self._log_once(
                 "target_instance_replaced",
@@ -1660,6 +1959,8 @@ class NonPhysicalPerturbationRuntime:
                 env.sim.data.site_xpos[env.robots[0].eef_site_id], dtype=np.float64
             ).copy()
             self._log_once("grasp_failure_window_started", step)
+        elif case_id == "D20":
+            self._apply_safe_robot_displacement(env, step)
         elif case_id == "D21":
             self._log_once("runtime_language_clarification", step)
         elif case_id in {"D08", "D10", "D11", "D12", "D13", "D14", "D15", "D16"}:
@@ -1687,6 +1988,23 @@ class NonPhysicalPerturbationRuntime:
         if case_id == "D01" and target and eef is not None:
             position, _ = _entity_pose(env, target)
             return bool(np.linalg.norm(eef - position) <= 0.12)
+        if case_id == "D20":
+            if eef is None:
+                return False
+            if self._initial_eef_position is None:
+                self._initial_eef_position = eef.copy()
+                return False
+            action = self.previous_action
+            action_norm = 0.0
+            if action is not None and action.size:
+                arm_action = action[:-1] if action.size > 1 else action
+                action_norm = float(np.linalg.norm(arm_action))
+            return bool(
+                action_norm
+                >= float(self.plan.params.get("trigger_action_norm", 0.05))
+                and np.linalg.norm(eef - self._initial_eef_position)
+                >= float(self.plan.params.get("trigger_eef_motion_m", 0.025))
+            )
         if case_id == "D17" and target and eef is not None:
             position, _ = _entity_pose(env, target)
             if self._interaction_mode() == "articulation":

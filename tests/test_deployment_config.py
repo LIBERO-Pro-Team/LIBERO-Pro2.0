@@ -534,7 +534,7 @@ def test_customer_technical_plan_matches_the_released_bundle_workflow() -> None:
     assert "LIBERO_REMOTE_MAX_SESSIONS" in technical_plan
     assert "LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER" in technical_plan
     assert "bash add_account.sh team-b" in technical_plan
-    assert "1680 个有效任务组合" in technical_plan
+    assert "1760 个有效任务组合" in technical_plan
     assert "AgentAdapter" in technical_plan
     assert "GitHub 不是客户部署来源" in technical_plan
     for obsolete in (

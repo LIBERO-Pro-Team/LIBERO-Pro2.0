@@ -11,8 +11,12 @@ def test_session_request_rejects_unsupported_options() -> None:
         CreateSessionRequest(protocol_version="2.0")
 
     assert CreateSessionRequest(variant="s01").variant == "S01"
+    assert CreateSessionRequest(variant="S22").variant == "S22"
+    assert CreateSessionRequest(variant="d20").variant == "D20"
     with pytest.raises(ValidationError):
-        CreateSessionRequest(variant="S22")
+        CreateSessionRequest(variant="S23")
+    with pytest.raises(ValidationError):
+        CreateSessionRequest(variant="D22")
 
 
 def test_session_request_validates_controller_mode() -> None:
