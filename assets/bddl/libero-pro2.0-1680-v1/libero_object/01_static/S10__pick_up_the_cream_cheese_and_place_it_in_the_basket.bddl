@@ -203,7 +203,7 @@
           (:interaction_mode placement)
           (:asset_count 3)
           (:clutter_minimum_gap_m 0.055)
-          (:clutter_offsets_xy 0.11 -0.10 0.11 0.10 -0.11 0.10)
+          (:clutter_offsets_xy 0.11 -0.10 -0.11 0.10 0.11 0.16)
           (:support_surface floor)
         )
       )

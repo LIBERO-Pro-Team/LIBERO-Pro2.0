@@ -525,6 +525,8 @@ class InSiteRegionRandomSampler(SiteRegionRandomSampler):
         z_offset=0.0,
     ):
 
+        self.reference_name = ""
+
         super().__init__(
             name=name,
             mujoco_objects=mujoco_objects,

@@ -201,8 +201,9 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/cracker_box)
-          (:asset_scale 0.58)
+          (:asset_scale 0.12)
           (:asset_quat 1.0 0.0 0.0 0.0)
+          (:grounded_replacement true)
         )
       )
       (S07

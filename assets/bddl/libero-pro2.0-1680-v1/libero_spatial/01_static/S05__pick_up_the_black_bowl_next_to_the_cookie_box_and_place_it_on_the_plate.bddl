@@ -199,6 +199,9 @@
         (:constraints initial_collision_free ik_reachable full_path_exists)
         (:params
           (:interaction_mode placement)
+          (:barrier_scale 0.15)
+          (:barrier_path_fraction 0.50)
+          (:barrier_lateral_offset_m 0.100)
         )
       )
       (S06

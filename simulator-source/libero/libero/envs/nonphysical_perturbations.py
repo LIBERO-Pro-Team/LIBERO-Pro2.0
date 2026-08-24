@@ -479,6 +479,11 @@ def build_execution_plan(
         if case_id in {"D03", "D04", "D05"}
         else 1.0
     )
+    static_barrier_scale = (
+        _param_float(params, "barrier_scale", 1.0)
+        if case_id == "S05"
+        else 1.0
+    )
     asset_ids = list(CASE_ASSETS.get(case_id, ()))
     if case_id in {"S10", "S11"} and "asset_count" in params:
         try:
@@ -499,7 +504,7 @@ def build_execution_plan(
             asset_root,
             asset_index,
             staged=staged,
-            scale=dynamic_asset_scale,
+            scale=(static_barrier_scale if case_id == "S05" else dynamic_asset_scale),
         )
         for index, asset_id in enumerate(asset_ids)
     ]
@@ -616,6 +621,26 @@ def inject_plan_assets(
                 original, "object_properties", {"vis_site_names": {}}
             )
             _scale_mujoco_object(replacement, asset.scale)
+            if _param_bool(plan.params, "sampler_compatible", False):
+                # Keep the original placement envelope during reset. The
+                # compiled collision and visual geometry still come from the
+                # replacement asset, while narrow BDDL regions retain their
+                # original sampling contract.
+                _set_object_site_pos(
+                    replacement,
+                    "bottom_site",
+                    getattr(original, "bottom_offset"),
+                )
+                _set_object_site_pos(
+                    replacement,
+                    "top_site",
+                    getattr(original, "top_offset"),
+                )
+                _set_object_site_pos(
+                    replacement,
+                    "horizontal_radius_site",
+                    (float(getattr(original, "horizontal_radius")), 0.0, 0.0),
+                )
             objects_dict[target] = replacement
             replaced.append(target)
             continue
@@ -664,18 +689,66 @@ def inject_plan_assets(
 def _scale_mujoco_object(obj: Any, factor: float) -> None:
     if abs(float(factor) - 1.0) < 1e-9:
         return
-    root = obj.get_obj() if hasattr(obj, "get_obj") else None
-    if root is None:
-        root = getattr(obj, "worldbody", None)
-    if root is None:
-        return
-    for mesh in root.findall(".//mesh"):
-        mesh.set("scale", _scale_xml_values(mesh.get("scale", "1 1 1"), factor))
-    for element in root.findall(".//*[@pos]"):
-        element.set("pos", _scale_xml_values(element.get("pos"), factor))
-    for geom in root.findall(".//geom"):
-        if geom.get("size"):
-            geom.set("size", _scale_xml_values(geom.get("size"), factor))
+    for root in _mujoco_xml_roots(obj):
+        for mesh in root.findall(".//mesh"):
+            mesh.set("scale", _scale_xml_values(mesh.get("scale", "1 1 1"), factor))
+        for element in root.findall(".//*[@pos]"):
+            element.set("pos", _scale_xml_values(element.get("pos"), factor))
+        for geom in root.findall(".//geom"):
+            if geom.get("size"):
+                geom.set("size", _scale_xml_values(geom.get("size"), factor))
+
+
+def _mujoco_xml_roots(obj: Any) -> tuple[Any, ...]:
+    """Return the asset and compiled body XML sections exactly once."""
+
+    roots: list[Any] = []
+    asset = getattr(obj, "asset", None)
+    if asset is not None:
+        roots.append(asset)
+    get_obj = getattr(obj, "get_obj", None)
+    body = get_obj() if callable(get_obj) else None
+    if body is not None and all(body is not root for root in roots):
+        roots.append(body)
+    elif body is None:
+        worldbody = getattr(obj, "worldbody", None)
+        if worldbody is not None and all(worldbody is not root for root in roots):
+            roots.append(worldbody)
+    return tuple(roots)
+
+
+def _set_object_site_pos(obj: Any, suffix: str, value: Any) -> None:
+    """Set one object's local sampling site without changing its world pose."""
+
+    prefix = str(getattr(obj, "naming_prefix", ""))
+    names = {f"{prefix}{suffix}", suffix}
+    roots = []
+    worldbody = getattr(obj, "worldbody", None)
+    if worldbody is not None:
+        roots.append(worldbody)
+    get_obj = getattr(obj, "get_obj", None)
+    if callable(get_obj):
+        root = get_obj()
+        if root is not None and root not in roots:
+            roots.append(root)
+    site = None
+    for root in roots:
+        site = next(
+            (element for element in root.iter("site") if element.get("name") in names),
+            None,
+        )
+        if site is not None:
+            break
+    if site is None:
+        raise PerturbationConfigurationError(
+            f"Replacement asset is missing sampling site {suffix!r}"
+        )
+    position = np.asarray(value, dtype=np.float64).reshape(-1)
+    if position.shape != (3,) or not np.all(np.isfinite(position)):
+        raise PerturbationConfigurationError(
+            f"Sampling site {suffix!r} must have three finite coordinates"
+        )
+    site.set("pos", " ".join(str(float(component)) for component in position))
 
 
 def _scale_mujoco_object_axes(
@@ -683,18 +756,14 @@ def _scale_mujoco_object_axes(
 ) -> None:
     """Scale an injected asset around its local origin on each axis."""
 
-    root = obj.get_obj() if hasattr(obj, "get_obj") else None
-    if root is None:
-        root = getattr(obj, "worldbody", None)
-    if root is None:
-        return
-    for mesh in root.findall(".//mesh"):
-        mesh.set("scale", _scale_xml_vector(mesh.get("scale", "1 1 1"), factors))
-    for element in root.findall(".//*[@pos]"):
-        element.set("pos", _scale_xml_vector(element.get("pos"), factors))
-    for geom in root.findall(".//geom"):
-        if geom.get("size"):
-            geom.set("size", _scale_xml_vector(geom.get("size"), factors))
+    for root in _mujoco_xml_roots(obj):
+        for mesh in root.findall(".//mesh"):
+            mesh.set("scale", _scale_xml_vector(mesh.get("scale", "1 1 1"), factors))
+        for element in root.findall(".//*[@pos]"):
+            element.set("pos", _scale_xml_vector(element.get("pos"), factors))
+        for geom in root.findall(".//geom"):
+            if geom.get("size"):
+                geom.set("size", _scale_xml_vector(geom.get("size"), factors))
 
 
 def _scale_xml_values(raw: str | None, factor: float) -> str | None:
@@ -2694,8 +2763,18 @@ class NonPhysicalPerturbationRuntime:
                     direction = np.array([0.0, 1.0])
                 else:
                     direction /= length
-                position = target + 0.58 * (receiver - target)
-                position[:2] += np.array([-direction[1], direction[0]]) * 0.035
+                path_fraction = _param_float(
+                    self.plan.params, "barrier_path_fraction", 0.58
+                )
+                if not 0.0 < path_fraction < 1.0:
+                    raise PerturbationConfigurationError(
+                        "S05 barrier_path_fraction must be between 0 and 1"
+                    )
+                lateral_offset = _param_float(
+                    self.plan.params, "barrier_lateral_offset_m", 0.035
+                )
+                position = target + path_fraction * (receiver - target)
+                position[:2] += np.array([-direction[1], direction[0]]) * lateral_offset
                 quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
             elif case_id in {"S10", "S11"}:
                 target_position, _ = _entity_pose(env, self.plan.targets[0])
@@ -2949,6 +3028,29 @@ class NonPhysicalPerturbationRuntime:
                     )
                 position, _ = _entity_pose(env, target)
                 _set_entity_pose(env, target, position, quaternion / norm)
+            if _param_bool(self.plan.params, "grounded_replacement", False):
+                position, quaternion = _entity_pose(env, target)
+                grounded = _grounded_entity_position(
+                    env,
+                    target,
+                    position[:2],
+                    self.plan.params,
+                    ignored=(target,),
+                )
+                if grounded is None:
+                    raise PerturbationValidationError(
+                        f"S06 replacement target {target!r} has no configured support surface"
+                    )
+                grounded_position, support_geom = grounded
+                _set_entity_pose(env, target, grounded_position, quaternion)
+                self._log_once(
+                    "replacement_target_grounded",
+                    0,
+                    target=target,
+                    position=grounded_position.tolist(),
+                    support_geom=support_geom,
+                    xy_preserved=True,
+                )
             self._log_once(
                 "target_instance_replaced",
                 0,

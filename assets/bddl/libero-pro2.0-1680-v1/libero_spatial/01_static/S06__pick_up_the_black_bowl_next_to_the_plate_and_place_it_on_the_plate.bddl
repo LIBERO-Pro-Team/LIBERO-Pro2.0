@@ -208,8 +208,9 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.26)
+          (:asset_scale 0.20)
           (:asset_quat 1.0 0.0 0.0 0.0)
+          (:sampler_compatible true)
         )
       )
       (S07

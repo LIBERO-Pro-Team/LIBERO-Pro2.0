@@ -201,7 +201,9 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/plastic_plate)
-          (:asset_scale 0.55)
+          (:asset_scale 0.12)
+          (:sampler_compatible true)
+          (:grounded_replacement true)
         )
       )
       (S07
