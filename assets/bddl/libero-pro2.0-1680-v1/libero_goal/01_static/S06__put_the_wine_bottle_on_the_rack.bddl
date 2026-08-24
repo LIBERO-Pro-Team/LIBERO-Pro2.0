@@ -201,7 +201,8 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/fuze_bottle)
-          (:asset_scale 0.72)
+          (:asset_scale 0.58)
+          (:asset_quat 1.0 0.0 0.0 0.0)
         )
       )
       (S07

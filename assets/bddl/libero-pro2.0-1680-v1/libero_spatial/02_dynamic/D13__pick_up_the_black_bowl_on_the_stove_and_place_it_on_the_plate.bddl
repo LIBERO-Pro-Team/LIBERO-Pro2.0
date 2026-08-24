@@ -460,6 +460,9 @@
         (:variant delay_jitter_or_desynchronization)
         (:params
           (:interaction_mode placement)
+          (:arm_delay_steps 6)
+          (:gripper_delay_steps 2)
+          (:event_duration_steps 36)
         )
       )
       (D14

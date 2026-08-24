@@ -300,6 +300,9 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 36)
+          (:asset_scale 1.20)
+          (:asset_offset_xyz 0.0 0.0 0.035)
         )
       )
       (D04

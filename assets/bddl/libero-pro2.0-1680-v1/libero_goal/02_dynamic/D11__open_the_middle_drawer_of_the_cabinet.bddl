@@ -434,6 +434,8 @@
         (:variant timestamp_offset_or_state_freeze)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 36)
+          (:freeze_modalities rgb)
         )
       )
       (D12

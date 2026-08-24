@@ -238,7 +238,7 @@
           (:interaction_mode articulation)
         )
       )
-      (S11
+(S11
         (:operator asset_or_appearance)
         (:targets akita_black_bowl_1)
         (:references akita_black_bowl_1)
@@ -247,6 +247,7 @@
           (:interaction_mode articulation)
           (:asset_id prl/plastic_bowl)
           (:asset_scale 0.45)
+          (:support_surface table)
         )
       )
       (S12

@@ -237,13 +237,14 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets akita_black_bowl_1)
         (:references akita_black_bowl_2)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:visual_only_asset true)
         )
       )
       (S11

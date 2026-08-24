@@ -349,6 +349,7 @@
         (:variant camera_dropout_then_restore)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 50)
         )
       )
       (D09

@@ -230,13 +230,18 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets plate_1)
         (:references akita_black_bowl_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:asset_count 2)
+          (:clutter_minimum_gap_m 0.055)
+          (:clutter_offsets_xy 0.08 -0.07 -0.08 -0.07)
+          (:support_surface table)
+          (:visual_only_asset true)
         )
       )
       (S11

@@ -503,6 +503,8 @@
         (:params
           (:interaction_mode articulation)
           (:trigger_state_change_m 0.02)
+          (:offset_xy -0.08 0.06)
+          (:minimum_clearance_m 0.12)
         )
       )
       (D19

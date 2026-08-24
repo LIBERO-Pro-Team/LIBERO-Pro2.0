@@ -219,6 +219,7 @@
         (:variant scale_or_aspect_ratio)
         (:params
           (:interaction_mode placement)
+          (:geometry_factors 1.18 1.18 0.82)
         )
       )
       (S09

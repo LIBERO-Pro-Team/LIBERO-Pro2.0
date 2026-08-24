@@ -340,6 +340,9 @@
         (:variant xy_yaw_update)
         (:params
           (:interaction_mode placement)
+          (:trigger_distance_m 0.17)
+          (:offset_xy 0.10 -0.08)
+          (:yaw_rad 0.28)
         )
       )
       (D02

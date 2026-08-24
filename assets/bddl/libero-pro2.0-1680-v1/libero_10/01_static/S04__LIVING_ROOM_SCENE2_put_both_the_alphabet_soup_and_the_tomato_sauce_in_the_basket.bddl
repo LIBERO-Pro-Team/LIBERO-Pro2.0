@@ -181,13 +181,16 @@
           (:interaction_mode placement)
         )
       )
-      (S04
+(S04
         (:operator pose_transform)
         (:targets alphabet_soup_1 cream_cheese_1)
         (:variant planar_object_position_swap)
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:grounded_swap true)
+          (:support_surface table)
+          (:swap_cluster_radius_m 0.20)
         )
       )
       (S05

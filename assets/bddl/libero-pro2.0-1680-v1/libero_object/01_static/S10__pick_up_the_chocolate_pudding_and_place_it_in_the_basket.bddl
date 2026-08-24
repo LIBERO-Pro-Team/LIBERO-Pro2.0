@@ -194,13 +194,18 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets chocolate_pudding_1)
         (:references orange_juice_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:asset_count 3)
+          (:clutter_minimum_gap_m 0.055)
+          (:clutter_offsets_xy 0.11 -0.10 0.11 0.10 -0.11 0.10)
+          (:support_surface floor)
+          (:visual_only_asset true)
         )
       )
       (S11

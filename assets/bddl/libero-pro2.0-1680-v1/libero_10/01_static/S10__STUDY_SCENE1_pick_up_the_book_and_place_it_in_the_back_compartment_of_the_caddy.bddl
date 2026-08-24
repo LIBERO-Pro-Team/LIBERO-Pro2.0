@@ -190,13 +190,14 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets black_book_1)
         (:references white_yellow_mug_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:visual_only_asset true)
         )
       )
       (S11

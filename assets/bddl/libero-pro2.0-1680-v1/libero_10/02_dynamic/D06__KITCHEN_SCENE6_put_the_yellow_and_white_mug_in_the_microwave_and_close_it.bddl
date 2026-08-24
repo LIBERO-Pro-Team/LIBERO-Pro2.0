@@ -341,10 +341,13 @@
       (D06
         (:operator pose_transform)
         (:targets porcelain_mug_1 white_yellow_mug_1)
+        (:disturbance_targets porcelain_mug_1)
         (:trigger task_phase)
         (:variant distractor_move_or_local_rearrangement)
         (:params
           (:interaction_mode placement)
+          (:minimum_displacement_m 0.10)
+          (:offset_xy 0.12 -0.09)
         )
       )
       (D07

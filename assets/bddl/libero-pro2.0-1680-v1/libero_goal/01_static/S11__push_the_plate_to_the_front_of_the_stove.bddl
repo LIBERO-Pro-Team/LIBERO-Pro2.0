@@ -239,7 +239,7 @@
           (:interaction_mode placement)
         )
       )
-      (S11
+(S11
         (:operator asset_or_appearance)
         (:targets plate_1)
         (:references akita_black_bowl_1)
@@ -247,7 +247,12 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/plastic_plate)
-          (:asset_scale 0.55)
+          (:asset_scale 0.30)
+          (:asset_count 1)
+          (:clutter_minimum_gap_m 0.055)
+          (:clutter_offsets_xy 0.075 0.055)
+          (:support_surface table)
+          (:visual_only_asset true)
         )
       )
       (S12

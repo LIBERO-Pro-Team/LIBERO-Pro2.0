@@ -214,10 +214,11 @@
       )
       (S08
         (:operator geometry_variant)
-        (:targets akita_black_bowl_1)
+        (:targets flat_stove_1)
         (:variant scale_or_aspect_ratio)
         (:params
           (:interaction_mode articulation)
+          (:geometry_factors 1.18 1.18 0.82)
         )
       )
       (S09

@@ -239,7 +239,7 @@
           (:interaction_mode placement)
         )
       )
-      (S11
+(S11
         (:operator asset_or_appearance)
         (:targets akita_black_bowl_1)
         (:references cream_cheese_1)
@@ -248,6 +248,7 @@
           (:interaction_mode placement)
           (:asset_id prl/plastic_bowl)
           (:asset_scale 0.45)
+          (:support_surface table)
         )
       )
       (S12

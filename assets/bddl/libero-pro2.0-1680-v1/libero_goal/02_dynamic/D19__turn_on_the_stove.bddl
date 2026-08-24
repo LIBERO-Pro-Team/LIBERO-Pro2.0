@@ -514,6 +514,9 @@
         (:params
           (:interaction_mode articulation)
           (:trigger_state_change_m 0.02)
+          (:misplace_offset_xy 0.045 -0.040)
+          (:misplace_height_m 0.035)
+          (:event_duration_steps 24)
         )
       )
       (D21

@@ -487,6 +487,8 @@
         (:constraints semantic_goal_unchanged)
         (:params
           (:interaction_mode placement)
+          (:value Continue_with_the_same_goal:_{instruction})
+          (:event_duration_steps 24)
         )
       )
     )

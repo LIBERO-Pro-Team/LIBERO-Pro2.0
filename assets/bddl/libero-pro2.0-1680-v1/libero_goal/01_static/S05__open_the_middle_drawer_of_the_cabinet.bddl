@@ -191,6 +191,9 @@
         (:constraints initial_collision_free ik_reachable full_path_exists)
         (:params
           (:interaction_mode articulation)
+          (:lateral_offset_m 0.055)
+          (:barrier_height_m -0.015)
+          (:visual_only_asset true)
         )
       )
       (S06

@@ -207,7 +207,9 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/cracker_box)
-          (:asset_scale 0.7)
+          (:asset_scale 0.58)
+          (:fixture_geometry_factors 1.0 1.0 1.0)
+          (:asset_quat 1.0 0.0 0.0 0.0)
         )
       )
       (S07

@@ -248,6 +248,7 @@
           (:interaction_mode placement)
           (:asset_id prl/plastic_bowl)
           (:asset_scale 0.45)
+          (:support_surface table)
         )
       )
       (S12

@@ -483,6 +483,8 @@
         (:params
           (:interaction_mode articulation)
           (:event_duration_steps 6)
+          (:takeover_action 0.18 -0.08)
+          (:takeover_duration_steps 12)
         )
       )
       (D17

@@ -477,6 +477,11 @@
         (:constraints correction_remains_possible)
         (:params
           (:interaction_mode placement)
+          (:misplace_offset_xy 0.100 0.040)
+          (:misplace_height_m 0.0)
+          (:event_duration_steps 24)
+          (:misplace_minimum_gap_m 0.08)
+          (:preserve_support_z true)
         )
       )
       (D21
