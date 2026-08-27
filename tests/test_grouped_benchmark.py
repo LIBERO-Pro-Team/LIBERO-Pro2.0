@@ -22,6 +22,7 @@ from libero_remote.server.settings import Settings
 def _catalog() -> Dict[str, Any]:
     tasks = []
     for suite, task_id in (("libero_goal", 9), ("libero_spatial", 4)):
+        max_steps = 300 if suite == "libero_goal" else 220
         for case_id, case_kind in (
             ("BASE", "base"),
             ("S01", "static"),
@@ -34,6 +35,7 @@ def _catalog() -> Dict[str, Any]:
                     "task_id": task_id,
                     "case_id": case_id,
                     "case_kind": case_kind,
+                    "max_steps": max_steps,
                 }
             )
     return {
@@ -52,7 +54,7 @@ def test_static_group_expands_catalog_tasks_and_paired_seeds() -> None:
         seeds=[42, 43],
         init_state_ids=[0, 1],
         control_mode="relative",
-        max_steps=300,
+        max_steps=123,
     )
 
     assert plan.schema_version == "libero-pro-grouped-eval-plan-v1"
@@ -68,6 +70,8 @@ def test_static_group_expands_catalog_tasks_and_paired_seeds() -> None:
         ("S02", 42, 0),
         ("S02", 43, 1),
     ]
+    assert {episode["max_steps"] for episode in plan.episodes} == {123}
+    assert plan.selection["max_steps"] == 123
 
 
 def test_matrix_mode_builds_seed_init_state_cartesian_product() -> None:
@@ -86,6 +90,18 @@ def test_matrix_mode_builds_seed_init_state_cartesian_product() -> None:
         for episode in plan.episodes
     ] == [(7, 0), (7, 1), (8, 0), (8, 1)]
     assert all(episode["control_mode"] == "absolute" for episode in plan.episodes)
+    assert {episode["max_steps"] for episode in plan.episodes} == {220}
+    assert plan.selection["max_steps"] is None
+
+
+def test_default_step_limit_is_resolved_per_catalog_task() -> None:
+    plan = build_benchmark_plan(
+        _catalog(), group="base", seeds=[143], init_state_ids=[0]
+    )
+
+    assert {
+        (episode["suite"], episode["max_steps"]) for episode in plan.episodes
+    } == {("libero_goal", 300), ("libero_spatial", 220)}
 
 
 def test_case_filter_uses_published_catalog_instead_of_cartesian_product() -> None:

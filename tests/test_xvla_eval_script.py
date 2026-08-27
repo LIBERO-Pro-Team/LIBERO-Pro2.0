@@ -1,6 +1,15 @@
 import io
+import sys
 
 from scripts import run_xvla_remote_eval
+
+
+def test_xvla_uses_manifest_default_step_limit(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "argv", ["run_xvla_remote_eval.py"])
+
+    args = run_xvla_remote_eval.parse_args()
+
+    assert args.max_steps is None
 
 
 def test_metadata_request_uses_configured_timeout(monkeypatch) -> None:

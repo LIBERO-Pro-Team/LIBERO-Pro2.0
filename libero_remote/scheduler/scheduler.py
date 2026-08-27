@@ -95,6 +95,10 @@ class RunScheduler:
                 )
             run_id = f"run_{uuid.uuid4().hex}"
             created_at = self._clock()
+            resolved_episodes = [
+                self._session_manager.resolve_session_request(episode)
+                for episode in request.episodes
+            ]
             jobs = [
                 {
                     "job_id": f"job_{uuid.uuid4().hex}",
@@ -104,7 +108,7 @@ class RunScheduler:
                     "job_fingerprint": canonical_fingerprint(episode.dict()),
                     "runtime_fingerprint": self._runtime_fingerprint,
                 }
-                for ordinal, episode in enumerate(request.episodes)
+                for ordinal, episode in enumerate(resolved_episodes)
             ]
             store.create_run(
                 run_id,

@@ -329,13 +329,18 @@ env.close()
   "control_mode": "relative",
   "camera_names": ["agentview", "robot0_eye_in_hand"],
   "camera_height": 128,
-  "camera_width": 128,
-  "max_steps": 300
+  "camera_width": 128
 }
 ```
 
 `variant` 接受 `base`、`S01-S22` 和 `D01-D21`；可用的 suite/task/variant 组合以
-`/v1/tasks` 返回的 1760 项 manifest 为准。
+`/v1/tasks` 返回的 1760 项 manifest 为准。省略 `max_steps` 时，服务端使用所选任务在
+manifest 中发布的 OpenPI/PI0 官方 suite 上限：`libero_spatial=220`、
+`libero_object=280`、`libero_goal=300`、`libero_10=520`。每条 `/v1/tasks` 任务记录都会
+返回其有效 `max_steps`；显式传值仍可覆盖默认值。10 个 reset 落稳 step 由
+`reset_stabilization_steps` 独立执行，不占用上述策略步数。数值来源为
+[OpenPI LIBERO evaluator](https://github.com/Physical-Intelligence/openpi/blob/main/examples/libero/main.py)；
+LIBERO 自带通用 evaluator 的 `max_steps=600` 是框架级配置，不用于覆盖 PI0 的 suite 协议。
 
 创建成功后返回：
 
@@ -752,8 +757,7 @@ Set-Location D:\LIBERO-Pro2.0\.claude-manager\worktrees\task-build-platform
   -TaskId 9 `
   -InitStateId 0 `
   -Episodes 1 `
-  -Seed 142 `
-  -MaxSteps 300
+  -Seed 142
 ```
 
 启动脚本先从 WSL 检查远程健康状态。若 `172.x.x.x:18082` 不可用，它会在 Windows 后台建立

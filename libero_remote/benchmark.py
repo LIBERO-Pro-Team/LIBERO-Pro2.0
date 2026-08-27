@@ -68,7 +68,7 @@ def build_benchmark_plan(
     camera_names: Sequence[str] = ("agentview", "robot0_eye_in_hand"),
     camera_height: int = 256,
     camera_width: int = 256,
-    max_steps: int = 500,
+    max_steps: Optional[int] = None,
     observation_schema_version: str = "libero_standard_v1",
 ) -> BenchmarkPlan:
     """Expand a published task catalog into deterministic episode specifications."""
@@ -78,8 +78,10 @@ def build_benchmark_plan(
         raise ValueError(f"group must be one of {VALID_GROUPS}, got {group!r}")
     if control_mode not in {"relative", "absolute"}:
         raise ValueError("control_mode must be 'relative' or 'absolute'")
-    if camera_height < 1 or camera_width < 1 or max_steps < 1:
-        raise ValueError("camera dimensions and max_steps must be positive")
+    if camera_height < 1 or camera_width < 1:
+        raise ValueError("camera dimensions must be positive")
+    if max_steps is not None and not 1 <= max_steps <= 5000:
+        raise ValueError("max_steps must be between 1 and 5000")
 
     normalized_suites = _normalize_unique_strings(suites, "suites")
     normalized_cases = _normalize_cases(cases)
@@ -115,6 +117,13 @@ def build_benchmark_plan(
         raise ValueError("camera_names must contain at least one camera")
     episodes: List[Dict[str, Any]] = []
     for task in selected:
+        effective_max_steps = max_steps
+        if effective_max_steps is None:
+            effective_max_steps = task.get("max_steps")
+        if effective_max_steps is None:
+            raise ValueError(
+                "Task catalog entries must publish max_steps when no override is provided"
+            )
         for seed, init_state_id in seed_state_pairs:
             episodes.append(
                 {
@@ -128,7 +137,7 @@ def build_benchmark_plan(
                     "camera_names": list(cameras),
                     "camera_height": camera_height,
                     "camera_width": camera_width,
-                    "max_steps": max_steps,
+                    "max_steps": effective_max_steps,
                     "observation_schema_version": observation_schema_version,
                 }
             )
@@ -145,6 +154,7 @@ def build_benchmark_plan(
         "camera_height": camera_height,
         "camera_width": camera_width,
         "max_steps": max_steps,
+        "max_steps_source": "override" if max_steps is not None else "task_manifest",
         "observation_schema_version": observation_schema_version,
     }
     identity = {
@@ -333,12 +343,18 @@ def _normalize_catalog_task(task: Mapping[str, Any]) -> Dict[str, Any]:
     suite = str(task.get("suite", "")).strip()
     if not suite:
         raise ValueError("Task catalog entry has an empty suite")
-    return {
+    normalized: Dict[str, Any] = {
         "suite": suite,
         "task_id": int(task["task_id"]),
         "case_id": case_id,
         "case_kind": case_kind,
     }
+    if task.get("max_steps") is not None:
+        task_max_steps = int(task["max_steps"])
+        if not 1 <= task_max_steps <= 5000:
+            raise ValueError("Task catalog max_steps must be between 1 and 5000")
+        normalized["max_steps"] = task_max_steps
+    return normalized
 
 
 def _normalize_case_id(value: Any) -> str:

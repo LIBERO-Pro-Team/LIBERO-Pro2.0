@@ -38,6 +38,38 @@ def test_published_manifest_contains_all_40_tasks_and_43_perturbations() -> None
     }
 
 
+def test_published_manifest_uses_official_pi0_suite_step_limits() -> None:
+    manifest = TaskManifest.load(str(MANIFEST_PATH))
+    expected = {
+        "libero_spatial": 220,
+        "libero_object": 280,
+        "libero_goal": 300,
+        "libero_10": 520,
+    }
+
+    assert {
+        suite: {int(entry["max_steps"]) for entry in manifest.entries if entry["suite"] == suite}
+        for suite in expected
+    } == {suite: {max_steps} for suite, max_steps in expected.items()}
+    assert {
+        suite: sum(entry["suite"] == suite for entry in manifest.entries) for suite in expected
+    } == {suite: 440 for suite in expected}
+
+
+def test_task_catalog_publishes_each_tasks_default_step_limit() -> None:
+    manifest = TaskManifest.load(str(MANIFEST_PATH))
+
+    catalog = manifest.catalog()
+
+    assert len(catalog["tasks"]) == 1760
+    assert all("max_steps" in task for task in catalog["tasks"])
+    assert {
+        task["max_steps"]
+        for task in catalog["tasks"]
+        if task["suite"] == "libero_10"
+    } == {520}
+
+
 def test_manifest_rejects_a_tampered_bddl(tmp_path: Path) -> None:
     payload = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     entry = dict(payload["tasks"][0])

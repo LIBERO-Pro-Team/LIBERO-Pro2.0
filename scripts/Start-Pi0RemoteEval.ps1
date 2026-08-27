@@ -14,7 +14,7 @@ param(
     [int]$InitStateId = 0,
     [int]$Episodes = 1,
     [int]$Seed = 142,
-    [int]$MaxSteps = 500,
+    [Nullable[int]]$MaxSteps,
     [string]$Variant = "base",
     [double]$Timeout = 120,
     [string]$Output = "runtime\pi0_remote_eval_spatial_task8_clean.jsonl",
@@ -138,21 +138,25 @@ try {
 
     $previousErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
+    $runnerArgs = @(
+        "--base-url", $baseUrl,
+        "--lerobot-root", $lerobotWsl,
+        "--model-path", $modelWsl,
+        "--tokenizer-path", $tokenizerWsl,
+        "--suite", $Suite,
+        "--task-id", $TaskId,
+        "--init-state-id", $InitStateId,
+        "--episodes", $Episodes,
+        "--seed", $Seed,
+        "--variant", $Variant,
+        "--timeout", $Timeout,
+        "--output", $outputWsl
+    )
+    if ($PSBoundParameters.ContainsKey("MaxSteps")) {
+        $runnerArgs += @("--max-steps", $MaxSteps)
+    }
     try {
-        & wsl.exe -d $Distro -- env "PYTHONPATH=$pythonPath" $WslPython $runnerWsl `
-            --base-url $baseUrl `
-            --lerobot-root $lerobotWsl `
-            --model-path $modelWsl `
-            --tokenizer-path $tokenizerWsl `
-            --suite $Suite `
-            --task-id $TaskId `
-            --init-state-id $InitStateId `
-            --episodes $Episodes `
-            --seed $Seed `
-            --max-steps $MaxSteps `
-            --variant $Variant `
-            --timeout $Timeout `
-            --output $outputWsl
+        & wsl.exe -d $Distro -- env "PYTHONPATH=$pythonPath" $WslPython $runnerWsl @runnerArgs
         $runnerExitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorAction

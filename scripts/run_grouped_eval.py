@@ -64,7 +64,7 @@ def _add_selection_arguments(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--camera-height", type=int, default=256)
     parser.add_argument("--camera-width", type=int, default=256)
-    parser.add_argument("--max-steps", type=int, default=500)
+    parser.add_argument("--max-steps", type=int)
     parser.add_argument("--catalog", type=Path)
     parser.add_argument("--output-dir", type=Path)
 

@@ -9,6 +9,34 @@ from libero_remote.protocol.codec import unpack_message
 from libero_remote.server.app import create_app
 from libero_remote.server.settings import Settings
 
+MANIFEST_PATH = Path(__file__).resolve().parents[1] / "assets" / "task_manifest.json"
+
+
+def test_scheduled_run_persists_manifest_default_max_steps(tmp_path: Path) -> None:
+    app = create_app(
+        Settings(
+            environment_backend="fake",
+            scheduler_db_path=str(tmp_path / "scheduler.sqlite3"),
+            task_manifest_path=str(MANIFEST_PATH),
+        )
+    )
+    request = {
+        "episodes": [
+            {
+                "suite": "libero_spatial",
+                "task_id": 0,
+                "camera_height": 16,
+                "camera_width": 16,
+            }
+        ]
+    }
+
+    with TestClient(app) as http_client:
+        run_id = http_client.post("/v1/runs", json=request).json()["run_id"]
+        episodes = http_client.get(f"/v1/runs/{run_id}/episodes").json()["episodes"]
+
+    assert episodes[0]["spec"]["max_steps"] == 220
+
 
 def test_user_can_submit_and_inspect_a_persistent_episode_run(tmp_path: Path) -> None:
     app = create_app(

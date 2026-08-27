@@ -7,6 +7,7 @@ from typing import Any, Dict
 from urllib.request import urlopen
 
 from libero_remote import RemoteLiberoEnv
+from libero_remote.environment.task_manifest import resolve_catalog_max_steps
 from libero_remote.runner.agent import AgentEpisodeSpec, run_remote_agent_episode
 from libero_remote.runner.pi0 import Pi0PolicyAdapter
 from libero_remote.runner.report import build_run_manifest
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--init-state-id", type=int, default=0)
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=142)
-    parser.add_argument("--max-steps", type=int, default=500)
+    parser.add_argument("--max-steps", type=int)
     parser.add_argument("--variant", default="base")
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument(
@@ -49,7 +50,7 @@ def main() -> None:
     args = parse_args()
     if args.episodes < 1:
         raise SystemExit("--episodes must be at least 1")
-    if args.max_steps < 1:
+    if args.max_steps is not None and args.max_steps < 1:
         raise SystemExit("--max-steps must be at least 1")
     if args.video_fps <= 0:
         raise SystemExit("--video-fps must be positive")
@@ -71,6 +72,12 @@ def main() -> None:
         raise SystemExit(
             f"remote LIBERO service does not advertise variant {args.variant!r}"
         )
+    try:
+        max_steps = args.max_steps or resolve_catalog_max_steps(
+            catalog, args.suite, args.task_id, args.variant
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     output = args.output.expanduser().resolve()
     video_dir = args.video_dir or output.parent / f"{output.stem}_videos"
@@ -87,7 +94,7 @@ def main() -> None:
             "initial_init_state_id": args.init_state_id,
             "episodes": args.episodes,
             "initial_seed": args.seed,
-            "max_steps": args.max_steps,
+            "max_steps": max_steps,
             "variant": args.variant,
             "control_mode": "relative",
             "device": args.device,
@@ -111,7 +118,7 @@ def main() -> None:
             task_id=args.task_id,
             init_state_id=args.init_state_id + episode_index,
             seed=args.seed + episode_index,
-            max_steps=args.max_steps,
+            max_steps=max_steps,
             control_mode="relative",
             variant=args.variant,
         )

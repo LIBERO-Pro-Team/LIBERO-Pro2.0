@@ -26,6 +26,13 @@ ASSET_ROOT = ROOT / "simulator-source" / "libero" / "libero" / "assets" / "pertu
 PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1760-v1"
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
+# OpenPI examples/libero/main.py limits, excluding its 10 reset wait steps.
+PI0_MAX_STEPS_BY_SUITE = {
+    "libero_spatial": 220,
+    "libero_object": 280,
+    "libero_goal": 300,
+    "libero_10": 520,
+}
 CASES = tuple(
     ["BASE"]
     + [f"S{i:02d}" for i in range(1, 23)]
@@ -564,7 +571,7 @@ def build(
                     "bddl_path": (Path("bddl") / output.name / profile.suite / folder / target.name).as_posix(),
                     "bddl_sha256": canonical_hash(target),
                     "task_version": PUBLISHED_MANIFEST_VERSION,
-                    "max_steps": 300,
+                    "max_steps": PI0_MAX_STEPS_BY_SUITE[profile.suite],
                     "reset_stabilization_steps": 10,
                     "observation_schema_version": "libero_standard_v1",
                     "action_schema_version": "libero_action_v1",

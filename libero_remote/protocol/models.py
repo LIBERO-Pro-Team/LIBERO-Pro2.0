@@ -63,7 +63,7 @@ class CreateSessionRequest(BaseModel):
     camera_names: List[str] = Field(default_factory=lambda: ["agentview", "robot0_eye_in_hand"])
     camera_height: int = Field(128, ge=16, le=1024)
     camera_width: int = Field(128, ge=16, le=1024)
-    max_steps: int = Field(300, ge=1, le=5000)
+    max_steps: Optional[int] = Field(None, ge=1, le=5000)
     observation_schema_version: Literal["libero_standard_v1"] = OBSERVATION_SCHEMA_VERSION
 
     @validator("suite")
