@@ -468,6 +468,13 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         )
     elif case_id == "D21":
         params["interaction_mode"] = profile.interaction_mode
+    if (
+        case_id == active_case
+        and case_id in {"S06", "S11"}
+        and profile.suite == "libero_10"
+        and profile.task_id == 8
+    ):
+        params.update({"asset_id": "libero/yellow_moka_pot", "asset_scale": 1.0})
 
     lines = [f"      ({case_id}"]
     for key, value in fields:

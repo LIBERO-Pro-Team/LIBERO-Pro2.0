@@ -1,8 +1,8 @@
 {
   "format_version": 1,
   "summary": {
-    "ready_mjcf_assets": 42,
-    "external_adapted_assets": 37,
+    "ready_mjcf_assets": 43,
+    "external_adapted_assets": 38,
     "generated_parametric_assets": 5,
     "perturbation_directions_covered": 41
   },
@@ -66,6 +66,7 @@
       "ycb/YcbTomatoSoupCan"
     ],
     "semantic_distractor_pairs": [
+      "libero/yellow_moka_pot",
       "prl/cracker_box",
       "ycb/YcbCrackerBox",
       "prl/gelatin_box",
@@ -99,6 +100,19 @@
     ]
   },
   "assets": [
+    {
+      "id": "libero/yellow_moka_pot",
+      "format": "mjcf",
+      "path": "../turbosquid_objects/yellow_moka_pot/yellow_moka_pot.xml",
+      "source_asset": "libero/libero/assets/turbosquid_objects/yellow_moka_pot",
+      "license": "MIT",
+      "dimensions_m": [
+        0.07919095,
+        0.145216175,
+        0.154196375
+      ],
+      "readiness": "ready_mjcf"
+    },
     {
       "id": "prl/ada_table",
       "format": "mjcf",
@@ -723,6 +737,7 @@
       "id": "S06",
       "mechanism": "external_asset",
       "asset_ids": [
+        "libero/yellow_moka_pot",
         "prl/can",
         "prl/cracker_box",
         "prl/fuze_bottle",
@@ -758,7 +773,7 @@
         "ycb/YcbTomatoSoupCan"
       ],
       "local_resources": [],
-      "note": "Use category-compatible PRL and YCB instances after graspability screening."
+      "note": "Use category-compatible LIBERO, PRL, and YCB instances after graspability screening."
     },
     {
       "id": "S07",
@@ -868,6 +883,7 @@
       "id": "S11",
       "mechanism": "external_asset",
       "asset_ids": [
+        "libero/yellow_moka_pot",
         "prl/cracker_box",
         "ycb/YcbCrackerBox",
         "prl/gelatin_box",
@@ -877,7 +893,7 @@
         "ycb/YcbTomatoSoupCan"
       ],
       "local_resources": [],
-      "note": "Use same-category and highly similar candidates for grounding distractors."
+      "note": "Use same-category and highly similar LIBERO, PRL, and YCB candidates for grounding distractors."
     },
     {
       "id": "S12",

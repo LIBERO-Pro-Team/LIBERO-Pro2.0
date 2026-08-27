@@ -48,6 +48,7 @@ EVERYDAY_OBJECTS = (
 )
 
 SEMANTIC_PAIRS = (
+    "libero/yellow_moka_pot",
     "prl/cracker_box",
     "ycb/YcbCrackerBox",
     "prl/gelatin_box",
@@ -119,8 +120,8 @@ COVERAGE = (
     coverage(
         "S06",
         "external_asset",
-        asset_ids=EVERYDAY_OBJECTS,
-        note="Use category-compatible PRL and YCB instances after graspability screening.",
+        asset_ids=("libero/yellow_moka_pot",) + EVERYDAY_OBJECTS,
+        note="Use category-compatible LIBERO, PRL, and YCB instances after graspability screening.",
     ),
     coverage(
         "S07",
@@ -150,7 +151,10 @@ COVERAGE = (
         "S11",
         "external_asset",
         asset_ids=SEMANTIC_PAIRS,
-        note="Use same-category and highly similar candidates for grounding distractors.",
+        note=(
+            "Use same-category and highly similar LIBERO, PRL, and YCB candidates "
+            "for grounding distractors."
+        ),
     ),
     coverage(
         "S12",
@@ -279,9 +283,8 @@ def main() -> None:
         "perturbation_coverage": list(COVERAGE),
     }
     destination = root / "asset_catalog.json"
-    destination.write_text(
-        json.dumps(catalog, indent=2) + "\n", encoding="utf-8"
-    )
+    with destination.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(catalog, indent=2) + "\n")
     print(
         f"Cataloged {len(assets)} ready assets and {len(COVERAGE)} perturbations in {destination}"
     )

@@ -141,8 +141,8 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/gelatin_box)
-          (:asset_scale 0.58)
+          (:asset_id libero/yellow_moka_pot)
+          (:asset_scale 1.0)
           (:asset_quat 1.0 0.0 0.0 0.0)
         )
       )
