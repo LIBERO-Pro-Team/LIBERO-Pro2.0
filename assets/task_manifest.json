@@ -5481,7 +5481,7 @@
       "case_id": "S04",
       "case_kind": "static",
       "bddl_path": "bddl/libero-pro2.0-1680-v1/libero_10/01_static/S04__KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it.bddl",
-      "bddl_sha256": "d78e15ac7a1a0bb94bd465cd55a49b4c0f82c0c729e892b27255895f746bc797",
+      "bddl_sha256": "1ac03403cb056d105d98a08040f9bf0bed657f02d3aab8d0eadbf92790f72d5d",
       "task_version": "libero-pro2.0-1760-v1",
       "max_steps": 520,
       "reset_stabilization_steps": 10,

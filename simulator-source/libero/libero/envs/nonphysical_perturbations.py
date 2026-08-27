@@ -2580,34 +2580,42 @@ class NonPhysicalPerturbationRuntime:
             )
             grounded_swap = _param_bool(self.plan.params, "grounded_swap", False)
             if grounded_swap:
-                midpoint = 0.5 * (first_position[:2] + second_position[:2])
-                direction = second_position[:2] - first_position[:2]
-                distance = float(np.linalg.norm(direction))
-                direction = (
-                    direction / distance
-                    if distance >= 1e-6
-                    else np.array([1.0, 0.0], dtype=np.float64)
-                )
-                radius = _param_float(
-                    self.plan.params,
-                    "swap_cluster_radius_m",
-                    min(max(distance * 0.25, 0.06), 0.12),
-                )
-                if radius <= 0.02:
-                    raise PerturbationConfigurationError(
-                        "S04 swap_cluster_radius_m must be greater than 0.02 m"
-                    )
                 support_params = self.plan.params
                 support_ignored = (first, second)
-                first_xy = midpoint + direction * (radius * 0.5) + swap_offset
-                second_xy = midpoint - direction * (radius * 0.5) - swap_offset
-                candidates = tuple(
-                    (left, right)
-                    for left, right in zip(
-                        _nearby_xy_candidates(first_xy),
-                        _nearby_xy_candidates(second_xy),
+                if _param_bool(self.plan.params, "strict_swap_xy", False):
+                    candidates = (
+                        (
+                            second_position[:2] + swap_offset,
+                            first_position[:2] - swap_offset,
+                        ),
                     )
-                )
+                else:
+                    midpoint = 0.5 * (first_position[:2] + second_position[:2])
+                    direction = second_position[:2] - first_position[:2]
+                    distance = float(np.linalg.norm(direction))
+                    direction = (
+                        direction / distance
+                        if distance >= 1e-6
+                        else np.array([1.0, 0.0], dtype=np.float64)
+                    )
+                    radius = _param_float(
+                        self.plan.params,
+                        "swap_cluster_radius_m",
+                        min(max(distance * 0.25, 0.06), 0.12),
+                    )
+                    if radius <= 0.02:
+                        raise PerturbationConfigurationError(
+                            "S04 swap_cluster_radius_m must be greater than 0.02 m"
+                        )
+                    first_xy = midpoint + direction * (radius * 0.5) + swap_offset
+                    second_xy = midpoint - direction * (radius * 0.5) - swap_offset
+                    candidates = tuple(
+                        (left, right)
+                        for left, right in zip(
+                            _nearby_xy_candidates(first_xy),
+                            _nearby_xy_candidates(second_xy),
+                        )
+                    )
                 selected: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str, str] | None = None
                 for first_xy_candidate, second_xy_candidate in candidates:
                     first_grounded = _grounded_entity_position(

@@ -137,9 +137,10 @@
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:swap_xy 0.0 0.0)
           (:grounded_swap true)
           (:support_surface table)
-          (:swap_cluster_radius_m 0.20)
+          (:strict_swap_xy true)
         )
       )
       (S05

@@ -185,7 +185,10 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         params["grounded_swap"] = ("true",)
         params["swap_cluster_radius_m"] = ("0.18",)
         params["support_surface"] = ("table",)
-        if (suite, task_id) == ("libero_goal", 0) or (suite, task_id) == ("libero_goal", 7):
+        if (suite, task_id) == ("libero_10", 9):
+            params.pop("swap_cluster_radius_m")
+            params["strict_swap_xy"] = ("true",)
+        elif (suite, task_id) == ("libero_goal", 0) or (suite, task_id) == ("libero_goal", 7):
             fields["targets"] = (
                 ("wine_bottle_1", "cream_cheese_1")
                 if task_id == 0
