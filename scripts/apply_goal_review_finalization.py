@@ -117,7 +117,7 @@ D03_FEEDBACK_OVERRIDES.update(
             "support_surface": ("main_table",),
         },
         ("libero_goal", 2): {
-            "event_duration_steps": ("300",),
+            "event_duration_steps": ("72",),
             "receiver_trigger_distance_m": ("0.24",),
             "asset_id": ("prl/plastic_plate",),
             "asset_scale": ("0.60",),
@@ -125,7 +125,7 @@ D03_FEEDBACK_OVERRIDES.update(
             "support_surface": ("wooden_cabinet_1",),
         },
         ("libero_goal", 3): {
-            "event_duration_steps": ("300",),
+            "event_duration_steps": ("72",),
             "receiver_trigger_distance_m": ("0.24",),
         },
         ("libero_goal", 6): {
