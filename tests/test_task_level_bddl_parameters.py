@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -386,6 +387,81 @@ def test_receiver_trigger_distance_keeps_defaults_and_allows_task_local_early_tr
     assert default_d02._receiver_trigger_distance_m("D02") == 0.16
     assert default_d05._receiver_trigger_distance_m("D05") == 0.18
     assert early_d02._receiver_trigger_distance_m("D02") == 0.24
+
+
+def test_functional_anchor_allows_task_local_receiver_site_override() -> None:
+    sites = {
+        "cabinet_top": SimpleNamespace(parent_name="cabinet"),
+        "cabinet_middle": SimpleNamespace(parent_name="cabinet"),
+    }
+    positions = {
+        "cabinet_top": np.array([0.0, -0.2, 1.1]),
+        "cabinet_middle": np.array([0.0, -0.2, 1.0]),
+    }
+    env = SimpleNamespace(
+        object_sites_dict=sites,
+        parsed_problem={"goal_state": [], "regions": {}},
+        sim=SimpleNamespace(
+            data=SimpleNamespace(get_site_xpos=lambda name: positions[name])
+        ),
+    )
+
+    default_position, default_name = RUNTIME._functional_anchor(env, "cabinet")
+    override_position, override_name = RUNTIME._functional_anchor(
+        env, "cabinet", "cabinet_middle"
+    )
+
+    assert default_name == "cabinet_top"
+    np.testing.assert_array_equal(default_position, positions["cabinet_top"])
+    assert override_name == "cabinet_middle"
+    np.testing.assert_array_equal(override_position, positions["cabinet_middle"])
+
+
+def test_goal_task2_d03_uses_declared_plate_without_changing_default_d03_asset() -> None:
+    parser_path = (
+        ROOT
+        / "simulator-source"
+        / "libero"
+        / "libero"
+        / "envs"
+        / "perturbation_config.py"
+    )
+    parser_spec = importlib.util.spec_from_file_location(
+        "_d03_asset_parser", parser_path
+    )
+    assert parser_spec is not None and parser_spec.loader is not None
+    parser = importlib.util.module_from_spec(parser_spec)
+    sys.modules[parser_spec.name] = parser
+    parser_spec.loader.exec_module(parser)
+
+    manifest = json.loads(
+        (ROOT / "assets" / "task_manifest.json").read_text(encoding="utf-8")
+    )
+    by_task = {
+        int(item["base_task_id"]): ROOT / "assets" / item["bddl_path"]
+        for item in manifest["tasks"]
+        if item["suite"] == "libero_goal" and item["case_id"] == "D03"
+    }
+    asset_root = (
+        ROOT
+        / "simulator-source"
+        / "libero"
+        / "libero"
+        / "assets"
+        / "perturbation_assets"
+    )
+
+    reviewed = RUNTIME.build_execution_plan(
+        parser.parse_bddl_perturbation_config(by_task[2]), asset_root
+    )
+    untouched = RUNTIME.build_execution_plan(
+        parser.parse_bddl_perturbation_config(by_task[1]), asset_root
+    )
+
+    assert reviewed.assets[0].asset_id == "prl/plastic_plate"
+    assert reviewed.assets[0].scale == 0.60
+    assert untouched.assets[0].asset_id == "ycb/YcbFoamBrick"
+    assert untouched.assets[0].scale == 1.0
 
 
 def test_object_task0_feedback_strength_values_are_task_local() -> None:

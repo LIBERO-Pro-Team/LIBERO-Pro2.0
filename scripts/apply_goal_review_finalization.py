@@ -4,10 +4,9 @@ The script owns the rules explicitly marked "all tasks" across all four
 suites, the task-local static fixes from the Goal review, and published-case
 deletions. BASE, S21, and D21 are never edited.
 
-Reviewed non-Goal D03 tasks use task-local receiver occupancy parameters. Goal
-and unreviewed D03 tasks retain their generated baseline. D05 always uses
-physical collision geometry, and D14 repeats commands for a full eight-step
-window.
+Reviewed D03 tasks use task-local receiver occupancy parameters; unreviewed
+D03 tasks retain their generated baseline. D05 always uses physical collision
+geometry, and D14 repeats commands for a full eight-step window.
 """
 
 from __future__ import annotations
@@ -106,6 +105,42 @@ for _task_id in (0, 1, 8, 9):
         "asset_scale": ("0.80",),
         "support_surface": ("plate_1",),
     }
+D03_FEEDBACK_OVERRIDES.update(
+    {
+        ("libero_goal", 0): {
+            "event_duration_steps": ("72",),
+            "receiver_trigger_distance_m": ("0.24",),
+            "asset_id": ("generated/barrier_panel",),
+            "asset_scale": ("0.55",),
+            "receiver_anchor": ("wooden_cabinet_1_middle_region",),
+            "asset_offset_xyz": ("0.07", "0.12", "-0.16"),
+            "support_surface": ("main_table",),
+        },
+        ("libero_goal", 2): {
+            "event_duration_steps": ("300",),
+            "receiver_trigger_distance_m": ("0.24",),
+            "asset_id": ("prl/plastic_plate",),
+            "asset_scale": ("0.60",),
+            "asset_offset_xyz": ("-0.055", "0.0", "0.025"),
+            "support_surface": ("wooden_cabinet_1",),
+        },
+        ("libero_goal", 3): {
+            "event_duration_steps": ("300",),
+            "receiver_trigger_distance_m": ("0.24",),
+        },
+        ("libero_goal", 6): {
+            "event_duration_steps": ("72",),
+            "receiver_trigger_distance_m": ("0.24",),
+            "asset_scale": ("0.80",),
+            "asset_offset_xyz": ("0.0", "0.14", "0.025"),
+            "support_surface": ("main_table",),
+        },
+        ("libero_goal", 9): {
+            "event_duration_steps": ("72",),
+            "receiver_trigger_distance_m": ("0.24",),
+        },
+    }
+)
 
 
 def is_excluded(suite: str, task_id: int, case_id: str) -> bool:
@@ -462,6 +497,7 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
             "asset_scale",
             "event_duration_steps",
             "obstacle_part",
+            "receiver_anchor",
             "receiver_trigger_distance_m",
             "support_surface",
             "visual_only_asset",

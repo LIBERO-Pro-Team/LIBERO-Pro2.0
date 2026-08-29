@@ -485,6 +485,13 @@ def build_execution_plan(
         else 1.0
     )
     asset_ids = list(CASE_ASSETS.get(case_id, ()))
+    if case_id == "D03" and "asset_id" in params:
+        configured_assets = _name_tuple(params.get("asset_id"))
+        if len(configured_assets) != 1:
+            raise PerturbationConfigurationError(
+                f"{case_id} asset_id must name exactly one asset"
+            )
+        asset_ids = [configured_assets[0]]
     if case_id in {"S10", "S11"} and "asset_count" in params:
         try:
             asset_count = int(params["asset_count"])
@@ -1655,9 +1662,37 @@ def _camera_occluder_pose(
     return root_position, _yaw_quaternion(yaw)
 
 
-def _functional_anchor(env: Any, entity_name: str) -> tuple[np.ndarray, str]:
+def _functional_anchor(
+    env: Any, entity_name: str, configured_anchor: str | None = None
+) -> tuple[np.ndarray, str]:
     """Return the task-relevant site on an entity, falling back to its body."""
     sites = getattr(env, "object_sites_dict", {})
+    if configured_anchor:
+        site = sites.get(configured_anchor)
+        region = (
+            getattr(env, "parsed_problem", {})
+            .get("regions", {})
+            .get(configured_anchor, {})
+        )
+        site_parent = (
+            getattr(site, "parent_name", None) if site is not None else None
+        )
+        region_target = region.get("target") if isinstance(region, dict) else None
+        if site is None or (site_parent != entity_name and region_target != entity_name):
+            raise PerturbationConfigurationError(
+                f"receiver_anchor {configured_anchor!r} does not belong to {entity_name!r}"
+            )
+        try:
+            return (
+                np.asarray(
+                    env.sim.data.get_site_xpos(configured_anchor), dtype=np.float64
+                ).copy(),
+                configured_anchor,
+            )
+        except Exception as exc:
+            raise PerturbationValidationError(
+                f"receiver_anchor {configured_anchor!r} is unavailable"
+            ) from exc
     goal_states = getattr(env, "parsed_problem", {}).get("goal_state", [])
     for state in goal_states:
         if len(state) < 3:
@@ -3695,7 +3730,18 @@ class NonPhysicalPerturbationRuntime:
                     )
                     quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
             else:
-                position, anchor_name = _functional_anchor(env, reference_name)
+                configured_anchors = _name_tuple(
+                    self.plan.params.get("receiver_anchor")
+                )
+                if len(configured_anchors) > 1:
+                    raise PerturbationConfigurationError(
+                        f"{case_id} receiver_anchor must name at most one site"
+                    )
+                position, anchor_name = _functional_anchor(
+                    env,
+                    reference_name,
+                    configured_anchors[0] if configured_anchors else None,
+                )
                 asset_offset = _param_vector(
                     self.plan.params, "asset_offset_xyz", (0.0, 0.0, 0.025)
                 )

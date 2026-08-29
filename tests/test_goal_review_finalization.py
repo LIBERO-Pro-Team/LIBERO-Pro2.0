@@ -160,7 +160,17 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
     }
 
 
-def test_published_d03_only_tunes_reviewed_non_goal_tasks() -> None:
+def _expected_d03_value(values: tuple[str, ...]):
+    parsed = []
+    for value in values:
+        try:
+            parsed.append(float(value))
+        except ValueError:
+            parsed.append(value)
+    return parsed[0] if len(parsed) == 1 else parsed
+
+
+def test_published_d03_only_tunes_reviewed_tasks() -> None:
     payload = json.loads(FINALIZER.MANIFEST.read_text(encoding="utf-8"))
     tuned: set[tuple[str, int]] = set()
     baseline: set[tuple[str, int]] = set()
@@ -180,33 +190,25 @@ def test_published_d03_only_tunes_reviewed_non_goal_tasks() -> None:
             baseline.add(key)
             continue
 
-        assert params["event_duration_steps"] == 48
-        assert params["receiver_trigger_distance_m"] == float(
-            expected["receiver_trigger_distance_m"][0]
-        )
-        if "asset_scale" in expected:
-            assert params["asset_scale"] == float(expected["asset_scale"][0])
-        else:
-            assert "asset_scale" not in params
-        if "support_surface" in expected:
-            assert params["support_surface"] == expected["support_surface"][0]
-        else:
-            assert "support_surface" not in params
-        if "asset_offset_xyz" in expected:
-            assert params["asset_offset_xyz"] == [0.0, -0.08, 0.025]
-        else:
-            assert "asset_offset_xyz" not in params
+        for name, values in expected.items():
+            assert params[name] == _expected_d03_value(values), (key, name, params)
         assert set(params) == {"interaction_mode", *expected}
         tuned.add(key)
 
     assert tuned == set(FINALIZER.D03_FEEDBACK_OVERRIDES)
-    assert len(tuned) == 11
-    assert len(baseline) == 29
-    assert all(suite != "libero_goal" for suite, _ in tuned)
+    assert len(tuned) == 16
+    assert len(baseline) == 24
+    assert {task_id for suite, task_id in tuned if suite == "libero_goal"} == {
+        0,
+        2,
+        3,
+        6,
+        9,
+    }
 
 
-def test_d03_feedback_overrides_do_not_apply_to_goal_or_unreviewed_tasks() -> None:
-    assert FINALIZER.case_updates("libero_goal", 0, "D03") == ({}, {})
+def test_d03_feedback_overrides_do_not_apply_to_unreviewed_tasks() -> None:
+    assert FINALIZER.case_updates("libero_goal", 1, "D03") == ({}, {})
     assert FINALIZER.case_updates("libero_10", 3, "D03") == ({}, {})
     assert FINALIZER.case_updates("libero_object", 1, "D03") == ({}, {})
     assert FINALIZER.case_updates("libero_spatial", 2, "D03") == ({}, {})

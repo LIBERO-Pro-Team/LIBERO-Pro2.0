@@ -360,6 +360,12 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 300)
+          (:receiver_trigger_distance_m 0.24)
+          (:asset_id prl/plastic_plate)
+          (:asset_scale 0.60)
+          (:asset_offset_xyz -0.055 0.0 0.025)
+          (:support_surface wooden_cabinet_1)
         )
       )
       (D04
