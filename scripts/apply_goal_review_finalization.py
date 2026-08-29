@@ -4,8 +4,10 @@ The script owns the rules explicitly marked "all tasks" across all four
 suites, the task-local static fixes from the Goal review, and published-case
 deletions. BASE, S21, and D21 are never edited.
 
-D03 is restored to its generated parameter baseline. D05 always uses physical
-collision geometry, and D14 repeats commands for a full eight-step window.
+Reviewed non-Goal D03 tasks use task-local receiver occupancy parameters. Goal
+and unreviewed D03 tasks retain their generated baseline. D05 always uses
+physical collision geometry, and D14 repeats commands for a full eight-step
+window.
 """
 
 from __future__ import annotations
@@ -67,6 +69,43 @@ GLOBAL_CASES = {
     "D15",
 }
 GOAL_S10_TASKS = {0, 1, 3, 4, 6, 7, 8}
+
+D03_FEEDBACK_OVERRIDES: dict[
+    tuple[str, int], dict[str, tuple[str, ...]]
+] = {
+    ("libero_10", task_id): {
+        "event_duration_steps": ("48",),
+        "receiver_trigger_distance_m": (("0.28",) if task_id == 9 else ("0.24",)),
+        **(
+            {
+                "asset_scale": ("0.80",),
+                "support_surface": ("plate_1",),
+            }
+            if task_id == 4
+            else {}
+        ),
+        **(
+            {
+                "asset_scale": ("0.80",),
+                "asset_offset_xyz": ("0.0", "-0.08", "0.025"),
+            }
+            if task_id == 9
+            else {}
+        ),
+    }
+    for task_id in (0, 1, 2, 4, 5, 9)
+}
+D03_FEEDBACK_OVERRIDES[("libero_object", 0)] = {
+    "event_duration_steps": ("48",),
+    "receiver_trigger_distance_m": ("0.24",),
+}
+for _task_id in (0, 1, 8, 9):
+    D03_FEEDBACK_OVERRIDES[("libero_spatial", _task_id)] = {
+        "event_duration_steps": ("48",),
+        "receiver_trigger_distance_m": ("0.24",),
+        "asset_scale": ("0.80",),
+        "support_surface": ("plate_1",),
+    }
 
 
 def is_excluded(suite: str, task_id: int, case_id: str) -> bool:
@@ -182,6 +221,8 @@ def case_updates(
         )
     elif case_id == "S20":
         params["delay_steps"] = ("7",)
+    elif case_id == "D03":
+        params.update(D03_FEEDBACK_OVERRIDES.get((suite, task_id), {}))
     elif case_id == "D05":
         params.update(
             visual_only_asset=("false",),

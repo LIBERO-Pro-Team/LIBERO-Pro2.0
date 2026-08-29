@@ -160,22 +160,56 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
     }
 
 
-def test_published_d03_uses_original_parameters_only() -> None:
+def test_published_d03_only_tunes_reviewed_non_goal_tasks() -> None:
     payload = json.loads(FINALIZER.MANIFEST.read_text(encoding="utf-8"))
-    count = 0
+    tuned: set[tuple[str, int]] = set()
+    baseline: set[tuple[str, int]] = set()
 
     for item in payload["tasks"]:
         if item["case_id"] != "D03":
             continue
+        key = (str(item["suite"]), int(item["base_task_id"]))
         params = _active_params(ROOT / "assets" / item["bddl_path"], "D03")
-        assert params == {"interaction_mode": params["interaction_mode"]}, (
-            item["suite"],
-            item["base_task_id"],
-            params,
-        )
-        count += 1
+        expected = FINALIZER.D03_FEEDBACK_OVERRIDES.get(key)
+        if expected is None:
+            assert params == {"interaction_mode": params["interaction_mode"]}, (
+                item["suite"],
+                item["base_task_id"],
+                params,
+            )
+            baseline.add(key)
+            continue
 
-    assert count == 40
+        assert params["event_duration_steps"] == 48
+        assert params["receiver_trigger_distance_m"] == float(
+            expected["receiver_trigger_distance_m"][0]
+        )
+        if "asset_scale" in expected:
+            assert params["asset_scale"] == float(expected["asset_scale"][0])
+        else:
+            assert "asset_scale" not in params
+        if "support_surface" in expected:
+            assert params["support_surface"] == expected["support_surface"][0]
+        else:
+            assert "support_surface" not in params
+        if "asset_offset_xyz" in expected:
+            assert params["asset_offset_xyz"] == [0.0, -0.08, 0.025]
+        else:
+            assert "asset_offset_xyz" not in params
+        assert set(params) == {"interaction_mode", *expected}
+        tuned.add(key)
+
+    assert tuned == set(FINALIZER.D03_FEEDBACK_OVERRIDES)
+    assert len(tuned) == 11
+    assert len(baseline) == 29
+    assert all(suite != "libero_goal" for suite, _ in tuned)
+
+
+def test_d03_feedback_overrides_do_not_apply_to_goal_or_unreviewed_tasks() -> None:
+    assert FINALIZER.case_updates("libero_goal", 0, "D03") == ({}, {})
+    assert FINALIZER.case_updates("libero_10", 3, "D03") == ({}, {})
+    assert FINALIZER.case_updates("libero_object", 1, "D03") == ({}, {})
+    assert FINALIZER.case_updates("libero_spatial", 2, "D03") == ({}, {})
 
 
 def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_cases() -> None:

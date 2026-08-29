@@ -315,6 +315,10 @@
         (:variant occupy_or_release_receiver)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 48)
+          (:receiver_trigger_distance_m 0.28)
+          (:asset_scale 0.80)
+          (:asset_offset_xyz 0.0 -0.08 0.025)
         )
       )
       (D04
