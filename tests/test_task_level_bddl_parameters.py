@@ -3,11 +3,19 @@ from __future__ import annotations
 import importlib.util
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[1]
+FIXER_PATH = ROOT / "scripts" / "apply_feedback_task_fixes.py"
+FIXER_SPEC = importlib.util.spec_from_file_location("_task_level_fixer", FIXER_PATH)
+assert FIXER_SPEC is not None and FIXER_SPEC.loader is not None
+FIXER = importlib.util.module_from_spec(FIXER_SPEC)
+sys.modules[FIXER_SPEC.name] = FIXER
+FIXER_SPEC.loader.exec_module(FIXER)
+
 RUNTIME_PATH = (
     ROOT
     / "simulator-source"
@@ -35,6 +43,61 @@ def _plan(case_id: str, **params):
         assets=(),
         trigger="task_phase" if case_id.startswith("D") else "reset",
         params=params,
+    )
+
+
+def test_s11_fixture_distractor_uses_declared_fixture_without_injected_asset() -> None:
+    plan = RUNTIME.ExecutionPlan(
+        case_id="S11",
+        schedule="static",
+        operator="test",
+        variant="test",
+        targets=("yellow_cabinet_2",),
+        references=("wooden_cabinet_1",),
+        mechanisms=(),
+        assets=(),
+        trigger="reset",
+        params={
+            "fixture_distractor": True,
+            "fixture_distractor_targets": "yellow_cabinet_2",
+        },
+    )
+    runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan)
+    env = SimpleNamespace(obj_body_id={"yellow_cabinet_2": 1})
+
+    runtime.apply_static(env)
+
+    assert runtime.events == [
+        {
+            "case_id": "S11",
+            "event": "static_fixture_distractor_present",
+            "step": 0,
+            "targets": ["yellow_cabinet_2"],
+        }
+    ]
+
+
+def test_task_local_clutter_clearance_can_include_task_entities() -> None:
+    default = _plan("S10")
+    default = RUNTIME.ExecutionPlan(
+        **{
+            **default.__dict__,
+            "targets": ("target",),
+            "references": ("reference",),
+        }
+    )
+    strict = RUNTIME.ExecutionPlan(
+        **{
+            **default.__dict__,
+            "params": {"clear_of_task_entities": True},
+        }
+    )
+
+    assert {"target", "reference"} <= set(
+        RUNTIME._clutter_clearance_ignored(default, "asset", ("placed",), ("table",))
+    )
+    assert {"target", "reference"}.isdisjoint(
+        RUNTIME._clutter_clearance_ignored(strict, "asset", ("placed",), ("table",))
     )
 
 
@@ -69,6 +132,21 @@ def test_s20_delay_steps_controls_observation_action_and_gripper() -> None:
     np.testing.assert_array_equal(actions[2], [1.0, 0.0])
     assert grippers == [0.1, 0.2, 0.1]
     assert [item.tolist() for item in observations] == [[1], [2], [1]]
+
+
+def test_d12_delay_steps_controls_observation_during_the_event() -> None:
+    runtime = RUNTIME.NonPhysicalPerturbationRuntime(
+        _plan("D12", delay_steps=2, event_duration_steps=3)
+    )
+    runtime._dynamic_event_step = 0
+
+    observations = [
+        runtime.transform_observation({"state": np.array([value])}, step)["state"]
+        for step, value in enumerate((1, 2, 3))
+    ]
+
+    assert [item.tolist() for item in observations] == [[1], [2], [1]]
+    assert runtime.events[-1]["delay_steps"] == 2
 
 
 def test_d13_task_parameters_keep_arm_and_gripper_delays_independent() -> None:
@@ -124,6 +202,24 @@ def test_d14_drop_repeat_counts_advance_when_event_starts_at_zero() -> None:
     np.testing.assert_array_equal(first, [1.0, 0.0])
     np.testing.assert_array_equal(second, [1.0, 0.0])
     np.testing.assert_array_equal(third, [3.0, 0.0])
+
+
+def test_d14_repeat_count_eight_has_an_eight_step_event_window() -> None:
+    runtime = RUNTIME.NonPhysicalPerturbationRuntime(
+        _plan("D14", drop_count=0, repeat_count=8, event_duration_steps=8)
+    )
+    runtime.transform_action(np.array([9.0, 0.0]), -1)
+    runtime._dynamic_event_step = 0
+
+    repeated = [
+        runtime.transform_action(np.array([float(step), 0.0]), step)
+        for step in range(8)
+    ]
+    restored = runtime.transform_action(np.array([8.0, 0.0]), 8)
+
+    for action in repeated:
+        np.testing.assert_array_equal(action, [9.0, 0.0])
+    np.testing.assert_array_equal(restored, [8.0, 0.0])
 
 
 def test_d09_lighting_factor_is_task_local_and_visible_in_observations() -> None:
@@ -278,6 +374,63 @@ def test_d17_trigger_distances_are_task_local() -> None:
     assert runtime._dynamic_triggered(env, 0)
     runtime.plan.params["wrapper_fallback_distance_m"] = 0.09
     assert not runtime._dynamic_triggered(env, 0)
+
+
+def test_receiver_trigger_distance_keeps_defaults_and_allows_task_local_early_trigger() -> None:
+    default_d02 = RUNTIME.NonPhysicalPerturbationRuntime(_plan("D02"))
+    default_d05 = RUNTIME.NonPhysicalPerturbationRuntime(_plan("D05"))
+    early_d02 = RUNTIME.NonPhysicalPerturbationRuntime(
+        _plan("D02", receiver_trigger_distance_m=0.24)
+    )
+
+    assert default_d02._receiver_trigger_distance_m("D02") == 0.16
+    assert default_d05._receiver_trigger_distance_m("D05") == 0.18
+    assert early_d02._receiver_trigger_distance_m("D02") == 0.24
+
+
+def test_object_task0_feedback_strength_values_are_task_local() -> None:
+    d03, _ = FIXER.task_params("libero_object", 0, "D03")
+    d05, _ = FIXER.task_params("libero_object", 0, "D05")
+    s05, _ = FIXER.task_params("libero_object", 0, "S05")
+    s10, _ = FIXER.task_params("libero_object", 0, "S10")
+
+    assert d03 == {}
+    assert d05["lateral_offset_m"] == ("0.0",)
+    assert d05["barrier_height_m"] == ("0.08",)
+    assert d05["asset_scale"] == ("1.35",)
+    assert d05["visual_only_asset"] == ("false",)
+    assert d05["physical_collision"] == ("true",)
+    assert s05["barrier_scale"] == ("1.35",)
+    assert s05["barrier_path_fraction"] == ("0.50",)
+    assert s05["barrier_lateral_offset_m"] == ("-0.07",)
+    assert s05["visual_only_asset"] == ("false",)
+    assert s10["asset_count"] == ("3",)
+    assert s10["clutter_minimum_gap_m"] == ("0.055",)
+
+
+def test_latest_nonspatial_review_values_are_task_local() -> None:
+    task0_s05, _ = FIXER.task_params("libero_10", 0, "S05")
+    task5_d03, _ = FIXER.task_params("libero_10", 5, "D03")
+    task9_d03, _ = FIXER.task_params("libero_10", 9, "D03")
+    task5_d13, _ = FIXER.task_params("libero_10", 5, "D13")
+    task8_d06, task8_d06_fields = FIXER.task_params("libero_10", 8, "D06")
+    task0_d20, _ = FIXER.task_params("libero_10", 0, "D20")
+    task2_d20, _ = FIXER.task_params("libero_10", 2, "D20")
+    task5_s09, _ = FIXER.task_params("libero_10", 5, "S09")
+
+    assert task0_s05["barrier_scale"] == ("1.15",)
+    assert task0_s05["barrier_path_fraction"] == ("0.50",)
+    assert task5_d03 == {}
+    assert task9_d03 == {}
+    assert task5_d13["arm_delay_steps"] == ("8",)
+    assert task5_d13["gripper_delay_steps"] == ("8",)
+    assert task8_d06["minimum_clearance_m"] == ("0.10",)
+    assert task8_d06_fields["disturbance_targets"] == ("red_coffee_mug_1",)
+    assert task0_d20["trigger_eef_motion_m"] == ("0.01",)
+    assert task0_d20["trigger_action_norm"] == ("0.01",)
+    assert "trigger_eef_motion_m" not in task2_d20
+    assert task5_s09["target_geometry_factors"] == ("1.20", "1.20", "1.20")
+    assert task5_s09["receiver_geometry_factors"] == ("0.80", "0.80", "0.80")
 
 
 def test_s18_logs_applied_robot_state_offsets() -> None:

@@ -471,7 +471,7 @@
         (:variant stale_chunk_late_chunk_or_replan_interrupt)
         (:params
           (:interaction_mode placement)
-          (:chunk_size 8)
+          (:chunk_size 12)
           (:stale_chunk_steps 8)
           (:event_duration_steps 8)
         )

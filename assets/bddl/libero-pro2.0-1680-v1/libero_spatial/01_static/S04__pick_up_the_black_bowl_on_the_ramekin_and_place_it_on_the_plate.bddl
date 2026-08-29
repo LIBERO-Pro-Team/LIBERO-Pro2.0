@@ -190,8 +190,9 @@
         (:params
           (:interaction_mode placement)
           (:grounded_swap true)
-          (:support_surface table)
+          (:support_surface glazed_rim_porcelain_ramekin_1 cookies_1)
           (:swap_cluster_radius_m 0.18)
+          (:strict_swap_xy true)
         )
       )
       (S05

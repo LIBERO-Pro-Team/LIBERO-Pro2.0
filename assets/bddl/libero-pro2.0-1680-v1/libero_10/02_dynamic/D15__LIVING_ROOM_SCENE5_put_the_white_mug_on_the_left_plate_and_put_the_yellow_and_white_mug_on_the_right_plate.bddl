@@ -435,8 +435,8 @@
         (:variant stale_chunk_late_chunk_or_replan_interrupt)
         (:params
           (:interaction_mode placement)
-          (:chunk_size 4)
-          (:stale_chunk_steps 4)
+          (:chunk_size 12)
+          (:stale_chunk_steps 8)
         )
       )
       (D16

@@ -245,9 +245,10 @@
         (:params
           (:interaction_mode placement)
           (:asset_count 2)
-          (:clutter_minimum_gap_m 0.055)
-          (:clutter_offsets_xy 0.075 -0.065 -0.075 -0.065)
-          (:support_surface table)
+          (:clutter_minimum_gap_m 0.065)
+          (:clutter_offsets_xy 0.06 0.04 -0.06 0.04)
+          (:support_surface flat_stove_1)
+          (:visual_only_asset true)
         )
       )
       (S11

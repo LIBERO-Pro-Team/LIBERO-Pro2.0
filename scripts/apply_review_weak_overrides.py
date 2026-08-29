@@ -72,18 +72,14 @@ def overrides(
     suite: str, task_id: int, case_id: str
 ) -> dict[str, tuple[str, ...]]:
     common: dict[str, dict[str, tuple[str, ...]]] = {
-        "D03": {
-            "event_duration_steps": ("18",),
-            "receiver_trigger_distance_m": ("0.24",),
-            "receiver_approach_distance_m": ("0.24",),
-            "asset_scale": ("1.35",),
-        },
         "D05": {
             "asset_scale": ("1.35",),
             "lateral_offset_m": ("0.04",),
             "path_progress_min_fraction": ("0.18",),
             "path_progress_max_fraction": ("0.95",),
             "path_progress_tolerance_m": ("0.22",),
+            "visual_only_asset": ("false",),
+            "physical_collision": ("true",),
         },
         "D06": {"offset_xy": ("0.12", "-0.09")},
         "D07": {"camera_offset_m": ("0.045", "-0.032", "0.020")},
@@ -92,9 +88,11 @@ def overrides(
         "D12": {
             "event_duration_steps": ("36",),
             "observation_delay_steps": ("6",),
+            "delay_steps": ("10",),
         },
-        "D14": {"event_duration_steps": ("4",)},
-        "D15": {"chunk_size": ("8",), "stale_chunk_steps": ("8",)},
+        "D13": {"arm_delay_steps": ("8",), "gripper_delay_steps": ("8",)},
+        "D14": {"event_duration_steps": ("8",), "repeat_count": ("8",)},
+        "D15": {"chunk_size": ("12",), "stale_chunk_steps": ("8",)},
         "D16": {
             "event_duration_steps": ("12",),
             "takeover_action_value": ("0.18",),
@@ -107,8 +105,8 @@ def overrides(
         "S04": {"layout_offset_xy": ("0.16", "0.10")},
         "S07": {"geometry_factors": ("1.0", "0.72", "1.18")},
         "S09": {
-            "target_geometry_factors": ("1.15", "1.15", "1.15"),
-            "receiver_geometry_factors": ("0.88", "0.88", "0.88"),
+            "target_geometry_factors": ("1.20", "1.20", "1.20"),
+            "receiver_geometry_factors": ("0.80", "0.80", "0.80"),
         },
         "S10": {
             "asset_scale": ("1.50",),
@@ -124,8 +122,13 @@ def overrides(
         "S17": {
             "joint_offset": ("0.060", "-0.045", "0.035", "0", "0", "0", "0")
         },
-        "S18": {"calibration_offset_m": ("0.012", "-0.008", "0.006")},
+        "S18": {
+            "eef_offset_xyz": ("0.050", "-0.040", "0.030"),
+            "joint_zero_offset_rad": ("0.050", "-0.040", "0.030"),
+            "grasp_center_offset_xyz": ("0.0", "0.0", "0.0"),
+        },
         "S20": {
+            "delay_steps": ("7",),
             "observation_delay_steps": ("3",),
             "action_delay_steps": ("3",),
             "gripper_delay_steps": ("3",),
@@ -146,17 +149,6 @@ def overrides(
                 "asset_scale": ("1.20",),
                 "clutter_radius_m": ("0.10",),
                 "clutter_minimum_gap_m": ("0.06",),
-            }
-        )
-    if suite == "libero_10" and task_id == 0 and case_id == "D03":
-        # A 1.35x foam brick intersects this basket's side wall. A compact,
-        # upright bottle visibly occupies the opening without penetration and
-        # is still removed by the normal 18-step restoration window.
-        values.update(
-            {
-                "asset_id": ("prl/fuze_bottle",),
-                "asset_scale": ("0.70",),
-                "allow_compact_asset": ("true",),
             }
         )
     return values

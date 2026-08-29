@@ -426,6 +426,8 @@
         (:variant command_drop_or_repeat)
         (:params
           (:interaction_mode placement)
+          (:repeat_count 8)
+          (:event_duration_steps 8)
         )
       )
       (D15

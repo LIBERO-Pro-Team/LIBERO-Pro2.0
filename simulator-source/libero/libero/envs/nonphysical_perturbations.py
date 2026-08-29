@@ -511,6 +511,9 @@ def build_execution_plan(
     if case_id in {"S06", "S11"}:
         source_suite = str(config.get("source_suite", ""))
         fixture_variant = params.get("fixture_variant") if case_id == "S06" else None
+        fixture_distractor = case_id == "S11" and _param_bool(
+            params, "fixture_distractor", False
+        )
         if fixture_variant:
             # Fixture variants are geometry-only task overrides.  They do not
             # replace a movable target with an incompatible object asset.
@@ -529,11 +532,11 @@ def build_execution_plan(
             except (TypeError, ValueError):
                 configured_scale = 1.0
             suite_default = (str(configured_asset), configured_scale)
-        if not suite_default and not fixture_variant:
+        if not suite_default and not fixture_variant and not fixture_distractor:
             raise PerturbationConfigurationError(
                 f"No semantics-preserving {case_id} asset for suite {source_suite!r}"
             )
-        if fixture_variant:
+        if fixture_variant or fixture_distractor:
             count = 0
         elif case_id == "S11":
             count = int(params.get("asset_count", 1))
@@ -589,6 +592,22 @@ def _static_asset_reference_name(plan: ExecutionPlan) -> str:
     if plan.case_id == "S11":
         return plan.references[0] if plan.references else plan.targets[0]
     return plan.targets[0]
+
+
+def _clutter_clearance_ignored(
+    plan: ExecutionPlan,
+    asset_name: str,
+    placed_assets: tuple[str, ...],
+    support_names: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Resolve task-local collision exclusions for static clutter placement."""
+
+    ignored = [asset_name, *placed_assets, *support_names]
+    ignored.extend(_support_entity_names(plan.params))
+    if not _param_bool(plan.params, "clear_of_task_entities", False):
+        ignored.extend(plan.targets)
+        ignored.extend(plan.references)
+    return tuple(dict.fromkeys(ignored))
 
 
 def inject_plan_assets(
@@ -669,14 +688,28 @@ def inject_plan_assets(
                     "S03 asset_geometry_factors must be positive"
                 )
             _scale_mujoco_object_axes(obj, tuple(float(value) for value in factors))
+        elif plan.case_id == "S05" and "barrier_geometry_factors" in plan.params:
+            factors = _param_vector(
+                plan.params, "barrier_geometry_factors", (1.0, 1.0, 1.0)
+            )
+            if np.any(factors <= 0.0):
+                raise PerturbationConfigurationError(
+                    "S05 barrier_geometry_factors must be positive"
+                )
+            # Apply the task-local anisotropic correction after the published
+            # uniform barrier scale; this preserves across-path coverage while
+            # allowing a narrow gap between nearby scene objects.
+            _scale_mujoco_object(obj, asset.scale)
+            _scale_mujoco_object_axes(obj, tuple(float(value) for value in factors))
         else:
             _scale_mujoco_object(obj, asset.scale)
         root = obj.get_obj() if hasattr(obj, "get_obj") else None
         if root is not None:
             root.set("pos", "0 0 -5")
-            if plan.case_id in {"S12", "D04"} or bool(
-                plan.params.get("visual_only_asset", False)
-            ):
+            if (
+                plan.case_id in {"S12", "D04"}
+                and not _param_bool(plan.params, "physical_collision", False)
+            ) or bool(plan.params.get("visual_only_asset", False)):
                 for geom in root.findall(".//geom"):
                     if geom.get("group", "0") == "0":
                         geom.set("contype", "0")
@@ -1530,13 +1563,22 @@ def _safe_dynamic_asset_pose(
 
     requested = np.asarray(requested_position, dtype=np.float64).copy()
     original, original_quat = _entity_pose(env, name)
+    placement_ignored = tuple(ignored)
+    if _param_bool(params, "allow_goal_overlap", False):
+        placement_ignored = tuple(
+            dict.fromkeys((*placement_ignored, *_goal_interaction_targets(env)))
+        )
+    declared_supports = set(_name_tuple(params.get("support_surface")))
+    support_ignored = tuple(
+        name for name in placement_ignored if name not in declared_supports
+    )
     for candidate_xy in _nearby_xy_candidates(requested[:2]):
         grounded = _grounded_entity_position(
             env,
             name,
             candidate_xy,
             params,
-            ignored=(name, *ignored),
+            ignored=(name, *support_ignored),
         )
         candidate = requested.copy()
         support_geom: str | None = None
@@ -1547,7 +1589,7 @@ def _safe_dynamic_asset_pose(
             # above the best support, but never lower below the support.
             candidate[2] = max(candidate[2], requested[2])
         if not _candidate_is_clear(
-            env, name, candidate[:2], 0.018, ignored=(name, *ignored)
+            env, name, candidate[:2], 0.018, ignored=(name, *placement_ignored)
         ):
             continue
         _set_entity_pose(env, name, candidate, quaternion)
@@ -1950,6 +1992,19 @@ class NonPhysicalPerturbationRuntime:
 
     def _interaction_mode(self) -> str:
         return str(self.plan.params.get("interaction_mode", "placement")).lower()
+
+    def _receiver_trigger_distance_m(self, case_id: str) -> float:
+        """Return the task-local receiver approach threshold without changing defaults."""
+
+        default = 0.18 if case_id == "D05" else 0.16
+        threshold = _param_float(
+            self.plan.params, "receiver_trigger_distance_m", default
+        )
+        if threshold <= 0.0:
+            raise PerturbationConfigurationError(
+                f"{case_id} receiver_trigger_distance_m must be positive"
+            )
+        return threshold
 
     def _articulation_progress(self, env: Any, target: str) -> float:
         state = getattr(env, "object_states_dict", {}).get(target)
@@ -2549,6 +2604,26 @@ class NonPhysicalPerturbationRuntime:
             _, after, delta = _safe_offset_pose(
                 env, target, tuple(float(value) for value in requested_offset), ignored=self.plan.targets
             )
+            if _param_bool(self.plan.params, "grounded_pose", False):
+                grounded = _grounded_entity_position(
+                    env,
+                    target,
+                    after[:2],
+                    self.plan.params,
+                    ignored=(target,),
+                )
+                if grounded is None:
+                    raise PerturbationValidationError(
+                        f"{case_id} grounded pose for {target!r} has no declared support"
+                    )
+                after, support_geom = grounded
+                self._log_once(
+                    "static_pose_grounded",
+                    0,
+                    target=target,
+                    support_geom=support_geom,
+                    position=after.tolist(),
+                )
             yaw = _param_float(
                 self.plan.params,
                 "yaw_rad",
@@ -2581,7 +2656,15 @@ class NonPhysicalPerturbationRuntime:
             grounded_swap = _param_bool(self.plan.params, "grounded_swap", False)
             if grounded_swap:
                 support_params = self.plan.params
-                support_ignored = (first, second)
+                support_ignored = (first, second, *_support_entity_names(self.plan.params))
+                grounding_ignored = support_ignored
+                if _param_bool(
+                    self.plan.params, "ground_support_from_declared_surface", False
+                ):
+                    # Keep support entities ignored for center-distance collision
+                    # checks, while allowing the declared collision geometry to
+                    # provide the grounding height.
+                    grounding_ignored = (first, second)
                 if _param_bool(self.plan.params, "strict_swap_xy", False):
                     candidates = (
                         (
@@ -2623,14 +2706,14 @@ class NonPhysicalPerturbationRuntime:
                         first,
                         first_xy_candidate,
                         support_params,
-                        ignored=support_ignored,
+                        ignored=grounding_ignored,
                     )
                     second_grounded = _grounded_entity_position(
                         env,
                         second,
                         second_xy_candidate,
                         support_params,
-                        ignored=support_ignored,
+                        ignored=grounding_ignored,
                     )
                     if first_grounded is None or second_grounded is None:
                         continue
@@ -2709,6 +2792,21 @@ class NonPhysicalPerturbationRuntime:
                 ),
             )
         elif case_id in {"S03", "S05", "S10", "S11", "S12"}:
+            if case_id == "S11" and _param_bool(
+                self.plan.params, "fixture_distractor", False
+            ):
+                targets = _name_tuple(
+                    self.plan.params.get("fixture_distractor_targets")
+                ) or self.plan.targets
+                missing = [name for name in targets if not _entity_exists(env, name)]
+                if missing:
+                    raise PerturbationValidationError(
+                        f"S11 fixture distractors are absent from the compiled scene: {missing}"
+                    )
+                self._log_once(
+                    "static_fixture_distractor_present", 0, targets=list(targets)
+                )
+                return
             asset_names = tuple(
                 _injected_name(self.plan, index)
                 for index in range(len(self.plan.assets))
@@ -2835,12 +2933,11 @@ class NonPhysicalPerturbationRuntime:
                             asset_name,
                             candidate[:2],
                             minimum_gap,
-                            ignored=(
+                            ignored=_clutter_clearance_ignored(
+                                self.plan,
                                 asset_name,
-                                self.plan.targets[0],
-                                *self.plan.references,
-                                *support_names,
-                                *_support_entity_names(self.plan.params),
+                                tuple(placed_assets),
+                                tuple(support_names),
                             ),
                         ):
                             continue
@@ -3050,6 +3147,14 @@ class NonPhysicalPerturbationRuntime:
                         f"S06 replacement target {target!r} has no configured support surface"
                     )
                 grounded_position, support_geom = grounded
+                grounded_height_offset = _param_float(
+                    self.plan.params, "grounded_height_offset_m", 0.0
+                )
+                if grounded_height_offset < 0.0:
+                    raise PerturbationConfigurationError(
+                        "S06 grounded_height_offset_m must be nonnegative"
+                    )
+                grounded_position[2] += grounded_height_offset
                 _set_entity_pose(env, target, grounded_position, quaternion)
                 self._log_once(
                     "replacement_target_grounded",
@@ -3058,6 +3163,7 @@ class NonPhysicalPerturbationRuntime:
                     position=grounded_position.tolist(),
                     support_geom=support_geom,
                     xy_preserved=True,
+                    height_offset_m=grounded_height_offset,
                 )
             self._log_once(
                 "target_instance_replaced",
@@ -3512,7 +3618,11 @@ class NonPhysicalPerturbationRuntime:
                         support_position=after.tolist(),
                     )
             yaw = {"D01": 0.28, "D02": -0.24}.get(case_id)
-            if case_id == "D18" and target in self._saved_poses:
+            if (
+                case_id == "D18"
+                and target in self._saved_poses
+                and not _param_bool(self.plan.params, "grounded_pose", False)
+            ):
                 initial_position, current_quaternion = self._saved_poses[target]
                 after[2] = initial_position[2]
                 _set_entity_pose(env, target, after, current_quaternion)
@@ -3784,7 +3894,7 @@ class NonPhysicalPerturbationRuntime:
             if articulation_targets:
                 target_name, _ = articulation_targets[0]
                 anchor = self._articulation_anchor(env, target_name)
-                threshold = 0.18 if case_id == "D05" else 0.16
+                threshold = self._receiver_trigger_distance_m(case_id)
                 if case_id == "D19":
                     return bool(
                         self._articulation_progress(env, target_name)
@@ -3810,7 +3920,9 @@ class NonPhysicalPerturbationRuntime:
                         and self.previous_action[-1] > 0.0
                     )
                     held_near_eef = bool(
-                        eef is not None and np.linalg.norm(eef - position) <= 0.18
+                        eef is not None
+                        and np.linalg.norm(eef - position)
+                        <= self._receiver_trigger_distance_m(case_id)
                     )
                     if transported and closing and held_near_eef:
                         return True
@@ -3829,14 +3941,16 @@ class NonPhysicalPerturbationRuntime:
                         transported
                         and closing
                         and eef is not None
-                        and np.linalg.norm(eef - receiver) <= 0.16
+                        and np.linalg.norm(eef - receiver)
+                        <= self._receiver_trigger_distance_m(case_id)
                     ):
                         return True
                 elif (
                     transported
                     and receiver is not None
                     and eef is not None
-                    and np.linalg.norm(eef - receiver) <= 0.16
+                    and np.linalg.norm(eef - receiver)
+                    <= self._receiver_trigger_distance_m(case_id)
                 ):
                     return True
             if case_id in {"D02", "D03", "D05", "D19"}:

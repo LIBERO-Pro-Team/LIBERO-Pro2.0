@@ -23,7 +23,7 @@ ORIGINAL_ROOT = ROOT / "assets" / "bddl" / "00_original" / "bddl"
 DEFAULT_OUTPUT = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 DEFAULT_MANIFEST = ROOT / "assets" / "task_manifest.json"
 ASSET_ROOT = ROOT / "simulator-source" / "libero" / "libero" / "assets" / "perturbation_assets"
-PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1760-v1"
+PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1707-v1"
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 # OpenPI examples/libero/main.py limits, excluding its 10 reset wait steps.
@@ -312,6 +312,24 @@ def params_block(values: Mapping[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _final_review_rules() -> Any:
+    try:
+        from scripts import apply_goal_review_finalization
+    except ImportError:  # Direct execution from the scripts directory.
+        import apply_goal_review_finalization
+
+    return apply_goal_review_finalization
+
+
+def _merge_case_fields(
+    fields: List[Tuple[str, str]], updates: Mapping[str, Sequence[str]]
+) -> List[Tuple[str, str]]:
+    values = dict(fields)
+    for key, atoms in updates.items():
+        values[key] = atom_list(atoms)
+    return [(key, values[key]) for key in values]
+
+
 def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
     mode = profile.interaction_mode
     placement = mode == "placement"
@@ -439,6 +457,8 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         params["offset_xy"] = (-0.12, 0.09) if receiver.startswith("basket_") else (-0.06, 0.045)
     elif case_id == "D15":
         params.update({"chunk_size": 4, "stale_chunk_steps": 4})
+    elif case_id == "D14":
+        params.update({"repeat_count": 8, "event_duration_steps": 8})
     elif case_id == "D16" and active_case == "D16":
         params["event_duration_steps"] = 6
     elif case_id == "D17" and active_case == "D17":
@@ -475,6 +495,43 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
         and profile.task_id == 8
     ):
         params.update({"asset_id": "libero/yellow_moka_pot", "asset_scale": 1.0})
+    if case_id == active_case:
+        final_params, final_fields = _final_review_rules().case_updates(
+            profile.suite, profile.task_id, case_id
+        )
+        fields = _merge_case_fields(fields, final_fields)
+        params.update(final_params)
+        if (
+            profile.suite == "libero_goal"
+            and case_id == "S06"
+            and profile.task_id in {0, 7}
+        ):
+            for key in (
+                "asset_id",
+                "asset_scale",
+                "asset_quat",
+                "geometry_factors",
+                "grounded_replacement",
+                "sampler_compatible",
+                "support_surface",
+            ):
+                params.pop(key, None)
+        if (
+            profile.suite == "libero_goal"
+            and case_id == "S11"
+            and profile.task_id == 0
+        ):
+            for key in (
+                "asset_id",
+                "asset_scale",
+                "asset_count",
+                "asset_quat",
+                "clutter_minimum_gap_m",
+                "clutter_offsets_xy",
+                "support_surface",
+                "visual_only_asset",
+            ):
+                params.pop(key, None)
 
     lines = [f"      ({case_id}"]
     for key, value in fields:
@@ -525,6 +582,10 @@ def perturbation_config(profile: TaskProfile, active_case: str) -> str:
 def append_config(source: str, profile: TaskProfile, active_case: str) -> str:
     if ":perturbation_config" in source:
         raise ValueError(f"Source already has perturbation_config: {profile.task_name}")
+    if profile.suite == "libero_goal":
+        source = _final_review_rules().apply_goal_structural_overrides(
+            source, profile.task_id, active_case
+        )
     source = source.rstrip()
     if not source.endswith(")"):
         raise ValueError(f"Source BDDL is not closed: {profile.task_name}")
@@ -563,6 +624,12 @@ def build(
         for case_id in CASES:
             folder = "00_base" if case_id == "BASE" else "01_static" if case_id.startswith("S") else "02_dynamic"
             target = output / profile.suite / folder / f"{case_id}__{profile.task_name}.bddl"
+            if _final_review_rules().is_excluded(
+                profile.suite, profile.task_id, case_id
+            ):
+                if target.is_file():
+                    target.unlink()
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
             is_new_case = case_id in {"S22", "D20"}
             if not target.exists() or (is_new_case and replace_new_cases):

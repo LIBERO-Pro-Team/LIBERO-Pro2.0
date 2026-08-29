@@ -187,8 +187,8 @@ def defaults(case_id: str, text: str) -> dict[str, tuple[str, ...]]:
         },
         "D14": {
             "drop_count": ("1",),
-            "repeat_count": ("1",),
-            "event_duration_steps": ("1",),
+            "repeat_count": ("8",),
+            "event_duration_steps": ("8",),
         },
         "D16": {
             "takeover_action": ("0.12",),

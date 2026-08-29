@@ -462,8 +462,8 @@
         (:params
           (:interaction_mode articulation)
           (:drop_count 2)
-          (:repeat_count 2)
-          (:event_duration_steps 4)
+          (:repeat_count 8)
+          (:event_duration_steps 8)
         )
       )
       (D15

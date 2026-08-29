@@ -249,6 +249,12 @@
           (:asset_id prl/plastic_bowl)
           (:asset_scale 0.45)
           (:support_surface table)
+          (:asset_count 1)
+          (:clutter_minimum_gap_m 0.080)
+          (:clutter_offsets_xy 0.18 0.12)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
+          (:asset_quat 1.0 0.0 0.0 0.0)
         )
       )
       (S12

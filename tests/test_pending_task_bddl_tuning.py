@@ -80,24 +80,26 @@ def test_user_requested_task_level_strength_values() -> None:
         "-0.090", "0.090", "-0.090", "0.0", "0.0", "0.0", "0.0"
     )
     assert plan[("libero_goal", 0, "S18")]["joint_zero_offset_rad"] == (
-        "0.012", "-0.010", "0.010"
+        "0.050", "-0.040", "0.030"
     )
     assert plan[("libero_goal", 0, "S18")]["eef_offset_xyz"] == (
-        "0.012", "-0.008", "0.006"
+        "0.050", "-0.040", "0.030"
     )
     assert plan[("libero_goal", 0, "S20")]["delay_steps"] == ("7",)
     assert plan[("libero_goal", 0, "D07")]["camera_offset_xyz"] == (
         "0.100", "-0.100", "0.070"
     )
     assert plan[("libero_goal", 0, "D12")] == {
-        "delay_steps": ("8",),
+        "delay_steps": ("10",),
         "event_duration_steps": ("36",),
     }
     assert plan[("libero_goal", 0, "D13")] == {
-        "arm_delay_steps": ("6",),
-        "gripper_delay_steps": ("2",),
+        "arm_delay_steps": ("8",),
+        "gripper_delay_steps": ("8",),
         "event_duration_steps": ("36",),
     }
+    assert plan[("libero_goal", 0, "D14")]["repeat_count"] == ("8",)
+    assert plan[("libero_goal", 0, "D14")]["event_duration_steps"] == ("8",)
 
 
 def test_case_parameter_update_is_idempotent() -> None:

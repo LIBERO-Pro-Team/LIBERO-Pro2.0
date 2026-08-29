@@ -96,18 +96,12 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         # than the old weak value and avoids the basket/rack-specific collision
         # direction used by the task-safe runtime fallback.
         params.update(offset_xy=("-0.12", "0.09"), yaw_rad=("-0.24",))
+        if suite == "libero_10" and task_id == 2:
+            # Trigger while the moka pot is still approaching the stove so a
+            # successful placement cannot end the episode first.
+            params["receiver_trigger_distance_m"] = ("0.24",)
     elif case_id == "D03":
-        params.update(
-            event_duration_steps=("36",),
-            asset_scale=("1.20",),
-            asset_offset_xyz=("0.0", "0.0", "0.035"),
-        )
-        if suite == "libero_10" and task_id == 0:
-            params["asset_scale"] = ("1.05",)
-        if suite == "libero_goal" and task_id == 1:
-            params["asset_scale"] = ("1.50",)
-        elif suite == "libero_goal" and task_id == 7:
-            params["asset_scale"] = ("1.35",)
+        pass
     elif case_id == "D04":
         params.update(
             event_duration_steps=("50",),
@@ -124,14 +118,30 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             lateral_offset_m=("0.075",),
             barrier_height_m=("0.05",),
             asset_scale=("1.10",),
-            visual_only_asset=("true",),
+            visual_only_asset=("false",),
+            physical_collision=("true",),
         )
         if suite == "libero_10" and task_id == 2:
             params["lateral_offset_m"] = ("0.105",)
         if suite == "libero_goal" and task_id in {5, 8}:
             params["lateral_offset_m"] = ("0.11",)
+        if suite == "libero_object" and task_id == 0:
+            params.update(
+                lateral_offset_m=("0.0",),
+                barrier_height_m=("0.08",),
+                asset_scale=("1.35",),
+                visual_only_asset=("false",),
+                physical_collision=("true",),
+            )
     elif case_id == "D06":
         params.update(minimum_clearance_m=("0.16",))
+        if suite == "libero_10" and task_id == 8:
+            params.update(
+                minimum_clearance_m=("0.10",),
+                minimum_displacement_m=("0.10",),
+                offset_xy=("0.12", "-0.09"),
+            )
+            fields["disturbance_targets"] = ("red_coffee_mug_1",)
         if suite == "libero_goal" and task_id in {1, 3, 4, 6, 8}:
             params["minimum_clearance_m"] = ("0.20",)
         if suite == "libero_object" and task_id == 6:
@@ -153,17 +163,17 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             freeze_modalities=("rgb",),
         )
     elif case_id == "D12":
-        params.update(delay_steps=("8",), event_duration_steps=("36",))
+        params.update(delay_steps=("10",), event_duration_steps=("36",))
     elif case_id == "D13":
         params.update(
-            arm_delay_steps=("6",),
-            gripper_delay_steps=("2",),
+            arm_delay_steps=("8",),
+            gripper_delay_steps=("8",),
             event_duration_steps=("36",),
         )
     elif case_id == "D14":
-        params.update(drop_count=("2",), repeat_count=("2",), event_duration_steps=("4",))
+        params.update(drop_count=("2",), repeat_count=("8",), event_duration_steps=("8",))
     elif case_id == "D15":
-        params.update(chunk_size=("8",), stale_chunk_steps=("8",), event_duration_steps=("8",))
+        params.update(chunk_size=("12",), stale_chunk_steps=("8",), event_duration_steps=("8",))
     elif case_id == "D16":
         params.update(takeover_action=("0.18", "-0.08"), takeover_duration_steps=("12",))
         if suite == "libero_object" and task_id == 1:
@@ -176,6 +186,12 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             misplace_minimum_gap_m=("0.08",),
             preserve_support_z=("true",),
         )
+    elif case_id == "D20":
+        if suite == "libero_10" and task_id in {0, 1, 3}:
+            params.update(
+                trigger_eef_motion_m=("0.01",),
+                trigger_action_norm=("0.01",),
+            )
     elif case_id == "S01":
         params.update(offset_xy=("0.055", "0.035"), yaw_rad=("0.28",))
     elif case_id == "S02":
@@ -185,7 +201,11 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         params["grounded_swap"] = ("true",)
         params["swap_cluster_radius_m"] = ("0.18",)
         params["support_surface"] = ("table",)
-        if (suite, task_id) == ("libero_10", 9):
+        if (suite, task_id) in {
+            ("libero_10", 7),
+            ("libero_10", 8),
+            ("libero_10", 9),
+        }:
             params.pop("swap_cluster_radius_m")
             params["strict_swap_xy"] = ("true",)
         elif (suite, task_id) == ("libero_goal", 0) or (suite, task_id) == ("libero_goal", 7):
@@ -198,6 +218,20 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             params["swap_xy"] = ("0.06", "0.0")
     elif case_id == "S05":
         params.update(lateral_offset_m=("0.055",), barrier_height_m=("-0.015",), visual_only_asset=("true",))
+        if suite == "libero_object" and task_id == 0:
+            params = {
+                "barrier_scale": ("1.35",),
+                "barrier_path_fraction": ("0.50",),
+                "barrier_lateral_offset_m": ("-0.07",),
+                "visual_only_asset": ("false",),
+            }
+        elif suite == "libero_10" and task_id == 0:
+            params = {
+                "barrier_scale": ("1.15",),
+                "barrier_path_fraction": ("0.50",),
+                "barrier_lateral_offset_m": ("0.04",),
+                "visual_only_asset": ("false",),
+            }
     elif case_id == "S06":
         params["asset_quat"] = ("1.0", "0.0", "0.0", "0.0")
         if suite == "libero_goal" and task_id in {2, 6, 9}:
@@ -206,6 +240,12 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             params["asset_scale"] = ("0.38",)
         elif suite == "libero_spatial":
             params["asset_scale"] = ("0.26",)
+        elif suite == "libero_10" and task_id in {6, 7, 9}:
+            params["asset_scale"] = ("0.58",)
+        elif suite == "libero_10":
+            # Preserve the already-published task-local scale for other
+            # LIBERO-10 S06 tasks when this fixer is rerun.
+            params.pop("asset_scale", None)
         else:
             params["asset_scale"] = ("0.58",)
     elif case_id == "S08":
@@ -218,8 +258,8 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             params["geometry_factors"] = ("1.08", "1.08", "0.88")
     elif case_id == "S09":
         params.update(
-            target_geometry_factors=("1.18", "1.18", "1.18"),
-            receiver_geometry_factors=("0.84", "0.84", "0.84"),
+            target_geometry_factors=("1.20", "1.20", "1.20"),
+            receiver_geometry_factors=("0.80", "0.80", "0.80"),
         )
     elif case_id == "S10":
         params.update(
@@ -256,9 +296,9 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         params["height_delta_m"] = ("0.10",)
     elif case_id == "S18":
         params.update(
-            eef_offset_xyz=("0.018", "-0.012", "0.009"),
-            joint_zero_offset_rad=("0.018", "-0.015", "0.015"),
-            grasp_center_offset_xyz=("0.006", "-0.004", "0.003"),
+            eef_offset_xyz=("0.050", "-0.040", "0.030"),
+            joint_zero_offset_rad=("0.050", "-0.040", "0.030"),
+            grasp_center_offset_xyz=("0.0", "0.0", "0.0"),
         )
     return params, fields
 

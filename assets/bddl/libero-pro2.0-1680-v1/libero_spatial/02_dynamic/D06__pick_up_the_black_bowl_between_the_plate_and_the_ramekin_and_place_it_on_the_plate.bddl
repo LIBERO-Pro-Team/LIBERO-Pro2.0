@@ -393,7 +393,7 @@
       (D06
         (:operator pose_transform)
         (:targets akita_black_bowl_2 akita_black_bowl_1)
-        (:disturbance_targets akita_black_bowl_2 cookies_1 glazed_rim_porcelain_ramekin_1)
+        (:disturbance_targets cookies_1 glazed_rim_porcelain_ramekin_1)
         (:trigger task_phase)
         (:variant distractor_move_or_local_rearrangement)
         (:params

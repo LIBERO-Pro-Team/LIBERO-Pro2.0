@@ -349,8 +349,9 @@
         (:params
           (:interaction_mode placement)
           (:trigger_distance_m 0.17)
-          (:offset_xy 0.10 -0.08)
+          (:offset_xy 0.055 -0.035)
           (:yaw_rad 0.28)
+          (:support_surface wooden_cabinet_1)
         )
       )
       (D02

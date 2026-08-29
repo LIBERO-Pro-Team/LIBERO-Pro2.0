@@ -19,14 +19,15 @@ def test_published_bddl_tree_excludes_legacy_perturbation_categories() -> None:
     assert not any(name.startswith(legacy_prefixes) for name in directory_names)
 
 
-def test_published_manifest_contains_all_40_tasks_and_43_perturbations() -> None:
+def test_published_manifest_contains_the_reviewed_1707_task_set() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 
-    assert manifest.version == "libero-pro2.0-1760-v1"
-    assert len(manifest.entries) == 1760
+    assert manifest.version == "libero-pro2.0-1707-v1"
+    assert len(manifest.entries) == 1707
     assert sum(entry["case_id"] == "BASE" for entry in manifest.entries) == 40
-    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 880
-    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 840
+    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 875
+    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 792
+    assert not any(entry["case_id"] == "D19" for entry in manifest.entries)
     assert {
         (entry["suite"], entry["base_task_id"])
         for entry in manifest.entries
@@ -53,7 +54,12 @@ def test_published_manifest_uses_official_pi0_suite_step_limits() -> None:
     } == {suite: {max_steps} for suite, max_steps in expected.items()}
     assert {
         suite: sum(entry["suite"] == suite for entry in manifest.entries) for suite in expected
-    } == {suite: 440 for suite in expected}
+    } == {
+        "libero_spatial": 430,
+        "libero_object": 430,
+        "libero_goal": 417,
+        "libero_10": 430,
+    }
 
 
 def test_task_catalog_publishes_each_tasks_default_step_limit() -> None:
@@ -61,7 +67,7 @@ def test_task_catalog_publishes_each_tasks_default_step_limit() -> None:
 
     catalog = manifest.catalog()
 
-    assert len(catalog["tasks"]) == 1760
+    assert len(catalog["tasks"]) == 1707
     assert all("max_steps" in task for task in catalog["tasks"])
     assert {
         task["max_steps"]

@@ -14,7 +14,7 @@
 2. 同一提交且无法根据时间区分时，Session、Worker、并发和请求重放以 `LIBERO_PRO_Agent_SOP.md` 为准。
 3. 具体参考模型的图像、proprio、坐标系和 action 适配以对应 adapter 的实测文档为准；这些结论不能写入通用服务端协议。
 4. 多用户队列、Slot、Lease 和公平调度以本文为准。
-5. 任务数量统一以版本化任务清单为准。当前有效集合为 1760 个任务组合，不再使用旧文档中的 320 个 BDDL 笛卡尔积。
+5. 任务数量统一以版本化任务清单为准。当前有效集合为 1707 个任务组合，不再使用旧文档中的 320 个 BDDL 笛卡尔积。
 
 ## 2. 保留的基础设计
 
@@ -33,9 +33,9 @@
 
 ### 3.1 任务集合没有唯一事实来源
 
-**问题**：旧并发方案按 suite 与扰动做笛卡尔积，仍描述为 320 个 BDDL。当前发布为 1760 个有效组合。若 readiness、任务目录和批量调度分别生成任务，会重新暴露已删除组合或错误报告服务未就绪。
+**问题**：旧并发方案按 suite 与扰动做笛卡尔积，仍描述为 320 个 BDDL。当前发布为 1707 个有效组合。若 readiness、任务目录和批量调度分别生成任务，会重新暴露已删除组合或错误报告服务未就绪。
 
-**解决方案**：发布版本化 `task_manifest.json`，逐项列出全部 1760 个有效 job。以下模块只能读取该清单，不得自行构造笛卡尔积：
+**解决方案**：发布版本化 `task_manifest.json`，逐项列出全部 1707 个有效 job。以下模块只能读取该清单，不得自行构造笛卡尔积：
 
 - `/v1/health` readiness 检查；
 - `/v1/tasks` 任务目录；
@@ -227,7 +227,7 @@ Session -> account_id + attempt_id + EnvWorker
 ```text
 账户认证
   -> 创建 Run 并锁定 manifest 版本
-  -> 展开 1760 个或用户选择的 JobSpec
+  -> 展开 1707 个或用户选择的 JobSpec
   -> 账户间轮询领取 Job，事务创建 Attempt 和 Lease
   -> 创建独立 Session/EnvWorker
   -> reset 并校验初态、扰动计划和 job fingerprint
@@ -241,7 +241,7 @@ Session -> account_id + attempt_id + EnvWorker
 
 ### 6.1 清单与服务就绪
 
-- 清单恰好包含 1760 个唯一有效组合。
+- 清单恰好包含 1707 个唯一有效组合。
 - `/v1/tasks` 只发布版本化 manifest 中的有效任务组合。
 - readiness 只校验清单内条目，不要求不存在的矩形组合。
 - 所有 BDDL、init state、资产和 hash 校验通过。
@@ -280,7 +280,7 @@ Session -> account_id + attempt_id + EnvWorker
 
 ## 7. 实施顺序
 
-1. 建立 1760 项版本化任务清单，统一 readiness、catalog 和批量展开逻辑。
+1. 建立 1707 项版本化任务清单，统一 readiness、catalog 和批量展开逻辑。
 2. 引入持久化 RunScheduler 和账户所有权校验。
 3. 实现 lease generation、防陈旧写入、错误分类和最大重试次数。
 4. 固化 JobSpec、全套 seed、动态扰动计划和初态指纹。

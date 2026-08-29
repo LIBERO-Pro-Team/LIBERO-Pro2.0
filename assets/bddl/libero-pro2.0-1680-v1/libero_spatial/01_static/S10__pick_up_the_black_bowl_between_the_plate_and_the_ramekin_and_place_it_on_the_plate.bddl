@@ -245,6 +245,10 @@
         (:params
           (:interaction_mode placement)
           (:visual_only_asset true)
+          (:asset_count 3)
+          (:clutter_minimum_gap_m 0.065)
+          (:clutter_offsets_xy 0.11 -0.10 -0.11 -0.10 0.0 0.13)
+          (:support_surface main_table)
         )
       )
       (S11

@@ -156,7 +156,7 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/plastic_glass)
-          (:asset_scale 0.20)
+          (:asset_scale 0.7)
           (:grounded_replacement true)
         )
       )

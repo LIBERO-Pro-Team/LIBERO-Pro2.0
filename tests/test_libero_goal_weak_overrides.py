@@ -31,10 +31,10 @@ def test_dynamic_renderer_covers_every_reviewed_weak_and_safety_case() -> None:
 
 
 def test_scene_safety_fixes_keep_the_requested_smaller_geometry_and_detour() -> None:
-    assert HARD_SAFETY_TASKS == {"D03": (7, 8), "D05": (1, 2, 3, 4, 8)}
-    assert overrides(8, "D03")["asset_scale"] == ("0.75",)
-    assert overrides(7, "D03")["obstacle_part"] == ("button",)
+    assert HARD_SAFETY_TASKS == {"D05": (1, 2, 3, 4, 8)}
+    assert overrides(8, "D03") == {}
     assert overrides(3, "D05")["lateral_offset_m"] == ("0.08",)
+    assert overrides(3, "D05")["physical_collision"] == ("true",)
 
 
 def test_weak_task_phase_events_use_a_model_agnostic_proximity_trigger() -> None:

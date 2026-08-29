@@ -38,7 +38,6 @@ TASKS = (
 # than a request to amplify the perturbation.
 WEAK_TASKS: dict[str, tuple[int, ...]] = {
     "D01": (0, 9),
-    "D03": (0, 1, 2),
     "D04": (0, 2, 3, 7),
     "D05": (0, 5),
     "D06": tuple(range(10)),
@@ -67,7 +66,6 @@ WEAK_TASKS: dict[str, tuple[int, ...]] = {
 # These CSV findings require a safer geometry or anchor rather than a larger
 # perturbation. They remain separate from the explicit weak-effect ledger.
 HARD_SAFETY_TASKS: dict[str, tuple[int, ...]] = {
-    "D03": (7, 8),
     "D05": (1, 2, 3, 4, 8),
 }
 
@@ -189,12 +187,17 @@ def overrides(task_id: int, case_id: str) -> dict[str, tuple[str, ...]]:
             "trigger_distance_m": ("0.22",),
             "event_duration_steps": ("72",),
             "observation_delay_steps": ("12",),
+            "delay_steps": ("10",),
         },
-        "D14": {"trigger_distance_m": ("0.22",), "event_duration_steps": ("12",)},
+        "D14": {
+            "trigger_distance_m": ("0.22",),
+            "event_duration_steps": ("8",),
+            "repeat_count": ("8",),
+        },
         "D15": {
             "trigger_distance_m": ("0.22",),
             "chunk_size": ("12",),
-            "stale_chunk_steps": ("16",),
+            "stale_chunk_steps": ("8",),
         },
         "D16": {
             "trigger_distance_m": ("0.22",),
@@ -207,7 +210,7 @@ def overrides(task_id: int, case_id: str) -> dict[str, tuple[str, ...]]:
             "asset_geometry_factors": ("0.75", "0.75", "2.0"),
         },
         "S09": {
-            "target_geometry_factors": ("1.25", "1.25", "1.25"),
+            "target_geometry_factors": ("1.20", "1.20", "1.20"),
             "receiver_geometry_factors": ("0.80", "0.80", "0.80"),
         },
         "S10": {
@@ -220,38 +223,15 @@ def overrides(task_id: int, case_id: str) -> dict[str, tuple[str, ...]]:
         "S17": {
             "joint_offset": ("0.09", "-0.07", "0.05", "0", "0", "0", "0")
         },
-        "S18": {"calibration_offset_m": ("0.055", "-0.042", "0.030")},
+        "S18": {
+            "eef_offset_xyz": ("0.050", "-0.040", "0.030"),
+            "joint_zero_offset_rad": ("0.050", "-0.040", "0.030"),
+            "grasp_center_offset_xyz": ("0.0", "0.0", "0.0"),
+        },
     }
     values = dict(common.get(case_id, {}))
     if case_id == "D01":
         values.update({"approach_trigger_distance_m": ("0.20",), "joint_offset": ("-0.06",)})
-    elif case_id == "D03":
-        values.update({"event_duration_steps": ("72",)})
-        if task_id == 0:
-            values.update(
-                {
-                    "asset_id": ("prl/fuze_bottle",),
-                    "asset_scale": ("0.75",),
-                    "allow_compact_asset": ("true",),
-                    "obstacle_part": ("handle",),
-                    "articulation_obstacle_offset_xy": ("0.0", "-0.12"),
-                }
-            )
-        elif task_id == 2:
-            values.update({"asset_scale": ("1.85",)})
-        elif task_id == 7:
-            values.update(
-                {
-                    "asset_scale": ("0.70",),
-                    "allow_compact_asset": ("true",),
-                    "obstacle_part": ("button",),
-                    "articulation_obstacle_offset_xy": ("0.0", "-0.08"),
-                }
-            )
-        elif task_id == 8:
-            values.update({"asset_scale": ("0.75",), "allow_compact_asset": ("true",)})
-        else:
-            values.update({"asset_scale": ("1.65",)})
     elif case_id == "D04":
         values.update({"trigger_distance_m": ("0.22",), "event_duration_steps": ("72",)})
         if task_id == 0:
@@ -259,7 +239,13 @@ def overrides(task_id: int, case_id: str) -> dict[str, tuple[str, ...]]:
         elif task_id == 7:
             values["occlusion_part"] = ("button",)
     elif case_id == "D05":
-        values.update({"event_duration_steps": ("72",)})
+        values.update(
+            {
+                "event_duration_steps": ("72",),
+                "visual_only_asset": ("false",),
+                "physical_collision": ("true",),
+            }
+        )
         if task_id == 0:
             values.update(
                 {

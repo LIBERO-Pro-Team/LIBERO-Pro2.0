@@ -13,18 +13,21 @@ sys.modules[SPEC.name] = GENERATOR
 SPEC.loader.exec_module(GENERATOR)
 
 
-def test_full_manifest_covers_40_base_tasks_and_43_perturbations() -> None:
+def test_full_manifest_covers_the_reviewed_1707_task_set() -> None:
     payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
     entries = payload["tasks"]
 
-    assert payload["manifest_version"] == "libero-pro2.0-1760-v1"
-    assert payload["task_count"] == len(entries) == 1760
+    assert payload["manifest_version"] == "libero-pro2.0-1707-v1"
+    assert payload["task_count"] == len(entries) == 1707
     assert len({(entry["suite"], entry["base_task_id"]) for entry in entries}) == 40
     assert {entry["case_id"] for entry in entries} == {
         "BASE",
         *(f"S{i:02d}" for i in range(1, 23)),
-        *(f"D{i:02d}" for i in range(1, 22)),
+        *(f"D{i:02d}" for i in range(1, 19)),
+        "D20",
+        "D21",
     }
+    assert not any(entry["case_id"] == "D19" for entry in entries)
     assert all(
         entry["bddl_path"].startswith("bddl/libero-pro2.0-1680-v1/")
         for entry in entries

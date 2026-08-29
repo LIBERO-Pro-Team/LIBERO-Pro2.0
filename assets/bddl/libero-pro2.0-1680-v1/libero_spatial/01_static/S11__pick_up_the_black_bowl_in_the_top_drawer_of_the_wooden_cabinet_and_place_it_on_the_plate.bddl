@@ -255,11 +255,12 @@
         (:params
           (:interaction_mode placement)
           (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.30)
+          (:asset_scale 0.36)
           (:asset_count 1)
           (:clutter_minimum_gap_m 0.055)
           (:clutter_offsets_xy 0.075 0.055)
-          (:support_surface table)
+          (:support_surface wooden_cabinet_1)
+          (:visual_only_asset true)
         )
       )
       (S12

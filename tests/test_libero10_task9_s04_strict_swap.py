@@ -49,25 +49,36 @@ def test_task9_s04_publishes_a_strict_zero_offset_swap() -> None:
     assert ":swap_cluster_radius_m" not in block
 
 
-def test_task9_exception_does_not_change_other_s04_generation() -> None:
+def test_strict_swap_is_limited_to_the_reported_libero10_s04_tasks() -> None:
     task9, _ = FIXER.task_params("libero_10", 9, "S04")
-    generic, _ = FIXER.task_params("libero_10", 7, "S04")
+    task7, _ = FIXER.task_params("libero_10", 7, "S04")
     task8, _ = FIXER.task_params("libero_10", 8, "S04")
+    generic, _ = FIXER.task_params("libero_10", 6, "S04")
 
-    assert task9["grounded_swap"] == ("true",)
-    assert task9["swap_xy"] == ("0.0", "0.0")
-    assert task9["strict_swap_xy"] == ("true",)
-    assert "swap_cluster_radius_m" not in task9
+    for values in (task7, task8, task9):
+        assert values["grounded_swap"] == ("true",)
+        assert values["swap_xy"] == ("0.0", "0.0")
+        assert values["strict_swap_xy"] == ("true",)
+        assert "swap_cluster_radius_m" not in values
 
     assert generic["grounded_swap"] == ("true",)
     assert generic["swap_cluster_radius_m"] == ("0.18",)
     assert generic["swap_xy"] == ("0.0", "0.0")
     assert "strict_swap_xy" not in generic
 
-    assert task8["grounded_swap"] == ("true",)
-    assert task8["swap_cluster_radius_m"] == ("0.18",)
-    assert task8["swap_xy"] == ("0.06", "0.0")
-    assert "strict_swap_xy" not in task8
+
+def test_remaining_libero10_s06_and_s09_values_are_task_local() -> None:
+    for task_id in (6, 7, 9):
+        params, _ = FIXER.task_params("libero_10", task_id, "S06")
+        assert params["asset_scale"] == ("0.58",)
+
+    for task_id in (5, 9):
+        params, _ = FIXER.task_params("libero_10", task_id, "S09")
+        assert params["target_geometry_factors"] == ("1.20", "1.20", "1.20")
+        assert params["receiver_geometry_factors"] == ("0.80", "0.80", "0.80")
+
+    other_s06, _ = FIXER.task_params("libero_10", 4, "S06")
+    assert "asset_scale" not in other_s06
 
 
 def test_grounded_strict_swap_uses_only_the_original_xy_coordinates(

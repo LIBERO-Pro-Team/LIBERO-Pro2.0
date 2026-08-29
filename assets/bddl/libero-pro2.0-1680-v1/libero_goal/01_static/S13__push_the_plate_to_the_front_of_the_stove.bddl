@@ -261,7 +261,7 @@
       )
       (S13
         (:operator asset_or_appearance)
-        (:targets plate_1 main_table)
+        (:targets plate_1)
         (:variant color_texture_reflection_or_surface_state)
         (:params
           (:interaction_mode placement)

@@ -88,10 +88,11 @@ def _record(spec: tuple[str, int, str], task: dict[str, Any]) -> dict[str, Any]:
     case_dir.mkdir(parents=True, exist_ok=True)
     env = None
     try:
-        np.random.seed(142)
+        np.random.seed(143)
         env = OffScreenRenderEnv(
             bddl_file_name=str(bddl), camera_heights=256, camera_widths=256
         )
+        env.seed(143)
         env.reset()
         sim_env = env.env
         runtime = sim_env.perturbation_runtime

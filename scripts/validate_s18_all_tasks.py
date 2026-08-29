@@ -17,7 +17,8 @@ from libero.libero.envs import OffScreenRenderEnv
 
 
 MANIFEST = ROOT / "assets" / "task_manifest.json"
-OUTPUT = ROOT / "outputs" / "s18_all_tasks_validation_20260824"
+OUTPUT = ROOT / "outputs" / "s18_all_tasks_validation_seed143_20260829"
+SEED = 143
 
 
 def main() -> None:
@@ -30,7 +31,7 @@ def main() -> None:
         key = (str(item["suite"]), int(item["base_task_id"]), "S18")
         wrapper = None
         try:
-            np.random.seed(142)
+            np.random.seed(SEED)
             bddl = ROOT / "assets" / str(item["bddl_path"])
             wrapper = OffScreenRenderEnv(
                 bddl_file_name=str(bddl), camera_heights=64, camera_widths=64

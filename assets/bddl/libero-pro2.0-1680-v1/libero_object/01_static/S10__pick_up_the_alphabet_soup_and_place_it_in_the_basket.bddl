@@ -201,6 +201,10 @@
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:asset_count 3)
+          (:clutter_minimum_gap_m 0.055)
+          (:support_surface table)
+          (:clutter_offsets_xy 0.11 -0.10 0.11 0.10 -0.11 0.10)
         )
       )
       (S11

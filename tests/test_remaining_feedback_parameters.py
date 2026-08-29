@@ -29,7 +29,7 @@ def _params_by_key() -> dict[tuple[str, int, str], dict[str, object]]:
     result = {}
     for item in payload["tasks"]:
         case_id = str(item["case_id"])
-        if case_id not in {"D17", "D19", "S07", "S13", "S14", "S18"}:
+        if case_id not in {"D17", "S07", "S13", "S14", "S18"}:
             continue
         config = PARSER.parse_bddl_perturbation_config(
             ROOT / "assets" / item["bddl_path"]
@@ -51,7 +51,7 @@ def _params_by_key() -> dict[tuple[str, int, str], dict[str, object]]:
 
 def test_remaining_runtime_defaults_are_explicit_in_all_case_bddls() -> None:
     params = _params_by_key()
-    assert len(params) == 240
+    assert len(params) == 199
     assert all(
         {
             "grasp_distance_m",
@@ -63,11 +63,6 @@ def test_remaining_runtime_defaults_are_explicit_in_all_case_bddls() -> None:
         <= set(values)
         for key, values in params.items()
         if key[2] == "D17"
-    )
-    assert all(
-        {"misplace_offset_xy", "misplace_height_m"} <= set(values)
-        for key, values in params.items()
-        if key[2] == "D19"
     )
     assert all(
         {"geometry_factors", "goal_region_scale"} <= set(values)
@@ -109,15 +104,12 @@ def test_feedback_tasks_have_only_the_intended_task_level_overrides() -> None:
         "articulation_grasp_distance_m"
     ] == 0.16
 
-    expected_s07 = {
-        ("libero_10", 5, "S07"): [1.0, 0.82, 1.05],
-        ("libero_10", 9, "S07"): [1.0, 0.85, 1.05],
-        ("libero_spatial", 1, "S07"): [1.0, 0.80, 1.05],
-        ("libero_goal", 2, "S07"): [1.0, 0.82, 1.08],
-    }
-    for key, expected in expected_s07.items():
-        assert params[key]["geometry_factors"] == expected
-        assert params[key]["goal_region_scale"] == expected
+    assert all(
+        values["geometry_factors"] == [1.0, 0.64, 1.20]
+        and values["goal_region_scale"] == [1.0, 1.0, 1.0]
+        for key, values in params.items()
+        if key[2] == "S07"
+    )
 
     assert params[("libero_spatial", 9, "S14")]["scene_color_mix"] == 0.32
     assert params[("libero_spatial", 9, "S14")]["light_factor"] == 0.78
@@ -125,12 +117,6 @@ def test_feedback_tasks_have_only_the_intended_task_level_overrides() -> None:
 
 def test_unreported_tasks_keep_the_previous_runtime_default_values() -> None:
     params = _params_by_key()
-    s07_overrides = {
-        ("libero_10", 5, "S07"): [1.0, 0.82, 1.05],
-        ("libero_10", 9, "S07"): [1.0, 0.85, 1.05],
-        ("libero_spatial", 1, "S07"): [1.0, 0.80, 1.05],
-        ("libero_goal", 2, "S07"): [1.0, 0.82, 1.08],
-    }
     for key, values in params.items():
         case_id = key[2]
         if case_id == "D17":
@@ -141,10 +127,8 @@ def test_unreported_tasks_keep_the_previous_runtime_default_values() -> None:
             expected_articulation = 0.16 if key == ("libero_goal", 7, "D17") else 0.14
             assert values["articulation_grasp_distance_m"] == expected_articulation
         elif case_id == "S07":
-            expected_geometry = s07_overrides.get(key, [1.0, 0.64, 1.20])
-            expected_goal = s07_overrides.get(key, [1.0, 1.0, 1.0])
-            assert values["geometry_factors"] == expected_geometry
-            assert values["goal_region_scale"] == expected_goal
+            assert values["geometry_factors"] == [1.0, 0.64, 1.20]
+            assert values["goal_region_scale"] == [1.0, 1.0, 1.0]
         elif case_id == "S13":
             assert values["color_rgb"] == [0.18, 0.72, 0.38]
         elif case_id == "S14":

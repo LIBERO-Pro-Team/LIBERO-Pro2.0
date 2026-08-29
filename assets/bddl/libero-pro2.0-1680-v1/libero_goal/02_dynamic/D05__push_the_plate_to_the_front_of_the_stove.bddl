@@ -384,7 +384,8 @@
           (:asset_scale 1.10)
           (:lateral_offset_m 0.11)
           (:barrier_height_m 0.05)
-          (:visual_only_asset true)
+          (:visual_only_asset false)
+          (:physical_collision true)
         )
       )
       (D06

@@ -63,7 +63,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
 
         self.assertEqual(plan.case_id, "D15")
-        self.assertEqual(plan.params["chunk_size"], 8)
+        self.assertEqual(plan.params["chunk_size"], 12)
         self.assertEqual(plan.params["stale_chunk_steps"], 8)
 
     def test_repo_d17_declares_bounded_recovery_window_parameters(self):
@@ -146,8 +146,8 @@ class SchemaExecutionPlanTests(unittest.TestCase):
             PARSER.parse_bddl_perturbation_config(d04), ASSET_ROOT
         )
         self.assertEqual(d01_plan.params["trigger_distance_m"], 0.17)
-        self.assertEqual(d03_plan.params["asset_scale"], 1.50)
-        self.assertEqual(d03_plan.assets[0].scale, 1.50)
+        self.assertEqual(d03_plan.params, {"interaction_mode": "placement"})
+        self.assertEqual(d03_plan.assets[0].scale, 1.0)
         self.assertEqual(d04_plan.params["event_duration_steps"], 50)
         self.assertEqual(d04_plan.assets[0].scale, 1.25)
         self.assertEqual(
@@ -211,7 +211,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1760)
+        self.assertEqual(len(files), 1707)
 
         seen = set()
         for path in files:
@@ -228,7 +228,8 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         self.assertEqual(
             seen,
             {f"S{i:02d}" for i in range(1, 23)}
-            | {f"D{i:02d}" for i in range(1, 22)},
+            | {f"D{i:02d}" for i in range(1, 19)}
+            | {"D20", "D21"},
         )
 
     def test_only_the_selected_case_is_active(self):

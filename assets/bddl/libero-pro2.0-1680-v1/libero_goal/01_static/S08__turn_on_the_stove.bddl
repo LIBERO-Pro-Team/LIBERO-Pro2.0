@@ -218,7 +218,7 @@
         (:variant scale_or_aspect_ratio)
         (:params
           (:interaction_mode articulation)
-          (:geometry_factors 1.18 1.18 0.82)
+          (:geometry_factors 1.15 0.90 1.0)
         )
       )
       (S09

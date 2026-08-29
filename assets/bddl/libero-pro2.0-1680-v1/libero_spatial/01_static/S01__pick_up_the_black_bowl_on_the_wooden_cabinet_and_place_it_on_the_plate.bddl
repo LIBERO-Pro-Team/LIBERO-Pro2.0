@@ -164,8 +164,10 @@
         (:variant xy_yaw)
         (:params
           (:interaction_mode placement)
-          (:offset_xy 0.055 0.035)
+          (:offset_xy 0.04 -0.03)
           (:yaw_rad 0.28)
+          (:grounded_pose true)
+          (:support_surface wooden_cabinet_1)
         )
       )
       (S02

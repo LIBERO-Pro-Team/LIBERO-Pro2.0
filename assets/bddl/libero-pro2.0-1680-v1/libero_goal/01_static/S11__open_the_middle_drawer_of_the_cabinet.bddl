@@ -90,6 +90,17 @@
       (top_region
           (:target wine_rack_1)
       )
+      (similar_cabinet_region
+          (:target main_table)
+          (:ranges (
+              (-0.06 0.39 -0.04 0.41)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
     )
 
   (:fixtures
@@ -97,6 +108,7 @@
     wooden_cabinet_1 - wooden_cabinet
     flat_stove_1 - flat_stove
     wine_rack_1 - wine_rack
+    yellow_cabinet_2 - yellow_cabinet
   )
 
   (:objects
@@ -118,6 +130,7 @@
     (On wooden_cabinet_1 main_table_cabinet_region)
     (On flat_stove_1 main_table_stove_region)
     (On wine_rack_1 main_table_wine_rack_region)
+    (On yellow_cabinet_2 main_table_similar_cabinet_region)
   )
 
   (:goal
@@ -240,17 +253,13 @@
       )
       (S11
         (:operator asset_or_appearance)
-        (:targets akita_black_bowl_1)
-        (:references akita_black_bowl_1)
+        (:targets yellow_cabinet_2)
+        (:references wooden_cabinet_1)
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode articulation)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.30)
-          (:asset_count 1)
-          (:clutter_minimum_gap_m 0.055)
-          (:clutter_offsets_xy 0.075 0.055)
-          (:support_surface table)
+          (:fixture_distractor true)
+          (:fixture_distractor_targets yellow_cabinet_2)
         )
       )
       (S12

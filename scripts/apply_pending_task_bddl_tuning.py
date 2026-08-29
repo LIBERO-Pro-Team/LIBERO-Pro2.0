@@ -77,9 +77,9 @@ COMMON_TUNING: dict[str, dict[str, tuple[str, ...]]] = {
         ),
     },
     "S18": {
-        "eef_offset_xyz": ("0.012", "-0.008", "0.006"),
-        "joint_zero_offset_rad": ("0.012", "-0.010", "0.010"),
-        "grasp_center_offset_xyz": ("0.004", "-0.003", "0.002"),
+        "eef_offset_xyz": ("0.050", "-0.040", "0.030"),
+        "joint_zero_offset_rad": ("0.050", "-0.040", "0.030"),
+        "grasp_center_offset_xyz": ("0.0", "0.0", "0.0"),
     },
     "S20": {"delay_steps": ("7",)},
     "D07": {
@@ -87,16 +87,16 @@ COMMON_TUNING: dict[str, dict[str, tuple[str, ...]]] = {
         "camera_rotation_rpy": ("0.015", "-0.010", "0.025"),
         "event_duration_steps": ("24",),
     },
-    "D12": {"delay_steps": ("8",), "event_duration_steps": ("36",)},
+    "D12": {"delay_steps": ("10",), "event_duration_steps": ("36",)},
     "D13": {
-        "arm_delay_steps": ("6",),
-        "gripper_delay_steps": ("2",),
+        "arm_delay_steps": ("8",),
+        "gripper_delay_steps": ("8",),
         "event_duration_steps": ("36",),
     },
     "D14": {
         "drop_count": ("2",),
-        "repeat_count": ("2",),
-        "event_duration_steps": ("4",),
+        "repeat_count": ("8",),
+        "event_duration_steps": ("8",),
     },
     "D16": {
         "takeover_action": ("0.18", "-0.08"),

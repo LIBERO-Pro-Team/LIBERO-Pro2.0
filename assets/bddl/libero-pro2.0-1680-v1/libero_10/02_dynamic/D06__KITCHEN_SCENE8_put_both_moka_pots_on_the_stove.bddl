@@ -35,6 +35,17 @@
             )
           )
       )
+      (d06_distractor_init_region
+          (:target kitchen_table)
+          (:ranges (
+              (0.175 0.235 0.185 0.245)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
       (cook_region
           (:target flat_stove_1)
       )
@@ -47,6 +58,7 @@
 
   (:objects
     moka_pot_1 moka_pot_2 - moka_pot
+    red_coffee_mug_1 - red_coffee_mug
   )
 
   (:obj_of_interest
@@ -59,6 +71,7 @@
     (On flat_stove_1 kitchen_table_flat_stove_init_region)
     (On moka_pot_1 kitchen_table_moka_pot_right_init_region)
     (On moka_pot_2 kitchen_table_moka_pot_left_init_region)
+    (On red_coffee_mug_1 kitchen_table_d06_distractor_init_region)
     (Turnon flat_stove_1)
   )
 
@@ -327,12 +340,13 @@
       (D06
         (:operator pose_transform)
         (:targets moka_pot_2 moka_pot_1)
-        (:disturbance_targets none)
+        (:disturbance_targets red_coffee_mug_1)
         (:trigger task_phase)
         (:variant distractor_move_or_local_rearrangement)
         (:params
           (:interaction_mode placement)
           (:minimum_displacement_m 0.10)
+          (:minimum_clearance_m 0.10)
           (:offset_xy 0.12 -0.09)
         )
       )
