@@ -211,7 +211,11 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1707)
+        self.assertEqual(len(files), 1706)
+        self.assertNotIn(
+            "S04__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl",
+            {path.name for path in files},
+        )
 
         seen = set()
         for path in files:

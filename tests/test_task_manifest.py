@@ -19,15 +19,21 @@ def test_published_bddl_tree_excludes_legacy_perturbation_categories() -> None:
     assert not any(name.startswith(legacy_prefixes) for name in directory_names)
 
 
-def test_published_manifest_contains_the_reviewed_1707_task_set() -> None:
+def test_published_manifest_contains_the_published_1706_task_set() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 
-    assert manifest.version == "libero-pro2.0-1707-v1"
-    assert len(manifest.entries) == 1707
+    assert manifest.version == "libero-pro2.0-1706-v1"
+    assert len(manifest.entries) == 1706
     assert sum(entry["case_id"] == "BASE" for entry in manifest.entries) == 40
-    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 875
+    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 874
     assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 792
     assert not any(entry["case_id"] == "D19" for entry in manifest.entries)
+    assert not any(
+        entry["suite"] == "libero_10"
+        and entry["base_task_id"] == 8
+        and entry["case_id"] == "S04"
+        for entry in manifest.entries
+    )
     assert {
         (entry["suite"], entry["base_task_id"])
         for entry in manifest.entries
@@ -58,7 +64,7 @@ def test_published_manifest_uses_official_pi0_suite_step_limits() -> None:
         "libero_spatial": 430,
         "libero_object": 430,
         "libero_goal": 417,
-        "libero_10": 430,
+        "libero_10": 429,
     }
 
 
@@ -67,7 +73,7 @@ def test_task_catalog_publishes_each_tasks_default_step_limit() -> None:
 
     catalog = manifest.catalog()
 
-    assert len(catalog["tasks"]) == 1707
+    assert len(catalog["tasks"]) == 1706
     assert all("max_steps" in task for task in catalog["tasks"])
     assert {
         task["max_steps"]

@@ -223,13 +223,14 @@ def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_c
         if FINALIZER.is_excluded(suite, task_id, case_id)
     }
 
-    assert len(excluded) == 53
+    assert len(excluded) == 54
     assert sum(case_id == "D19" for _, _, case_id in excluded) == 40
+    assert ("libero_10", 8, "S04") in excluded
     assert excluded - {
         (suite, task_id, "D19")
         for suite in FINALIZER.SUITES
         for task_id in range(10)
-    } == FINALIZER.GOAL_NOT_APPLICABLE
+    } == FINALIZER.GOAL_NOT_APPLICABLE | {("libero_10", 8, "S04")}
 
 
 def test_goal_task0_s11_adds_one_collision_fixture_without_moving_existing_scene() -> None:

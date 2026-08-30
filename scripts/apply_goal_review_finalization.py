@@ -28,7 +28,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets"
 DATASET = ASSETS / "bddl" / "libero-pro2.0-1680-v1"
 MANIFEST = ASSETS / "task_manifest.json"
-PUBLISHED_VERSION = "libero-pro2.0-1707-v1"
+PUBLISHED_VERSION = "libero-pro2.0-1706-v1"
+PUBLISHED_TASK_COUNT = 1706
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 PUBLISHED_CASES = (
     "BASE",
@@ -145,7 +146,11 @@ D03_FEEDBACK_OVERRIDES.update(
 
 def is_excluded(suite: str, task_id: int, case_id: str) -> bool:
     key = (str(suite), int(task_id), str(case_id).upper())
-    return key[2] == "D19" or key in GOAL_NOT_APPLICABLE
+    return (
+        key[2] == "D19"
+        or key in GOAL_NOT_APPLICABLE
+        or key == ("libero_10", 8, "S04")
+    )
 
 
 def _profile(suite: str, task_id: int) -> generator.TaskProfile:
@@ -592,8 +597,10 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
                 path.unlink()
 
     retained = [item for item in entries if item not in excluded_entries]
-    if len(retained) != 1707:
-        raise ValueError(f"Expected 1707 retained tasks, found {len(retained)}")
+    if len(retained) != PUBLISHED_TASK_COUNT:
+        raise ValueError(
+            f"Expected {PUBLISHED_TASK_COUNT} retained tasks, found {len(retained)}"
+        )
     if not check_only:
         for item in retained:
             path = ASSETS / str(item["bddl_path"])

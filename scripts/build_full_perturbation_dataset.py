@@ -23,7 +23,7 @@ ORIGINAL_ROOT = ROOT / "assets" / "bddl" / "00_original" / "bddl"
 DEFAULT_OUTPUT = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 DEFAULT_MANIFEST = ROOT / "assets" / "task_manifest.json"
 ASSET_ROOT = ROOT / "simulator-source" / "libero" / "libero" / "assets" / "perturbation_assets"
-PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1707-v1"
+PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1706-v1"
 
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 # OpenPI examples/libero/main.py limits, excluding its 10 reset wait steps.

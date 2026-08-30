@@ -96,7 +96,7 @@ def test_readiness_reports_valid_task_manifest(
     result = readiness.check_backend_readiness("libero", str(manifest))
 
     assert result["ready"] is True
-    assert result["task_manifest"]["task_count"] == 1707
+    assert result["task_manifest"]["task_count"] == 1706
 
 
 def test_readiness_rejects_a_runtime_without_perturbation_support(

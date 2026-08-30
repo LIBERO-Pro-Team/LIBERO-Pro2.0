@@ -67,8 +67,8 @@ if ($LASTEXITCODE -ne 0) { throw "Simulator Git LFS verification failed" }
 
 $manifestPath = Join-Path $repoRoot "assets\task_manifest.json"
 $manifest = Get-Content -Raw $manifestPath | ConvertFrom-Json
-if ($manifest.task_count -ne 1707 -or $manifest.tasks.Count -ne 1707) {
-    throw "Expected exactly 1707 published BDDL entries"
+if ($manifest.task_count -ne 1706 -or $manifest.tasks.Count -ne 1706) {
+    throw "Expected exactly 1706 published BDDL entries"
 }
 Assert-ManifestBddlHashes $manifest (Split-Path $manifestPath)
 

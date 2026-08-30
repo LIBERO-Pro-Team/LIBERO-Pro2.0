@@ -41,8 +41,9 @@ CASE_IDS = (
     *(f"S{index:02d}" for index in range(1, 23)),
     *(f"D{index:02d}" for index in range(1, 22)),
 )
-PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1707-v1"
-PUBLISHED_TASK_COUNT = 1707
+PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1706-v1"
+PUBLISHED_TASK_COUNT = 1706
+PUBLISHED_EXCLUDED = {("libero_10", 8, "S04")}
 GOAL_NOT_APPLICABLE = {
     ("libero_goal", 0, "D02"),
     ("libero_goal", 0, "D18"),
@@ -602,6 +603,7 @@ def _manifest_checks(tasks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         for case_id in CASE_IDS
         if case_id != "D19"
         and (suite, task_id, case_id) not in GOAL_NOT_APPLICABLE
+        and (suite, task_id, case_id) not in PUBLISHED_EXCLUDED
     }
     actual = set(keys)
     if actual != expected:
