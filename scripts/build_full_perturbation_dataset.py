@@ -451,6 +451,15 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
     params: Dict[str, Any] = {"interaction_mode": profile.interaction_mode}
     if case_id == "S06":
         params.update({"asset_id": profile.s06_asset, "asset_scale": profile.s06_scale})
+    elif case_id == "S04" and profile.suite == "libero_10" and profile.task_id == 2:
+        params.update(
+            {
+                "grounded_swap": True,
+                "ground_support_from_declared_surface": True,
+                "swap_cluster_radius_m": 0.18,
+                "support_surface": "kitchen_table",
+            }
+        )
     elif case_id == "S11":
         params.update({"asset_id": profile.s11_asset, "asset_scale": profile.s11_scale})
     elif case_id == "D02":

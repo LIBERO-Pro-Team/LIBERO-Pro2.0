@@ -1438,7 +1438,7 @@
       "case_id": "S04",
       "case_kind": "static",
       "bddl_path": "bddl/libero-pro2.0-1680-v1/libero_10/01_static/S04__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl",
-      "bddl_sha256": "f68e37116cb19e3feb375cad742c15a6df2c86438472fea270de552a100944df",
+      "bddl_sha256": "0dbdfd9155da6101cb6c2b544ace9aa6f8339aef6be28245ab038ad5f3cc49e7",
       "task_version": "libero-pro2.0-1706-v1",
       "max_steps": 520,
       "reset_stabilization_steps": 10,

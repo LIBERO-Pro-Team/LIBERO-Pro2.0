@@ -115,8 +115,27 @@ def test_grounded_s04_tasks_keep_declared_supports_available_for_grounding() -> 
         if "(:ground_support_from_declared_surface true)" not in text:
             missing.append(path.relative_to(dataset).as_posix())
 
-    assert len(grounded) == 26
+    assert len(grounded) == 27
     assert missing == []
+
+
+def test_libero10_task2_s04_uses_collision_safe_grounded_swap() -> None:
+    path = (
+        ROOT
+        / "assets"
+        / "bddl"
+        / "libero-pro2.0-1680-v1"
+        / "libero_10"
+        / "01_static"
+        / "S04__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl"
+    )
+    text = path.read_text(encoding="utf-8")
+    _, _, block = FIXER.case_slice(text, "S04")
+
+    assert "(:grounded_swap true)" in block
+    assert "(:ground_support_from_declared_surface true)" in block
+    assert "(:swap_cluster_radius_m 0.18)" in block
+    assert "(:support_surface kitchen_table)" in block
 
 
 def test_libero10_task8_d06_uses_a_welded_runtime_distractor() -> None:

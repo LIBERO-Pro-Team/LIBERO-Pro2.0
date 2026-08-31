@@ -70,7 +70,7 @@ GLOBAL_CASES = {
 }
 GOAL_S10_TASKS = {0, 1, 3, 4, 6, 7, 8}
 S04_GROUNDED_TASKS = {
-    *(("libero_10", task_id) for task_id in (0, 1, 3, 7, 9)),
+    *(("libero_10", task_id) for task_id in (0, 1, 2, 3, 7, 9)),
     *(("libero_goal", task_id) for task_id in (0, 7)),
     *(("libero_object", task_id) for task_id in range(10)),
     *(("libero_spatial", task_id) for task_id in (0, 1, 2, 3, 4, 5, 6, 7, 9)),
@@ -190,6 +190,12 @@ def case_updates(
         )
     elif case_id == "S04" and (suite, task_id) in S04_GROUNDED_TASKS:
         params["ground_support_from_declared_surface"] = ("true",)
+        if (suite, task_id) == ("libero_10", 2):
+            params.update(
+                grounded_swap=("true",),
+                swap_cluster_radius_m=("0.18",),
+                support_surface=("kitchen_table",),
+            )
         if (suite, task_id) == ("libero_spatial", 5):
             params["preserve_swapped_support_heights"] = ("true",)
     elif case_id == "S05":
