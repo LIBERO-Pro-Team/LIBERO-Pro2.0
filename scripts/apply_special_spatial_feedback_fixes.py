@@ -174,6 +174,7 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
         "params": _params(
             strict_swap_xy=("true",),
             support_surface=_support("glazed_rim_porcelain_ramekin_1", "cookies_1"),
+            preserve_swapped_support_heights=("true",),
         ),
     },
     ("libero_spatial", 7, "S04"): {

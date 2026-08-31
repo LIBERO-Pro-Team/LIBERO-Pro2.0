@@ -69,6 +69,12 @@ GLOBAL_CASES = {
     "D15",
 }
 GOAL_S10_TASKS = {0, 1, 3, 4, 6, 7, 8}
+S04_GROUNDED_TASKS = {
+    *(("libero_10", task_id) for task_id in (0, 1, 3, 7, 9)),
+    *(("libero_goal", task_id) for task_id in (0, 7)),
+    *(("libero_object", task_id) for task_id in range(10)),
+    *(("libero_spatial", task_id) for task_id in (0, 1, 2, 3, 4, 5, 6, 7, 9)),
+}
 
 D03_FEEDBACK_OVERRIDES: dict[
     tuple[str, int], dict[str, tuple[str, ...]]
@@ -169,7 +175,24 @@ def case_updates(
     params: dict[str, tuple[str, ...]] = {}
     fields: dict[str, tuple[str, ...]] = {}
 
-    if case_id == "S05":
+    if (suite, task_id, case_id) == ("libero_10", 8, "D06"):
+        fields["disturbance_targets"] = ("none",)
+        params.update(
+            asset_id=("libero/red_coffee_mug",),
+            asset_scale=("1.0",),
+            asset_initial_anchor=("moka_pot_2",),
+            asset_initial_offset_xy=("0.134437", "0.194625"),
+            asset_initial_clearance_m=("0.10",),
+            support_surface=("kitchen_table",),
+            minimum_clearance_m=("0.10",),
+            minimum_displacement_m=("0.10",),
+            offset_xy=("0.12", "-0.09"),
+        )
+    elif case_id == "S04" and (suite, task_id) in S04_GROUNDED_TASKS:
+        params["ground_support_from_declared_surface"] = ("true",)
+        if (suite, task_id) == ("libero_spatial", 5):
+            params["preserve_swapped_support_heights"] = ("true",)
+    elif case_id == "S05":
         params.update(
             barrier_scale=("0.65",),
             barrier_path_fraction=("0.35",),
@@ -234,6 +257,12 @@ def case_updates(
                 asset_quat=("0.70710678", "0.70710678", "0.0", "0.0"),
                 grounded_replacement=("true",),
                 support_surface=("table",),
+            )
+        elif (suite, task_id) == ("libero_object", 9):
+            params.update(
+                sampler_compatible=("true",),
+                grounded_replacement=("true",),
+                support_surface=("floor",),
             )
     elif case_id == "S07":
         params.update(
@@ -310,11 +339,18 @@ def case_updates(
     elif case_id == "S11":
         if task_id == 0:
             fields.update(
-                targets=("yellow_cabinet_2",), references=("wooden_cabinet_1",)
+                targets=("wooden_cabinet_1",), references=("wooden_cabinet_1",)
             )
             params.update(
-                fixture_distractor=("true",),
-                fixture_distractor_targets=("yellow_cabinet_2",),
+                asset_id=("libero/yellow_cabinet",),
+                asset_scale=("1.0",),
+                asset_count=("1",),
+                asset_quat=("1.0", "0.0", "0.0", "0.0"),
+                weld_asset_joints=("true",),
+                clutter_minimum_gap_m=("0.080",),
+                clutter_offsets_xy=("-0.067791", "0.639295"),
+                support_surface=("main_table",),
+                clear_of_task_entities=("true",),
             )
         elif task_id in {1, 5, 6}:
             params.update(
@@ -450,44 +486,34 @@ def apply_goal_structural_overrides(text: str, task_id: int, case_id: str) -> st
             "flat_stove_1 - flat_stove", "flat_stove_1 - yellow_stove", 1
         )
     elif (task_id, case_id) == (0, "S11"):
-        # Keep the custom region inside :regions. The earlier insertion before
-        # :fixtures placed it after the :regions closing parenthesis, so LIBERO
-        # ignored the placement and left the distractor below the table.
-        markers = (
-            "yellow_cabinet_2 - yellow_cabinet",
-            "(-0.06 0.39 -0.04 0.41)",
-            "(0.0 0.0)",
-            "(On yellow_cabinet_2 main_table_similar_cabinet_region)",
-        )
-        regions_match = re.search(r"\(\s*:regions\b", text)
-        similar_match = re.search(r"\(\s*similar_cabinet_region\b", text)
-        if regions_match is not None and similar_match is not None:
-            regions_end = group_end(text, regions_match.start())
-            if (
-                regions_match.start() < similar_match.start() < regions_end
-                and all(marker in text for marker in markers)
-            ):
-                return text
         text = _remove_named_group(text, "similar_cabinet_region")
-        region = """      (similar_cabinet_region
-          (:target main_table)
-          (:ranges (
-              (-0.06 0.39 -0.04 0.41)
-            )
-          )
-          (:yaw_rotation (
-              (0.0 0.0)
-            )
-          )
-      )"""
-        text = _insert_in_group(text, "regions", region)
-        if "yellow_cabinet_2 - yellow_cabinet" not in text:
-            text = _insert_in_group(
-                text, "fixtures", "    yellow_cabinet_2 - yellow_cabinet"
-            )
-        init = "(On yellow_cabinet_2 main_table_similar_cabinet_region)"
-        if init not in text:
-            text = _insert_in_group(text, "init", f"    {init}")
+        text = re.sub(
+            r"\n\s*yellow_cabinet_2\s+-\s+yellow_cabinet\s*", "\n", text, count=1
+        )
+        text = re.sub(
+            r"\n\s*\(On\s+yellow_cabinet_2\s+[^)]+\)\s*", "\n", text, count=1
+        )
+    return text
+
+
+def apply_published_structural_overrides(
+    text: str, suite: str, task_id: int, case_id: str
+) -> str:
+    if (str(suite), int(task_id), str(case_id).upper()) == (
+        "libero_10",
+        8,
+        "D06",
+    ):
+        text = _remove_named_group(text, "d06_distractor_init_region")
+        text = re.sub(
+            r"\n\s*red_coffee_mug_1\s+-\s+red_coffee_mug\s*", "\n", text, count=1
+        )
+        text = re.sub(
+            r"\n\s*\(On\s+red_coffee_mug_1\s+[^)]+\)\s*", "\n", text, count=1
+        )
+        return text
+    if str(suite) == "libero_goal":
+        return apply_goal_structural_overrides(text, task_id, case_id)
     return text
 
 
@@ -519,14 +545,8 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
         }
     if case_id == "S11" and suite == "libero_goal" and task_id == 0:
         return {
-            "asset_id",
-            "asset_scale",
-            "asset_count",
-            "asset_quat",
-            "clutter_minimum_gap_m",
-            "clutter_offsets_xy",
-            "support_surface",
-            "visual_only_asset",
+            "fixture_distractor",
+            "fixture_distractor_targets",
         }
     return set()
 
@@ -550,16 +570,19 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
             continue
         params, fields = case_updates(suite, task_id, case_id)
         remove_params = _remove_params_for(suite, task_id, case_id)
-        structural = suite == "libero_goal" and (
-            (task_id, case_id) in {(0, "S06"), (7, "S06"), (0, "S11")}
-        )
+        structural = (
+            suite == "libero_goal"
+            and (task_id, case_id) in {(0, "S06"), (7, "S06"), (0, "S11")}
+        ) or (suite, task_id, case_id) == ("libero_10", 8, "D06")
         if not params and not fields and not structural and not remove_params:
             continue
         path = ASSETS / str(item["bddl_path"])
         original = path.read_text(encoding="utf-8")
         updated = original
         if structural:
-            updated = apply_goal_structural_overrides(updated, task_id, case_id)
+            updated = apply_published_structural_overrides(
+                updated, suite, task_id, case_id
+            )
         updated = update_case(
             updated,
             case_id,

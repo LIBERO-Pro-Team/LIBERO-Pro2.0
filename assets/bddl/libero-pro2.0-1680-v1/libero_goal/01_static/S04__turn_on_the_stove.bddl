@@ -185,6 +185,7 @@
           (:grounded_swap true)
           (:swap_cluster_radius_m 0.18)
           (:support_surface table)
+          (:ground_support_from_declared_surface true)
         )
       )
       (S05

@@ -516,23 +516,6 @@ def case_entry(case_id: str, profile: TaskProfile, active_case: str) -> str:
                 "support_surface",
             ):
                 params.pop(key, None)
-        if (
-            profile.suite == "libero_goal"
-            and case_id == "S11"
-            and profile.task_id == 0
-        ):
-            for key in (
-                "asset_id",
-                "asset_scale",
-                "asset_count",
-                "asset_quat",
-                "clutter_minimum_gap_m",
-                "clutter_offsets_xy",
-                "support_surface",
-                "visual_only_asset",
-            ):
-                params.pop(key, None)
-
     lines = [f"      ({case_id}"]
     for key, value in fields:
         lines.append(f"        (:{key} {value})")
@@ -582,10 +565,9 @@ def perturbation_config(profile: TaskProfile, active_case: str) -> str:
 def append_config(source: str, profile: TaskProfile, active_case: str) -> str:
     if ":perturbation_config" in source:
         raise ValueError(f"Source already has perturbation_config: {profile.task_name}")
-    if profile.suite == "libero_goal":
-        source = _final_review_rules().apply_goal_structural_overrides(
-            source, profile.task_id, active_case
-        )
+    source = _final_review_rules().apply_published_structural_overrides(
+        source, profile.suite, profile.task_id, active_case
+    )
     source = source.rstrip()
     if not source.endswith(")"):
         raise ValueError(f"Source BDDL is not closed: {profile.task_name}")

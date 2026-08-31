@@ -194,6 +194,7 @@
           (:swap_cluster_radius_m 0.18)
           (:support_surface flat_stove_1 wooden_cabinet_1)
           (:strict_swap_xy true)
+          (:ground_support_from_declared_surface true)
         )
       )
       (S05

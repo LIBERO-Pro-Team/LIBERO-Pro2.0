@@ -167,6 +167,8 @@
           (:asset_id prl/cracker_box)
           (:asset_scale 0.7)
           (:grounded_replacement true)
+          (:sampler_compatible true)
+          (:support_surface floor)
         )
       )
       (S07

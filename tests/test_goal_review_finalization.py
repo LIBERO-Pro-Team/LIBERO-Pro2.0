@@ -233,7 +233,7 @@ def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_c
     } == FINALIZER.GOAL_NOT_APPLICABLE | {("libero_10", 8, "S04")}
 
 
-def test_goal_task0_s11_adds_one_collision_fixture_without_moving_existing_scene() -> None:
+def test_goal_task0_s11_keeps_the_original_scene_structure() -> None:
     source = (
         ROOT
         / "assets"
@@ -248,16 +248,10 @@ def test_goal_task0_s11_adds_one_collision_fixture_without_moving_existing_scene
     twice = FINALIZER.apply_goal_structural_overrides(once, 0, "S11")
 
     assert once == twice
-    assert "yellow_cabinet_2 - yellow_cabinet" in once
-    assert "(:target main_table)" in once
-    assert "(-0.06 0.39 -0.04 0.41)" in once
-    assert "(0.0 0.0)" in once
-    assert "(On yellow_cabinet_2 main_table_similar_cabinet_region)" in once
+    assert "yellow_cabinet_2 - yellow_cabinet" not in once
+    assert "similar_cabinet_region" not in once
+    assert "(On yellow_cabinet_2 " not in once
     assert once.count("(On wooden_cabinet_1 main_table_cabinet_region)") == 1
-    regions_start = once.index("(:regions")
-    regions_end = FINALIZER.group_end(once, regions_start)
-    similar_start = once.index("(similar_cabinet_region")
-    assert regions_start < similar_start < regions_end
 
 
 def test_goal_task_specific_review_updates_are_scoped() -> None:
@@ -288,6 +282,8 @@ def test_goal_task_specific_review_updates_are_scoped() -> None:
     assert task6_s03["height_delta_m"] == ("0.05",)
     assert task8_s03["height_delta_m"] == ("0.05",)
     assert task9_s03["height_delta_m"] == ("0.07",)
-    assert task0_s11["fixture_distractor"] == ("true",)
-    assert task0_s11_fields["targets"] == ("yellow_cabinet_2",)
+    assert task0_s11["asset_id"] == ("libero/yellow_cabinet",)
+    assert task0_s11["weld_asset_joints"] == ("true",)
+    assert task0_s11["clutter_offsets_xy"] == ("-0.067791", "0.639295")
+    assert task0_s11_fields["targets"] == ("wooden_cabinet_1",)
     assert task5_s13_fields["targets"] == ("plate_1",)

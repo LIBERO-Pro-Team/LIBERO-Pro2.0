@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -100,6 +101,131 @@ def test_task_local_clutter_clearance_can_include_task_entities() -> None:
     assert {"target", "reference"}.isdisjoint(
         RUNTIME._clutter_clearance_ignored(strict, "asset", ("placed",), ("table",))
     )
+
+
+def test_grounded_s04_tasks_keep_declared_supports_available_for_grounding() -> None:
+    dataset = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1"
+    grounded = []
+    missing = []
+    for path in dataset.rglob("S04__*.bddl"):
+        text = path.read_text(encoding="utf-8")
+        if "(:grounded_swap true)" not in text:
+            continue
+        grounded.append(path)
+        if "(:ground_support_from_declared_surface true)" not in text:
+            missing.append(path.relative_to(dataset).as_posix())
+
+    assert len(grounded) == 26
+    assert missing == []
+
+
+def test_libero10_task8_d06_uses_a_welded_runtime_distractor() -> None:
+    path = (
+        ROOT
+        / "assets"
+        / "bddl"
+        / "libero-pro2.0-1680-v1"
+        / "libero_10"
+        / "02_dynamic"
+        / "D06__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl"
+    )
+    text = path.read_text(encoding="utf-8")
+    _, _, block = FIXER.case_slice(text, "D06")
+
+    assert "red_coffee_mug_1 - red_coffee_mug" not in text
+    assert "(On red_coffee_mug_1 " not in text
+    assert "(:disturbance_targets none)" in block
+    assert "(:asset_id libero/red_coffee_mug)" in block
+    assert "(:asset_initial_anchor moka_pot_2)" in block
+    assert "(:asset_initial_offset_xy 0.134437 0.194625)" in block
+
+
+def test_goal_task0_s11_uses_a_welded_yellow_cabinet_asset() -> None:
+    path = (
+        ROOT
+        / "assets"
+        / "bddl"
+        / "libero-pro2.0-1680-v1"
+        / "libero_goal"
+        / "01_static"
+        / "S11__open_the_middle_drawer_of_the_cabinet.bddl"
+    )
+    text = path.read_text(encoding="utf-8")
+    _, _, block = FIXER.case_slice(text, "S11")
+
+    assert "yellow_cabinet_2 - yellow_cabinet" not in text
+    assert "(On yellow_cabinet_2 " not in text
+    assert "(:targets wooden_cabinet_1)" in block
+    assert "(:asset_id libero/yellow_cabinet)" in block
+    assert "(:weld_asset_joints true)" in block
+    assert "(:clutter_offsets_xy -0.067791 0.639295)" in block
+
+
+def test_asset_joint_welding_removes_internal_stateful_joints() -> None:
+    root = ET.fromstring(
+        "<body><body><joint name='drawer'/><geom type='box' size='1 1 1'/></body></body>"
+    )
+    calls = []
+
+    class FakeObject:
+        category_name = ""
+        rotation = (0.0, 0.0)
+        rotation_axis = "z"
+        object_properties = {}
+
+        def __init__(self):
+            self.joints = []
+
+        def get_obj(self):
+            return root
+
+    def factory(path, *, name, joints):
+        calls.append((path, name, joints))
+        return FakeObject()
+
+    plan = RUNTIME.ExecutionPlan(
+        case_id="S11",
+        schedule="static",
+        operator="asset_or_appearance",
+        variant="same_class_or_visually_similar_distractor",
+        targets=("wooden_cabinet_1",),
+        references=("wooden_cabinet_1",),
+        mechanisms=("asset",),
+        assets=(
+            RUNTIME.AssetSpec(
+                "libero/yellow_cabinet",
+                ROOT / "yellow_cabinet.xml",
+                staged=False,
+            ),
+        ),
+        params={"weld_asset_joints": True},
+    )
+
+    result = RUNTIME.inject_plan_assets({}, plan, factory)
+
+    assert result.injected_names == ("perturbation_s11_0",)
+    assert calls[0][2] is None
+    assert root.findall(".//joint") == []
+
+
+def test_object_task9_s06_keeps_the_original_sampling_envelope() -> None:
+    path = (
+        ROOT
+        / "assets"
+        / "bddl"
+        / "libero-pro2.0-1680-v1"
+        / "libero_object"
+        / "01_static"
+        / "S06__pick_up_the_orange_juice_and_place_it_in_the_basket.bddl"
+    )
+    text = path.read_text(encoding="utf-8")
+    _, _, block = FIXER.case_slice(text, "S06")
+
+    assert "(:asset_id prl/cracker_box)" in block
+    assert "(:asset_scale 0.7)" in block
+    assert "(:sampler_compatible true)" in block
+    assert "(:grounded_replacement true)" in block
+    assert "(:support_surface floor)" in block
 
 
 def test_s16_default_image_shift_keeps_legacy_height_rule() -> None:
@@ -500,8 +626,11 @@ def test_latest_nonspatial_review_values_are_task_local() -> None:
     assert task9_d03 == {}
     assert task5_d13["arm_delay_steps"] == ("8",)
     assert task5_d13["gripper_delay_steps"] == ("8",)
+    assert task8_d06["asset_id"] == ("libero/red_coffee_mug",)
+    assert task8_d06["asset_initial_anchor"] == ("moka_pot_2",)
+    assert task8_d06["asset_initial_offset_xy"] == ("0.134437", "0.194625")
     assert task8_d06["minimum_clearance_m"] == ("0.10",)
-    assert task8_d06_fields["disturbance_targets"] == ("red_coffee_mug_1",)
+    assert task8_d06_fields["disturbance_targets"] == ("none",)
     assert task0_d20["trigger_eef_motion_m"] == ("0.01",)
     assert task0_d20["trigger_action_norm"] == ("0.01",)
     assert "trigger_eef_motion_m" not in task2_d20

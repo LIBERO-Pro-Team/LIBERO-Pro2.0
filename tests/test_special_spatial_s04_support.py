@@ -94,7 +94,7 @@ def test_declared_support_grounding_is_task_local(monkeypatch) -> None:
     np.testing.assert_array_equal(applied["second"][:2], first_before[:2])
 
 
-def test_only_reported_spatial_s04_files_opt_in_to_declared_support_grounding() -> None:
+def test_grounded_spatial_s04_files_opt_in_to_declared_support_grounding() -> None:
     paths = {
         path.name: path.read_text(encoding="utf-8")
         for path in (
@@ -113,7 +113,14 @@ def test_only_reported_spatial_s04_files_opt_in_to_declared_support_grounding() 
         if "(:ground_support_from_declared_surface true)" in text
     }
     assert opted_in == {
+        "S04__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate.bddl",
         "S04__pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate.bddl",
+        "S04__pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate.bddl",
         "S04__pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
     }
 
@@ -133,3 +140,20 @@ def test_spatial_task4_d18_uses_the_stable_task_local_drop_state() -> None:
     assert "(:offset_xy 0.04 -0.12)" in text
     assert "(:minimum_clearance_m 0.08)" in text
     assert "(:grounded_pose true)" in text
+
+
+def test_spatial_task5_s04_preserves_the_two_stable_support_heights() -> None:
+    path = next(
+        (
+            ROOT
+            / "assets"
+            / "bddl"
+            / "libero-pro2.0-1680-v1"
+            / "libero_spatial"
+            / "01_static"
+        ).glob("S04__pick_up_the_black_bowl_on_the_ramekin*.bddl")
+    )
+
+    text = path.read_text(encoding="utf-8")
+
+    assert "(:preserve_swapped_support_heights true)" in text

@@ -137,11 +137,17 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         params.update(minimum_clearance_m=("0.16",))
         if suite == "libero_10" and task_id == 8:
             params.update(
+                asset_id=("libero/red_coffee_mug",),
+                asset_scale=("1.0",),
+                asset_initial_anchor=("moka_pot_2",),
+                asset_initial_offset_xy=("0.134437", "0.194625"),
+                asset_initial_clearance_m=("0.10",),
+                support_surface=("kitchen_table",),
                 minimum_clearance_m=("0.10",),
                 minimum_displacement_m=("0.10",),
                 offset_xy=("0.12", "-0.09"),
             )
-            fields["disturbance_targets"] = ("red_coffee_mug_1",)
+            fields["disturbance_targets"] = ("none",)
         if suite == "libero_goal" and task_id in {1, 3, 4, 6, 8}:
             params["minimum_clearance_m"] = ("0.20",)
         if suite == "libero_object" and task_id == 6:
@@ -199,8 +205,11 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
     elif case_id == "S04":
         params["swap_xy"] = ("0.0", "0.0")
         params["grounded_swap"] = ("true",)
+        params["ground_support_from_declared_surface"] = ("true",)
         params["swap_cluster_radius_m"] = ("0.18",)
         params["support_surface"] = ("table",)
+        if (suite, task_id) == ("libero_spatial", 5):
+            params["preserve_swapped_support_heights"] = ("true",)
         if (suite, task_id) in {
             ("libero_10", 7),
             ("libero_10", 8),
@@ -246,6 +255,14 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             # Preserve the already-published task-local scale for other
             # LIBERO-10 S06 tasks when this fixer is rerun.
             params.pop("asset_scale", None)
+        elif suite == "libero_object" and task_id == 9:
+            params.update(
+                asset_id=("prl/cracker_box",),
+                asset_scale=("0.7",),
+                sampler_compatible=("true",),
+                grounded_replacement=("true",),
+                support_surface=("floor",),
+            )
         else:
             params["asset_scale"] = ("0.58",)
     elif case_id == "S08":
@@ -285,7 +302,22 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             asset_scale=("0.30",),
             clutter_offsets_xy=("0.075", "0.055"),
         )
-        if suite == "libero_10" and task_id == 6:
+        if suite == "libero_goal" and task_id == 0:
+            fields.update(
+                targets=("wooden_cabinet_1",), references=("wooden_cabinet_1",)
+            )
+            params.update(
+                asset_id=("libero/yellow_cabinet",),
+                asset_scale=("1.0",),
+                asset_count=("1",),
+                asset_quat=("1.0", "0.0", "0.0", "0.0"),
+                weld_asset_joints=("true",),
+                clutter_minimum_gap_m=("0.080",),
+                clutter_offsets_xy=("-0.067791", "0.639295"),
+                support_surface=("main_table",),
+                clear_of_task_entities=("true",),
+            )
+        elif suite == "libero_10" and task_id == 6:
             params["asset_count"] = ("2",)
             params["clutter_offsets_xy"] = ("0.075", "0.055", "-0.075", "0.055")
     elif case_id == "S12":

@@ -153,6 +153,7 @@
           (:grounded_swap true)
           (:strict_swap_xy true)
           (:support_surface table)
+          (:ground_support_from_declared_surface true)
         )
       )
       (S05

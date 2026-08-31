@@ -476,7 +476,7 @@ def build_execution_plan(
         params = {}
     dynamic_asset_scale = (
         _param_float(params, "asset_scale", 1.0)
-        if case_id in {"D03", "D04", "D05"}
+        if case_id in {"D03", "D04", "D05", "D06"}
         else 1.0
     )
     static_barrier_scale = (
@@ -485,7 +485,7 @@ def build_execution_plan(
         else 1.0
     )
     asset_ids = list(CASE_ASSETS.get(case_id, ()))
-    if case_id == "D03" and "asset_id" in params:
+    if case_id in {"D03", "D06"} and "asset_id" in params:
         configured_assets = _name_tuple(params.get("asset_id"))
         if len(configured_assets) != 1:
             raise PerturbationConfigurationError(
@@ -686,6 +686,8 @@ def inject_plan_assets(
         obj.rotation = (0.0, 0.0)
         obj.rotation_axis = "z"
         obj.object_properties = {"vis_site_names": {}}
+        if _param_bool(plan.params, "weld_asset_joints", False):
+            _remove_object_joints(obj)
         if plan.case_id == "S03" and "asset_geometry_factors" in plan.params:
             factors = _param_vector(
                 plan.params, "asset_geometry_factors", (1.0, 1.0, 1.0)
@@ -724,6 +726,16 @@ def inject_plan_assets(
         objects_dict[name] = obj
         injected.append(name)
     return AssetInjectionResult(tuple(injected), tuple(replaced))
+
+
+def _remove_object_joints(obj: Any) -> None:
+    """Weld every body in an opt-in injected asset before MuJoCo compilation."""
+
+    for root in _mujoco_xml_roots(obj):
+        for parent in root.iter():
+            for child in list(parent):
+                if child.tag == "joint":
+                    parent.remove(child)
 
 
 def _scale_mujoco_object(obj: Any, factor: float) -> None:
@@ -1059,6 +1071,16 @@ def _set_entity_pose(
         quaternion = np.asarray(env.sim.data.body_xquat[body_id], dtype=np.float64)
     obj = env.objects_dict.get(name)
     joints = list(getattr(obj, "joints", []) or []) if obj is not None else []
+    joint_lookup = getattr(env.sim.model, "joint_name2id", None)
+    if callable(joint_lookup):
+        valid_joints = []
+        for joint in joints:
+            try:
+                joint_lookup(joint)
+            except Exception:
+                continue
+            valid_joints.append(joint)
+        joints = valid_joints
     if joints:
         env.sim.data.set_joint_qpos(
             joints[-1], np.concatenate([np.asarray(position), np.asarray(quaternion)])
@@ -2754,6 +2776,15 @@ class NonPhysicalPerturbationRuntime:
                         continue
                     first_after, first_support = first_grounded
                     second_after, second_support = second_grounded
+                    if _param_bool(
+                        self.plan.params,
+                        "preserve_swapped_support_heights",
+                        False,
+                    ):
+                        first_after = first_after.copy()
+                        second_after = second_after.copy()
+                        first_after[2] = second_position[2]
+                        second_after[2] = first_position[2]
                     if not _candidate_is_clear(
                         env, first, first_after[:2], 0.02, ignored=support_ignored
                     ) or not _candidate_is_clear(
@@ -3251,6 +3282,55 @@ class NonPhysicalPerturbationRuntime:
             name = _injected_name(self.plan, index)
             if _entity_exists(env, name):
                 position, quat = _entity_pose(env, name)
+                if self.plan.case_id == "D06":
+                    anchors = _name_tuple(
+                        self.plan.params.get("asset_initial_anchor")
+                    )
+                    if len(anchors) != 1 or not _entity_exists(env, anchors[0]):
+                        raise PerturbationConfigurationError(
+                            "D06 asset_initial_anchor must name one scene entity"
+                        )
+                    anchor, _ = _entity_pose(env, anchors[0])
+                    offset_xy = _required_param_vector(
+                        self.plan.params, "asset_initial_offset_xy", 2
+                    )
+                    grounded = _grounded_entity_position(
+                        env,
+                        name,
+                        anchor[:2] + offset_xy,
+                        self.plan.params,
+                        ignored=(name,),
+                    )
+                    if grounded is None:
+                        raise PerturbationValidationError(
+                            "D06 injected distractor has no configured support surface"
+                        )
+                    grounded_position, _ = grounded
+                    support_names = _support_entity_names(self.plan.params)
+                    initial_clearance = _param_float(
+                        self.plan.params, "asset_initial_clearance_m", 0.08
+                    )
+                    if not _candidate_is_clear(
+                        env,
+                        name,
+                        grounded_position[:2],
+                        initial_clearance,
+                        ignored=(name, *support_names),
+                    ):
+                        raise PerturbationValidationError(
+                            "D06 injected distractor initial pose is not collision-clear"
+                        )
+                    configured_quaternion = _param_vector(
+                        self.plan.params, "asset_quat", (1.0, 0.0, 0.0, 0.0)
+                    )
+                    _set_entity_pose(
+                        env, name, grounded_position, configured_quaternion
+                    )
+                    self._saved_poses[name] = (
+                        grounded_position.copy(),
+                        configured_quaternion.copy(),
+                    )
+                    continue
                 self._saved_poses[name] = (position, quat)
                 _set_entity_pose(env, name, np.array([0.0, 0.0, -5.0]), quat)
 
@@ -3449,7 +3529,17 @@ class NonPhysicalPerturbationRuntime:
                 self._dynamic_event_step = int(step)
                 self._dynamic_applied = True
                 return
-            if case_id == "D06" and self.plan.disturbance_targets is not None:
+            if case_id == "D06" and self.plan.assets:
+                targets = [
+                    _injected_name(self.plan, index)
+                    for index in range(len(self.plan.assets))
+                ]
+                missing = [name for name in targets if not _entity_exists(env, name)]
+                if missing:
+                    raise PerturbationValidationError(
+                        f"D06 injected distractors are absent from the scene: {missing}"
+                    )
+            elif case_id == "D06" and self.plan.disturbance_targets is not None:
                 targets = list(self.plan.disturbance_targets)
                 if len(set(targets)) != len(targets):
                     raise PerturbationValidationError(
