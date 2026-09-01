@@ -23,6 +23,8 @@ ASSET_ROOT = (
     / "perturbation_assets"
 )
 INJECTED_OBSTACLE_TASK = ("libero_10", 8)
+TABLE_SUPPORTED_MICROWAVE_TASK = ("libero_10", 9)
+CREAM_CHEESE_IN_BOWL_TASK = ("libero_goal", 6)
 TABLE_SUPPORTED_WINE_RACK_TASK = ("libero_goal", 9)
 
 
@@ -143,6 +145,10 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
         if key == TABLE_SUPPORTED_WINE_RACK_TASK:
             assert plan.params["support_surface"] == "main_table"
             assert plan.params["asset_offset_xyz"] == [0.14, 0.05, -0.22]
+        elif key == TABLE_SUPPORTED_MICROWAVE_TASK:
+            assert plan.params["asset_offset_xyz"] == [0.0, -0.08, -0.12]
+        elif key == CREAM_CHEESE_IN_BOWL_TASK:
+            assert plan.params["asset_offset_xyz"] == [-0.03, 0.14, 0.0]
 
         tree = PARSER.scan_tokens(filename=str(path))
         objects = _declared_objects(tree)

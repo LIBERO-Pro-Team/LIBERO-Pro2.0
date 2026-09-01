@@ -118,10 +118,10 @@ D03_SUPPORT_SURFACES: dict[tuple[str, int], str] = {
 }
 
 D03_ASSET_OFFSETS: dict[tuple[str, int], tuple[str, str, str]] = {
-    ("libero_10", 9): ("0.0", "-0.08", "0.0"),
+    ("libero_10", 9): ("0.0", "-0.08", "-0.12"),
     ("libero_goal", 0): ("0.07", "0.12", "-0.16"),
     ("libero_goal", 2): ("-0.055", "0.0", "0.0"),
-    ("libero_goal", 6): ("0.0", "0.14", "0.0"),
+    ("libero_goal", 6): ("-0.03", "0.14", "0.0"),
     ("libero_goal", 9): ("0.14", "0.05", "-0.22"),
 }
 

@@ -362,7 +362,7 @@
           (:interaction_mode placement)
           (:receiver_trigger_distance_m 0.24)
           (:support_surface main_table)
-          (:asset_offset_xyz 0.0 0.14 0.0)
+          (:asset_offset_xyz -0.03 0.14 0.0)
           (:staging_position_xyz 0.0 0.0 -5.0)
           (:persistent_existing_obstacle true)
         )
