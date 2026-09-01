@@ -389,6 +389,10 @@
           (:interaction_mode placement)
           (:visual_only_asset false)
           (:physical_collision true)
+          (:lateral_offset_m 0.0)
+          (:barrier_height_m 0.05)
+          (:asset_scale 1.10)
+          (:barrier_path_fraction 0.50)
         )
       )
       (D06

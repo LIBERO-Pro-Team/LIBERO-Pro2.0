@@ -633,6 +633,11 @@ def test_object_task0_feedback_strength_values_are_task_local() -> None:
 
 def test_latest_nonspatial_review_values_are_task_local() -> None:
     task0_s05, _ = FIXER.task_params("libero_10", 0, "S05")
+    task1_d03, _ = FIXER.task_params("libero_10", 1, "D03")
+    task1_d05, _ = FIXER.task_params("libero_10", 1, "D05")
+    task1_d20, _ = FIXER.task_params("libero_10", 1, "D20")
+    task1_s06, _ = FIXER.task_params("libero_10", 1, "S06")
+    task1_s10, _ = FIXER.task_params("libero_10", 1, "S10")
     task5_d03, _ = FIXER.task_params("libero_10", 5, "D03")
     task9_d03, _ = FIXER.task_params("libero_10", 9, "D03")
     task5_d13, _ = FIXER.task_params("libero_10", 5, "D13")
@@ -643,6 +648,21 @@ def test_latest_nonspatial_review_values_are_task_local() -> None:
 
     assert task0_s05["barrier_scale"] == ("1.15",)
     assert task0_s05["barrier_path_fraction"] == ("0.50",)
+    assert task1_d03 == {}
+    assert task1_d05["barrier_path_fraction"] == ("0.50",)
+    assert task1_d05["lateral_offset_m"] == ("0.055",)
+    assert task1_d20["joint_delta_rad"] == ("0.14",)
+    assert task1_d20["min_eef_displacement_m"] == ("0.05",)
+    assert task1_s06["asset_scale"] == ("0.55",)
+    assert task1_s10["asset_count"] == ("3",)
+    assert task1_s10["clutter_offsets_xy"] == (
+        "0.11",
+        "-0.10",
+        "0.11",
+        "0.10",
+        "-0.11",
+        "0.10",
+    )
     assert task5_d03 == {}
     assert task9_d03 == {}
     assert task5_d13["arm_delay_steps"] == ("8",)

@@ -22,7 +22,7 @@ ASSET_ROOT = (
     / "assets"
     / "perturbation_assets"
 )
-INJECTED_OBSTACLE_TASK = ("libero_10", 8)
+INJECTED_OBSTACLE_TASKS = {("libero_10", 4), ("libero_10", 8)}
 TABLE_SUPPORTED_MICROWAVE_TASK = ("libero_10", 9)
 CREAM_CHEESE_IN_BOWL_TASK = ("libero_goal", 6)
 TABLE_SUPPORTED_WINE_RACK_TASK = ("libero_goal", 9)
@@ -153,13 +153,20 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
         tree = PARSER.scan_tokens(filename=str(path))
         objects = _declared_objects(tree)
         goal_objects = _goal_objects(tree, objects)
-        if key == INJECTED_OBSTACLE_TASK:
+        if key in INJECTED_OBSTACLE_TASKS:
             assert plan.params["persistent_movable_asset"] is True
             assert "persistent_existing_obstacle" not in plan.params
             assert plan.references == ()
             assert len(plan.assets) == 1
-            assert plan.assets[0].asset_id == "prl/can"
-            assert plan.assets[0].scale == 1.0
+            if key == ("libero_10", 4):
+                assert plan.params["receiver_selection"] == "active_goal_path"
+                assert plan.targets == ("plate_1", "plate_2")
+                assert plan.params["support_surface"] == "living_room_table"
+                assert plan.assets[0].asset_id == "ycb/YcbTomatoSoupCan"
+                assert plan.assets[0].scale == 0.50
+            else:
+                assert plan.assets[0].asset_id == "prl/can"
+                assert plan.assets[0].scale == 1.0
         else:
             assert plan.params["persistent_existing_obstacle"] is True
             assert "persistent_movable_asset" not in plan.params

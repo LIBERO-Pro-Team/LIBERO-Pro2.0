@@ -1921,6 +1921,33 @@ def _goal_path_anchor_candidates(
     return tuple(candidates)
 
 
+def _goal_path_receiver_for_target(
+    env: Any, target_name: str
+) -> tuple[str, np.ndarray, str]:
+    """Resolve the receiver and functional anchor for one declared goal."""
+
+    sites = getattr(env, "object_sites_dict", {})
+    regions = getattr(env, "parsed_problem", {}).get("regions", {})
+    for state in getattr(env, "parsed_problem", {}).get("goal_state", []):
+        if len(state) < 3 or str(state[1]) != str(target_name):
+            continue
+        site_name = str(state[2])
+        site = sites.get(site_name)
+        receiver_name = getattr(site, "parent_name", None) if site is not None else None
+        region = regions.get(site_name, {})
+        if receiver_name is None and isinstance(region, dict):
+            receiver_name = region.get("target")
+        if receiver_name is None and _entity_exists(env, site_name):
+            receiver_name = site_name
+        if receiver_name is None or not _entity_exists(env, receiver_name):
+            break
+        receiver, anchor_name = _functional_anchor(env, str(receiver_name))
+        return str(receiver_name), receiver, anchor_name
+    raise PerturbationValidationError(
+        f"Cannot resolve a receiver for goal target {target_name!r}"
+    )
+
+
 def _eef_target_contact(env: Any, target: str, tolerance: float = 0.004) -> bool:
     """Return true when robot collision geometry touches the target."""
 
@@ -2023,6 +2050,7 @@ class NonPhysicalPerturbationRuntime:
             tuple[tuple[int, float], ...],
             tuple[tuple[int, int, int], ...],
         ] | None = None
+        self._dynamic_active_goal_target: str | None = None
         self._baseline_model_id: int | None = None
         self._model_baseline: dict[str, np.ndarray] = {}
         self.set_seed(seed)
@@ -2076,6 +2104,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_event_origin_eef = None
         self._initial_eef_position = None
         self._staged_persistent_obstacle = None
+        self._dynamic_active_goal_target = None
 
     def _clear_temporal_state(self) -> None:
         self.previous_action = None
@@ -2149,6 +2178,17 @@ class NonPhysicalPerturbationRuntime:
                 )
             return _injected_name(self.plan)
         return None
+
+    def _d03_receiver_selection(self) -> str:
+        """Return the explicitly configured D03 receiver-selection mode."""
+
+        mode = str(self.plan.params.get("receiver_selection", "configured_target"))
+        normalized = mode.strip().casefold()
+        if normalized not in {"configured_target", "active_goal_path"}:
+            raise PerturbationConfigurationError(
+                "D03 receiver_selection must be configured_target or active_goal_path"
+            )
+        return normalized
 
     def _restore_staged_persistent_obstacle_physics(self, env: Any) -> None:
         state = self._staged_persistent_obstacle
@@ -2232,21 +2272,33 @@ class NonPhysicalPerturbationRuntime:
                 "Persistent D03 obstacle was not staged before its trigger"
             )
         obstacle, gravcomp, contact_masks = state
-        receiver = self.plan.targets[0] if self.plan.targets else None
-        if receiver is None or not _entity_exists(env, receiver):
-            raise PerturbationValidationError(
-                "Persistent D03 obstacle has no valid receiver"
+        selection = self._d03_receiver_selection()
+        selected_goal_target = None
+        if selection == "active_goal_path":
+            selected_goal_target = self._dynamic_active_goal_target
+            if selected_goal_target is None:
+                raise PerturbationValidationError(
+                    "D03 active_goal_path receiver was not selected before trigger"
+                )
+            receiver, requested_position, anchor_name = _goal_path_receiver_for_target(
+                env, selected_goal_target
             )
-        configured_anchors = _name_tuple(self.plan.params.get("receiver_anchor"))
-        if len(configured_anchors) > 1:
-            raise PerturbationConfigurationError(
-                "D03 receiver_anchor must name at most one site"
+        else:
+            receiver = self.plan.targets[0] if self.plan.targets else None
+            if receiver is None or not _entity_exists(env, receiver):
+                raise PerturbationValidationError(
+                    "Persistent D03 obstacle has no valid receiver"
+                )
+            configured_anchors = _name_tuple(self.plan.params.get("receiver_anchor"))
+            if len(configured_anchors) > 1:
+                raise PerturbationConfigurationError(
+                    "D03 receiver_anchor must name at most one site"
+                )
+            requested_position, anchor_name = _functional_anchor(
+                env,
+                receiver,
+                configured_anchors[0] if configured_anchors else None,
             )
-        requested_position, anchor_name = _functional_anchor(
-            env,
-            receiver,
-            configured_anchors[0] if configured_anchors else None,
-        )
         requested_position += _param_vector(
             self.plan.params, "asset_offset_xyz", (0.0, 0.0, 0.0)
         )
@@ -2260,13 +2312,19 @@ class NonPhysicalPerturbationRuntime:
             contype[geom_id] = original_contype
             conaffinity[geom_id] = original_conaffinity
         try:
+            placement_ignored = (receiver,)
+            if selected_goal_target is not None:
+                # The carried goal object is above the receiver during the
+                # pre-place event; it must not force the persistent obstacle
+                # outside the receiver's footprint.
+                placement_ignored = (receiver, selected_goal_target)
             position, support_geom = _safe_dynamic_asset_pose(
                 env,
                 obstacle,
                 requested_position,
                 quaternion,
                 self.plan.params,
-                ignored=(receiver,),
+                ignored=placement_ignored,
             )
         except Exception:
             for body_id, _ in gravcomp:
@@ -2285,15 +2343,16 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_event_step = int(step)
         self._dynamic_applied = True
         self._dynamic_restored = True
-        self._log_once(
-            "persistent_dynamic_obstacle_entered",
-            step,
-            obstacle=obstacle,
-            receiver=receiver,
-            anchor=anchor_name,
-            position=position.tolist(),
-            support_geom=support_geom,
-        )
+        details = {
+            "obstacle": obstacle,
+            "receiver": receiver,
+            "anchor": anchor_name,
+            "position": position.tolist(),
+            "support_geom": support_geom,
+        }
+        if selected_goal_target is not None:
+            details["goal_target"] = selected_goal_target
+        self._log_once("persistent_dynamic_obstacle_entered", step, **details)
 
     def _maintain_staged_persistent_obstacle(self, env: Any) -> None:
         state = self._staged_persistent_obstacle
@@ -4496,6 +4555,8 @@ class NonPhysicalPerturbationRuntime:
                     and np.linalg.norm(eef - receiver)
                     <= self._receiver_trigger_distance_m(case_id)
                 ):
+                    if case_id == "D03" and self._d03_receiver_selection() == "active_goal_path":
+                        self._dynamic_active_goal_target = goal_target
                     return True
             if case_id in {"D02", "D03", "D05", "D19"}:
                 return False
