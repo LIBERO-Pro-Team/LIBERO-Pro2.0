@@ -207,9 +207,9 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.45)
-          (:asset_quat 1.0 0.0 0.0 0.0)
+          (:asset_id github/object_sim_bowl)
+          (:asset_scale 0.70)
+          (:asset_quat 0.0 1.0 0.0 0.0)
           (:sampler_compatible true)
           (:grounded_replacement true)
           (:support_surface main_table)

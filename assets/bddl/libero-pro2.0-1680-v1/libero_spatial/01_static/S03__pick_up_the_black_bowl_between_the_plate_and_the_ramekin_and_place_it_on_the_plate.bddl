@@ -180,7 +180,7 @@
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode placement)
-          (:asset_geometry_factors 0.20 0.20 2.0)
+          (:asset_geometry_factors 0.70 0.70 2.0)
           (:height_delta_m 0.055)
         )
       )

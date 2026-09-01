@@ -16,6 +16,8 @@ for clearance, occlusion, and approach-path tests.
   (LGPL-2.1-only in the selected repository): visual meshes, simplified
   collision meshes, textures, and inertial metadata.
 - 3 RoboCasa handle geometries (CC BY 4.0 assets): bar, boxed, and knob handle.
+- 1 `object_sim` bowl geometry (Apache-2.0): one visual mesh and twelve
+  contact meshes wrapped for LIBERO placement and collision handling.
 - 5 locally generated parameterized MJCF structures (MIT): barrier panel,
   occlusion screen, opening frame, slotted receiver, and support riser.
 

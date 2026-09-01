@@ -1,8 +1,8 @@
 {
   "format_version": 1,
   "summary": {
-    "ready_mjcf_assets": 43,
-    "external_adapted_assets": 38,
+    "ready_mjcf_assets": 44,
+    "external_adapted_assets": 39,
     "generated_parametric_assets": 5,
     "perturbation_directions_covered": 41
   },
@@ -243,6 +243,19 @@
         0.172,
         0.172,
         0.076
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "github/object_sim_bowl",
+      "format": "mjcf",
+      "path": "adapted/github_objects/object_sim_bowl/object_sim_bowl.xml",
+      "source_asset": "https://github.com/vikashplus/object_sim/tree/main/bowl",
+      "license": "Apache-2.0",
+      "dimensions_m": [
+        0.14892301,
+        0.14895717,
+        0.07659914
       ],
       "readiness": "ready_mjcf"
     },

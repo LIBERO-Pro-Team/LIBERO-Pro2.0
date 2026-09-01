@@ -132,6 +132,19 @@
       "readiness": "ready_mjcf"
     },
     {
+      "id": "github/object_sim_bowl",
+      "format": "mjcf",
+      "path": "adapted/github_objects/object_sim_bowl/object_sim_bowl.xml",
+      "source_asset": "https://github.com/vikashplus/object_sim/tree/main/bowl",
+      "license": "Apache-2.0",
+      "dimensions_m": [
+        0.14892301,
+        0.14895717,
+        0.07659914
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
       "id": "prl/plastic_glass",
       "format": "mjcf",
       "path": "adapted/prl_objects/plastic_glass/plastic_glass.xml",

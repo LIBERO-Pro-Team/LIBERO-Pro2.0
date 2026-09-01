@@ -67,3 +67,50 @@ def test_non_opted_in_task_keeps_strict_original_state() -> None:
     result = _task_compatible_init_state(env, incoming)
 
     assert result is incoming
+
+
+def test_static_distractor_merges_multiple_free_joints_into_base_state() -> None:
+    old_nq = 24
+    old_nv = 22
+    current = np.arange(1 + 38 + 34, dtype=float) + 1000.0
+    model = SimpleNamespace(
+        nq=38,
+        nv=34,
+        jnt_type=np.array([0, 0], dtype=int),
+        jnt_qposadr=np.array([10, 25], dtype=int),
+        jnt_dofadr=np.array([9, 21], dtype=int),
+        joint_name2id=lambda name: {"first_joint": 0, "second_joint": 1}[name],
+    )
+    env = SimpleNamespace(
+        perturbation_plan=SimpleNamespace(
+            case_id="S10", params={"movable_asset": True}
+        ),
+        perturbation_asset_injection=SimpleNamespace(
+            injected_names=("perturbation_s10_0", "perturbation_s10_1")
+        ),
+        objects_dict={
+            "perturbation_s10_0": SimpleNamespace(
+                joints=["first_joint", "removed_internal_joint"]
+            ),
+            "perturbation_s10_1": SimpleNamespace(joints=["second_joint"]),
+        },
+        sim=SimpleNamespace(
+            model=model,
+            get_state=lambda: SimpleNamespace(flatten=lambda: current.copy()),
+        ),
+    )
+    incoming = np.arange(1 + old_nq + old_nv, dtype=float)
+
+    merged = _task_compatible_init_state(env, incoming)
+
+    assert merged.shape == current.shape
+    np.testing.assert_array_equal(merged[1:11], incoming[1:11])
+    np.testing.assert_array_equal(merged[11:18], current[11:18])
+    np.testing.assert_array_equal(merged[18:26], incoming[11:19])
+    np.testing.assert_array_equal(merged[26:33], current[26:33])
+    np.testing.assert_array_equal(merged[33:39], incoming[19:25])
+    np.testing.assert_array_equal(merged[39:48], incoming[25:34])
+    np.testing.assert_array_equal(merged[48:54], current[48:54])
+    np.testing.assert_array_equal(merged[54:60], incoming[34:40])
+    np.testing.assert_array_equal(merged[60:66], current[60:66])
+    np.testing.assert_array_equal(merged[66:73], incoming[40:47])

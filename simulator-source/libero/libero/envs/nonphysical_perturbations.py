@@ -649,6 +649,21 @@ def _clutter_clearance_ignored(
     return tuple(dict.fromkeys(ignored))
 
 
+def _set_movable_asset_contact_margin(obj: Any, margin_m: float) -> None:
+    if not 0.0 <= margin_m <= 0.02:
+        raise PerturbationConfigurationError(
+            "asset_contact_margin_m must be between 0.0 and 0.02"
+        )
+    value = f"{margin_m:.9g}"
+    for root in _mujoco_xml_roots(obj):
+        for geom in root.iter("geom"):
+            if geom.get("group", "0") != "0":
+                continue
+            if geom.get("contype", "1") == "0" and geom.get("conaffinity", "1") == "0":
+                continue
+            geom.set("margin", value)
+
+
 def inject_plan_assets(
     objects_dict: dict[str, Any],
     plan: ExecutionPlan,
@@ -711,21 +726,30 @@ def inject_plan_assets(
                     f"Injected asset name collides with an existing object: {name}"
                 )
             del objects_dict[name]
-        persistent_movable_asset = plan.case_id == "D03" and _param_bool(
-            plan.params, "persistent_movable_asset", False
+        movable_injected_asset = (
+            plan.case_id == "D03"
+            and _param_bool(plan.params, "persistent_movable_asset", False)
+        ) or (
+            plan.case_id in {"S10", "S11"}
+            and _param_bool(plan.params, "movable_asset", False)
         )
-        # Structural assets stay welded. The one explicitly movable D03 asset
-        # is compiled with a free joint so the policy can physically relocate it.
+        # Structural assets stay welded. Explicitly movable object distractors
+        # receive a free joint so the policy can physically relocate them.
         obj = object_factory(
             str(asset.xml_path),
             name=name,
-            joints="default" if persistent_movable_asset else None,
+            joints="default" if movable_injected_asset else None,
         )
         obj.category_name = "perturbation_asset"
         obj.rotation = (0.0, 0.0)
         obj.rotation_axis = "z"
         obj.object_properties = {"vis_site_names": {}}
-        if _param_bool(plan.params, "weld_asset_joints", False):
+        weld_asset_joints = _param_bool(plan.params, "weld_asset_joints", False)
+        if movable_injected_asset and weld_asset_joints:
+            raise PerturbationConfigurationError(
+                "A movable injected asset cannot weld its free joint"
+            )
+        if weld_asset_joints:
             _remove_object_joints(obj)
         if plan.case_id == "S03" and "asset_geometry_factors" in plan.params:
             factors = _param_vector(
@@ -751,12 +775,17 @@ def inject_plan_assets(
             _scale_mujoco_object_axes(obj, tuple(float(value) for value in factors))
         else:
             _scale_mujoco_object(obj, asset.scale)
+        if movable_injected_asset and "asset_contact_margin_m" in plan.params:
+            _set_movable_asset_contact_margin(
+                obj,
+                _param_float(plan.params, "asset_contact_margin_m", 0.0),
+            )
         root = obj.get_obj() if hasattr(obj, "get_obj") else None
         if root is not None:
             # A movable body cannot start below MuJoCo's infinite floor plane.
             # Keep it safely above the scene until begin_rollout stages it with
             # collision disabled; welded assets retain their legacy pose.
-            root.set("pos", "0 0 3" if persistent_movable_asset else "0 0 -5")
+            root.set("pos", "0 0 3" if movable_injected_asset else "0 0 -5")
             if (
                 plan.case_id in {"S12", "D04"}
                 and not _param_bool(plan.params, "physical_collision", False)
@@ -1390,6 +1419,23 @@ def _grounded_entity_position(
     # deep penetration.
     position[2] = float(support[0] - bottom_offset + 0.003)
     return position, support[1]
+
+
+def _support_geom_belongs_to_entity(
+    env: Any, support_geom: str, support_entity: str
+) -> bool:
+    support_body_ids = set(_entity_body_ids(env, support_entity))
+    model = env.sim.model
+    for geom_id, body_id in enumerate(
+        np.asarray(getattr(model, "geom_bodyid", ()), dtype=int)
+    ):
+        if int(body_id) not in support_body_ids:
+            continue
+        geom_name = str(model.geom_id2name(int(geom_id)) or "")
+        body_name = str(model.body_id2name(int(body_id)) or "")
+        if support_geom in {geom_name, body_name}:
+            return True
+    return False
 
 
 def _nearby_xy_candidates(candidate_xy: np.ndarray) -> tuple[np.ndarray, ...]:
@@ -3902,6 +3948,7 @@ class NonPhysicalPerturbationRuntime:
                 return
             target = targets[0]
             delta = _dynamic_pose_requested_delta(case_id, target, self.plan.params)
+            support_relation_state = None
             if case_id == "D19":
                 before, current_quaternion = _entity_pose(env, target)
                 initial = self._saved_poses.get(target, (before, current_quaternion))[0]
@@ -3980,38 +4027,112 @@ class NonPhysicalPerturbationRuntime:
                         f"D19 misplacement for {target!r} created deep penetration"
                     )
             else:
-                minimum_clearance = (
-                    _param_float(self.plan.params, "minimum_clearance_m", 0.08)
-                    if case_id == "D18"
-                    else 0.08
+                preserve_support_relation = case_id == "D01" and _param_bool(
+                    self.plan.params, "preserve_original_support_relation", False
                 )
-                if minimum_clearance <= 0.0:
-                    raise PerturbationConfigurationError(
-                        f"{case_id} minimum_clearance_m must be positive"
+                if preserve_support_relation:
+                    support_entities = _name_tuple(
+                        self.plan.params.get("support_surface")
                     )
-                _, after, applied = _safe_offset_pose(
-                    env,
-                    target,
-                    delta,
-                    minimum_gap=minimum_clearance,
-                )
-                grounded = _grounded_entity_position(
-                    env,
-                    target,
-                    after[:2],
-                    self.plan.params,
-                    ignored=(target, *self.plan.references),
-                )
-                if grounded is not None:
-                    after, support_geom = grounded
-                    self._log_once(
-                        "drop_position_grounded",
-                        step,
-                        target=target,
-                        support_geom=support_geom,
-                        support_position=after.tolist(),
+                    if len(support_entities) != 1:
+                        raise PerturbationConfigurationError(
+                            "D01 support preservation requires exactly one support_surface"
+                        )
+                    support_entity = support_entities[0]
+                    if support_entity == target or not _entity_exists(env, support_entity):
+                        raise PerturbationConfigurationError(
+                            f"D01 support entity {support_entity!r} is invalid"
+                        )
+                    local_clearance = _required_param_float(
+                        self.plan.params, "support_relation_clearance_m"
                     )
-            yaw = {"D01": 0.28, "D02": -0.24}.get(case_id)
+                    if not 0.0 < local_clearance < 0.03:
+                        raise PerturbationConfigurationError(
+                            "D01 support_relation_clearance_m must be between 0 and 0.03"
+                        )
+                    before, original_quaternion = _entity_pose(env, target)
+                    after = before.copy()
+                    after[:2] += np.asarray(delta, dtype=np.float64)
+                    applied = after[:2] - before[:2]
+                    if not _candidate_is_clear(
+                        env,
+                        target,
+                        after[:2],
+                        local_clearance,
+                        ignored=(support_entity,),
+                    ):
+                        raise PerturbationValidationError(
+                            f"D01 support-preserving position for {target!r} is blocked"
+                        )
+                    grounded = _grounded_entity_position(
+                        env,
+                        target,
+                        after[:2],
+                        self.plan.params,
+                        ignored=(target, *self.plan.references),
+                    )
+                    if grounded is None:
+                        raise PerturbationValidationError(
+                            f"D01 could not ground {target!r} on {support_entity!r}"
+                        )
+                    _, support_geom = grounded
+                    if not _support_geom_belongs_to_entity(
+                        env, support_geom, support_entity
+                    ):
+                        raise PerturbationValidationError(
+                            f"D01 candidate for {target!r} left support {support_entity!r}"
+                        )
+                    # Movable support assets can expose collision AABBs below
+                    # their semantic top. Keep the established relative height
+                    # while using the support geom only to validate XY coverage.
+                    after[2] = before[2]
+                    _set_entity_pose(env, target, after, original_quaternion)
+                    support_relation_state = (
+                        before,
+                        original_quaternion,
+                        support_entity,
+                        support_geom,
+                    )
+                else:
+                    minimum_clearance = (
+                        _param_float(self.plan.params, "minimum_clearance_m", 0.08)
+                        if case_id == "D18"
+                        else 0.08
+                    )
+                    if minimum_clearance <= 0.0:
+                        raise PerturbationConfigurationError(
+                            f"{case_id} minimum_clearance_m must be positive"
+                        )
+                    _, after, applied = _safe_offset_pose(
+                        env,
+                        target,
+                        delta,
+                        minimum_gap=minimum_clearance,
+                    )
+                    grounded = _grounded_entity_position(
+                        env,
+                        target,
+                        after[:2],
+                        self.plan.params,
+                        ignored=(target, *self.plan.references),
+                    )
+                    if grounded is not None:
+                        after, support_geom = grounded
+                        self._log_once(
+                            "drop_position_grounded",
+                            step,
+                            target=target,
+                            support_geom=support_geom,
+                            support_position=after.tolist(),
+                        )
+            yaw = (
+                _param_float(self.plan.params, "yaw_rad", 0.28)
+                if case_id == "D01"
+                and _param_bool(
+                    self.plan.params, "preserve_original_support_relation", False
+                )
+                else {"D01": 0.28, "D02": -0.24}.get(case_id)
+            )
             if (
                 case_id == "D18"
                 and target in self._saved_poses
@@ -4027,6 +4148,24 @@ class NonPhysicalPerturbationRuntime:
                     target,
                     after,
                     _quaternion_multiply(_yaw_quaternion(yaw), current_quaternion),
+                )
+            if support_relation_state is not None:
+                before, original_quaternion, support_entity, support_geom = (
+                    support_relation_state
+                )
+                deep_contacts = _entity_deep_contacts(env, target)
+                if deep_contacts:
+                    _set_entity_pose(env, target, before, original_quaternion)
+                    raise PerturbationValidationError(
+                        f"D01 support-preserving move for {target!r} created deep penetration"
+                    )
+                self._log_once(
+                    "support_relation_preserved",
+                    step,
+                    target=target,
+                    support=support_entity,
+                    support_geom=support_geom,
+                    support_position=after.tolist(),
                 )
             self._log_once(
                 "dynamic_state_change",
