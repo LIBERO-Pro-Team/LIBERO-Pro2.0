@@ -129,8 +129,8 @@
         (:variant xy_yaw)
         (:params
           (:interaction_mode placement)
-          (:offset_xy -0.065 0.045)
-          (:yaw_rad -0.24)
+          (:offset_xy -0.12 0.09)
+          (:yaw_rad -0.30)
         )
       )
       (S03
