@@ -321,9 +321,15 @@
         (:targets basket_1)
         (:references cream_cheese_1)
         (:trigger preplace)
-        (:variant occupy_or_release_receiver)
+        (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
+          (:receiver_trigger_distance_m 0.24)
+          (:support_surface basket_1)
+          (:asset_offset_xyz 0.0 0.0 0.0)
+          (:staging_position_xyz 0.0 0.0 -5.0)
+          (:receiver_anchor basket_1_contain_region)
+          (:persistent_existing_obstacle true)
         )
       )
       (D04

@@ -101,6 +101,8 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             # successful placement cannot end the episode first.
             params["receiver_trigger_distance_m"] = ("0.24",)
     elif case_id == "D03":
+        # The finalization pass owns the complete persistent D03 contract.
+        # Do not reintroduce the obsolete temporary-obstacle duration here.
         pass
     elif case_id == "D04":
         params.update(

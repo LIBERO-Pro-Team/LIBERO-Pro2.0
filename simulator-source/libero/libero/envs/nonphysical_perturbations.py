@@ -492,6 +492,38 @@ def build_execution_plan(
                 f"{case_id} asset_id must name exactly one asset"
             )
         asset_ids = [configured_assets[0]]
+    plan_references = _name_tuple(fields.get("references"))
+    persistent_existing_obstacle = case_id == "D03" and _param_bool(
+        params, "persistent_existing_obstacle", False
+    )
+    persistent_movable_asset = case_id == "D03" and _param_bool(
+        params, "persistent_movable_asset", False
+    )
+    if persistent_existing_obstacle and persistent_movable_asset:
+        raise PerturbationConfigurationError(
+            "D03 persistent obstacle modes are mutually exclusive"
+        )
+    if persistent_existing_obstacle or persistent_movable_asset:
+        if variant != "persistent_triggered_receiver_occupation":
+            raise PerturbationConfigurationError(
+                "Persistent D03 obstacles require the persistent_triggered_receiver_occupation variant"
+            )
+        if persistent_existing_obstacle:
+            if len(plan_references) != 1:
+                raise PerturbationConfigurationError(
+                    "D03 persistent_existing_obstacle requires exactly one existing reference"
+                )
+            if "asset_id" in params:
+                raise PerturbationConfigurationError(
+                    "D03 persistent_existing_obstacle cannot also configure asset_id"
+                )
+            asset_ids = []
+        else:
+            if "asset_id" not in params or len(asset_ids) != 1:
+                raise PerturbationConfigurationError(
+                    "D03 persistent_movable_asset requires exactly one explicit asset_id"
+                )
+            plan_references = ()
     if case_id in {"S10", "S11"} and "asset_count" in params:
         try:
             asset_count = int(params["asset_count"])
@@ -578,7 +610,7 @@ def build_execution_plan(
             if "disturbance_targets" in fields
             else None
         ),
-        references=_name_tuple(fields.get("references")),
+        references=plan_references,
         mechanisms=CASE_MECHANISMS[case_id],
         assets=tuple(assets),
         trigger=str(fields.get("trigger", "task_phase" if staged else "reset")),
@@ -679,9 +711,16 @@ def inject_plan_assets(
                     f"Injected asset name collides with an existing object: {name}"
                 )
             del objects_dict[name]
-        # Structural assets are welded to the world. Dynamic cases move their
-        # body pose at runtime; no free joint is needed and gravity cannot topple them.
-        obj = object_factory(str(asset.xml_path), name=name, joints=None)
+        persistent_movable_asset = plan.case_id == "D03" and _param_bool(
+            plan.params, "persistent_movable_asset", False
+        )
+        # Structural assets stay welded. The one explicitly movable D03 asset
+        # is compiled with a free joint so the policy can physically relocate it.
+        obj = object_factory(
+            str(asset.xml_path),
+            name=name,
+            joints="default" if persistent_movable_asset else None,
+        )
         obj.category_name = "perturbation_asset"
         obj.rotation = (0.0, 0.0)
         obj.rotation_axis = "z"
@@ -714,7 +753,10 @@ def inject_plan_assets(
             _scale_mujoco_object(obj, asset.scale)
         root = obj.get_obj() if hasattr(obj, "get_obj") else None
         if root is not None:
-            root.set("pos", "0 0 -5")
+            # A movable body cannot start below MuJoCo's infinite floor plane.
+            # Keep it safely above the scene until begin_rollout stages it with
+            # collision disabled; welded assets retain their legacy pose.
+            root.set("pos", "0 0 3" if persistent_movable_asset else "0 0 -5")
             if (
                 plan.case_id in {"S12", "D04"}
                 and not _param_bool(plan.params, "physical_collision", False)
@@ -1089,6 +1131,33 @@ def _set_entity_pose(
         env.sim.model.body_pos[body_id] = np.asarray(position)
         env.sim.model.body_quat[body_id] = np.asarray(quaternion)
     env.sim.forward()
+
+
+def _zero_entity_free_joint_velocity(env: Any, name: str) -> str:
+    """Stop one movable scene object before and after task-local staging."""
+
+    scene_object = getattr(env, "objects_dict", {}).get(name)
+    joints = list(getattr(scene_object, "joints", []) or [])
+    model = env.sim.model
+    data = env.sim.data
+    for joint in joints:
+        try:
+            joint_id = int(model.joint_name2id(joint))
+            joint_type = int(model.jnt_type[joint_id])
+        except Exception:
+            continue
+        if joint_type != 0:
+            continue
+        setter = getattr(data, "set_joint_qvel", None)
+        if callable(setter):
+            setter(joint, np.zeros(6, dtype=np.float64))
+        else:
+            dof_address = int(model.jnt_dofadr[joint_id])
+            data.qvel[dof_address : dof_address + 6] = 0.0
+        return str(joint)
+    raise PerturbationValidationError(
+        f"Persistent D03 obstacle {name!r} must have a compiled free joint"
+    )
 
 
 def _yaw_quaternion(yaw: float) -> np.ndarray:
@@ -1903,6 +1972,11 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_event_step: int | None = None
         self._dynamic_event_origin_eef: np.ndarray | None = None
         self._initial_eef_position: np.ndarray | None = None
+        self._staged_persistent_obstacle: tuple[
+            str,
+            tuple[tuple[int, float], ...],
+            tuple[tuple[int, int, int], ...],
+        ] | None = None
         self._baseline_model_id: int | None = None
         self._model_baseline: dict[str, np.ndarray] = {}
         self.set_seed(seed)
@@ -1929,6 +2003,7 @@ class NonPhysicalPerturbationRuntime:
         fields = (
             "body_pos",
             "body_quat",
+            "body_gravcomp",
             "cam_pos",
             "cam_quat",
             "cam_fovy",
@@ -1954,6 +2029,7 @@ class NonPhysicalPerturbationRuntime:
         self._dynamic_event_step = None
         self._dynamic_event_origin_eef = None
         self._initial_eef_position = None
+        self._staged_persistent_obstacle = None
 
     def _clear_temporal_state(self) -> None:
         self.previous_action = None
@@ -1988,12 +2064,18 @@ class NonPhysicalPerturbationRuntime:
             self._clear_temporal_state()
             return
 
-        if self._dynamic_applied:
+        persistent_obstacle = self._persistent_d03_obstacle_name()
+        if self._staged_persistent_obstacle is not None:
+            self._restore_staged_persistent_obstacle_physics(env)
+        if self._dynamic_applied or persistent_obstacle is not None:
             for name, (position, quaternion) in self._saved_poses.items():
                 if _entity_exists(env, name):
                     _set_entity_pose(env, name, position, quaternion)
         self.reset()
         self._stage_dynamic_assets(env)
+        persistent_obstacle = self._persistent_d03_obstacle_name()
+        if persistent_obstacle is not None:
+            self._stage_persistent_obstacle(env, persistent_obstacle)
         if self.plan.case_id == "D20":
             try:
                 self._initial_eef_position = np.asarray(
@@ -2004,6 +2086,180 @@ class NonPhysicalPerturbationRuntime:
                 raise PerturbationValidationError(
                     "D20 requires a valid robot end-effector site"
                 ) from exc
+
+    def _persistent_d03_obstacle_name(self) -> str | None:
+        if self.plan.case_id != "D03":
+            return None
+        if _param_bool(self.plan.params, "persistent_existing_obstacle", False):
+            if len(self.plan.references) != 1:
+                raise PerturbationConfigurationError(
+                    "D03 persistent_existing_obstacle requires exactly one existing reference"
+                )
+            return self.plan.references[0]
+        if _param_bool(self.plan.params, "persistent_movable_asset", False):
+            if len(self.plan.assets) != 1:
+                raise PerturbationConfigurationError(
+                    "D03 persistent_movable_asset requires exactly one injected asset"
+                )
+            return _injected_name(self.plan)
+        return None
+
+    def _restore_staged_persistent_obstacle_physics(self, env: Any) -> None:
+        state = self._staged_persistent_obstacle
+        if state is None:
+            return
+        _, gravcomp, contact_masks = state
+        model = env.sim.model
+        values = getattr(model, "body_gravcomp", None)
+        if values is not None:
+            for body_id, value in gravcomp:
+                values[body_id] = value
+        contype = getattr(model, "geom_contype", None)
+        conaffinity = getattr(model, "geom_conaffinity", None)
+        if contype is not None and conaffinity is not None:
+            for geom_id, original_contype, original_conaffinity in contact_masks:
+                contype[geom_id] = original_contype
+                conaffinity[geom_id] = original_conaffinity
+        self._staged_persistent_obstacle = None
+        env.sim.forward()
+
+    def _stage_persistent_obstacle(self, env: Any, obstacle: str) -> None:
+        if not _entity_exists(env, obstacle):
+            raise PerturbationValidationError(
+                f"Persistent D03 obstacle {obstacle!r} is absent from the scene"
+            )
+        _zero_entity_free_joint_velocity(env, obstacle)
+        gravcomp_values = getattr(env.sim.model, "body_gravcomp", None)
+        if gravcomp_values is None:
+            raise PerturbationValidationError(
+                "Persistent D03 staging requires MuJoCo body_gravcomp"
+            )
+        gravcomp = tuple(
+            (body_id, float(gravcomp_values[body_id]))
+            for body_id in _entity_body_ids(env, obstacle)
+        )
+        body_ids = set(_entity_body_ids(env, obstacle))
+        model = env.sim.model
+        contype = getattr(model, "geom_contype", None)
+        conaffinity = getattr(model, "geom_conaffinity", None)
+        if contype is None or conaffinity is None:
+            raise PerturbationValidationError(
+                "Persistent D03 staging requires MuJoCo contact masks"
+            )
+        contact_masks = tuple(
+            (
+                geom_id,
+                int(contype[geom_id]),
+                int(conaffinity[geom_id]),
+            )
+            for geom_id in range(int(model.ngeom))
+            if int(model.geom_bodyid[geom_id]) in body_ids
+        )
+        if not any(
+            mask != 0 and affinity != 0
+            for _, mask, affinity in contact_masks
+        ):
+            raise PerturbationValidationError(
+                f"Persistent D03 obstacle {obstacle!r} must have collision geometry"
+            )
+        for body_id, _ in gravcomp:
+            gravcomp_values[body_id] = 1.0
+        for geom_id, _, _ in contact_masks:
+            contype[geom_id] = 0
+            conaffinity[geom_id] = 0
+        self._staged_persistent_obstacle = (obstacle, gravcomp, contact_masks)
+        _, quaternion = self._saved_poses[obstacle]
+        staging_position = _required_param_vector(
+            self.plan.params, "staging_position_xyz", 3
+        )
+        try:
+            _set_entity_pose(env, obstacle, staging_position, quaternion)
+            _zero_entity_free_joint_velocity(env, obstacle)
+        except Exception:
+            self._restore_staged_persistent_obstacle_physics(env)
+            raise
+
+    def _enter_persistent_obstacle(self, env: Any, step: int) -> None:
+        state = self._staged_persistent_obstacle
+        if state is None:
+            raise PerturbationValidationError(
+                "Persistent D03 obstacle was not staged before its trigger"
+            )
+        obstacle, gravcomp, contact_masks = state
+        receiver = self.plan.targets[0] if self.plan.targets else None
+        if receiver is None or not _entity_exists(env, receiver):
+            raise PerturbationValidationError(
+                "Persistent D03 obstacle has no valid receiver"
+            )
+        configured_anchors = _name_tuple(self.plan.params.get("receiver_anchor"))
+        if len(configured_anchors) > 1:
+            raise PerturbationConfigurationError(
+                "D03 receiver_anchor must name at most one site"
+            )
+        requested_position, anchor_name = _functional_anchor(
+            env,
+            receiver,
+            configured_anchors[0] if configured_anchors else None,
+        )
+        requested_position += _param_vector(
+            self.plan.params, "asset_offset_xyz", (0.0, 0.0, 0.0)
+        )
+        _, quaternion = self._saved_poses[obstacle]
+        gravcomp_values = env.sim.model.body_gravcomp
+        for body_id, value in gravcomp:
+            gravcomp_values[body_id] = value
+        contype = env.sim.model.geom_contype
+        conaffinity = env.sim.model.geom_conaffinity
+        for geom_id, original_contype, original_conaffinity in contact_masks:
+            contype[geom_id] = original_contype
+            conaffinity[geom_id] = original_conaffinity
+        try:
+            position, support_geom = _safe_dynamic_asset_pose(
+                env,
+                obstacle,
+                requested_position,
+                quaternion,
+                self.plan.params,
+                ignored=(receiver,),
+            )
+        except Exception:
+            for body_id, _ in gravcomp:
+                gravcomp_values[body_id] = 1.0
+            for geom_id, _, _ in contact_masks:
+                contype[geom_id] = 0
+                conaffinity[geom_id] = 0
+            staging_position = _required_param_vector(
+                self.plan.params, "staging_position_xyz", 3
+            )
+            _set_entity_pose(env, obstacle, staging_position, quaternion)
+            _zero_entity_free_joint_velocity(env, obstacle)
+            raise
+        _zero_entity_free_joint_velocity(env, obstacle)
+        self._staged_persistent_obstacle = None
+        self._dynamic_event_step = int(step)
+        self._dynamic_applied = True
+        self._dynamic_restored = True
+        self._log_once(
+            "persistent_dynamic_obstacle_entered",
+            step,
+            obstacle=obstacle,
+            receiver=receiver,
+            anchor=anchor_name,
+            position=position.tolist(),
+            support_geom=support_geom,
+        )
+
+    def _maintain_staged_persistent_obstacle(self, env: Any) -> None:
+        state = self._staged_persistent_obstacle
+        if state is None:
+            return
+        obstacle, _, _ = state
+        _, quaternion = self._saved_poses[obstacle]
+        staging_position = _required_param_vector(
+            self.plan.params, "staging_position_xyz", 3
+        )
+        _set_entity_pose(env, obstacle, staging_position, quaternion)
+        _zero_entity_free_joint_velocity(env, obstacle)
 
     def _log_once(self, key: str, step: int, **details: Any) -> None:
         if key in self._logged:
@@ -3282,6 +3538,13 @@ class NonPhysicalPerturbationRuntime:
             name = _injected_name(self.plan, index)
             if _entity_exists(env, name):
                 position, quat = _entity_pose(env, name)
+                if self.plan.case_id == "D03" and _param_bool(
+                    self.plan.params, "persistent_movable_asset", False
+                ):
+                    # This free-joint asset must stay above the scene until
+                    # _stage_persistent_obstacle disables its collisions.
+                    self._saved_poses[name] = (position, quat)
+                    continue
                 if self.plan.case_id == "D06":
                     anchors = _name_tuple(
                         self.plan.params.get("asset_initial_anchor")
@@ -3446,6 +3709,8 @@ class NonPhysicalPerturbationRuntime:
         case_id = self.plan.case_id
         if not case_id.startswith("D"):
             return
+        if self._staged_persistent_obstacle is not None:
+            self._maintain_staged_persistent_obstacle(env)
         if self._dynamic_applied:
             if (
                 case_id == "D09"
@@ -3496,6 +3761,10 @@ class NonPhysicalPerturbationRuntime:
                 self._log_once("dynamic_asset_restored", step, asset=name)
             return
         if not self._dynamic_triggered(env, step):
+            return
+
+        if self._persistent_d03_obstacle_name() is not None:
+            self._enter_persistent_obstacle(env, step)
             return
 
         if case_id in {"D01", "D02", "D06", "D18", "D19"}:

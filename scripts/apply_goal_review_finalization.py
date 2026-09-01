@@ -4,9 +4,9 @@ The script owns the rules explicitly marked "all tasks" across all four
 suites, the task-local static fixes from the Goal review, and published-case
 deletions. BASE, S21, and D21 are never edited.
 
-Reviewed D03 tasks use task-local receiver occupancy parameters; unreviewed
-D03 tasks retain their generated baseline. D05 always uses physical collision
-geometry, and D14 repeats commands for a full eight-step window.
+All D03 tasks use task-local, distance-triggered persistent movable obstacles.
+D05 always uses physical collision geometry, and D14 repeats commands for a
+full eight-step window.
 """
 
 from __future__ import annotations
@@ -76,78 +76,93 @@ S04_GROUNDED_TASKS = {
     *(("libero_spatial", task_id) for task_id in (0, 1, 2, 3, 4, 5, 6, 7, 9)),
 }
 
-D03_FEEDBACK_OVERRIDES: dict[
-    tuple[str, int], dict[str, tuple[str, ...]]
-] = {
-    ("libero_10", task_id): {
-        "event_duration_steps": ("48",),
-        "receiver_trigger_distance_m": (("0.28",) if task_id == 9 else ("0.24",)),
-        **(
-            {
-                "asset_scale": ("0.80",),
-                "support_surface": ("plate_1",),
-            }
-            if task_id == 4
-            else {}
-        ),
-        **(
-            {
-                "asset_scale": ("0.80",),
-                "asset_offset_xyz": ("0.0", "-0.08", "0.025"),
-            }
-            if task_id == 9
-            else {}
-        ),
-    }
-    for task_id in (0, 1, 2, 4, 5, 9)
+D03_RECEIVER_ANCHORS: dict[tuple[str, int], str] = {
+    **{("libero_10", task_id): "basket_1_contain_region" for task_id in (0, 1, 7)},
+    ("libero_10", 2): "flat_stove_1_cook_region",
+    ("libero_10", 3): "white_cabinet_1_bottom_region",
+    ("libero_10", 5): "desk_caddy_1_back_contain_region",
+    ("libero_10", 8): "flat_stove_1_cook_region",
+    ("libero_10", 9): "microwave_1_heating_region",
+    ("libero_goal", 0): "wooden_cabinet_1_middle_region",
+    ("libero_goal", 1): "flat_stove_1_cook_region",
+    ("libero_goal", 2): "wooden_cabinet_1_top_side",
+    ("libero_goal", 3): "wooden_cabinet_1_top_region",
+    ("libero_goal", 4): "wooden_cabinet_1_top_side",
+    ("libero_goal", 5): "main_table_stove_front_region",
+    ("libero_goal", 7): "flat_stove_1_cook_region",
+    ("libero_goal", 9): "wine_rack_1_top_region",
+    **{("libero_object", task_id): "basket_1_contain_region" for task_id in range(10)},
 }
-D03_FEEDBACK_OVERRIDES[("libero_object", 0)] = {
-    "event_duration_steps": ("48",),
-    "receiver_trigger_distance_m": ("0.24",),
+
+D03_SUPPORT_SURFACES: dict[tuple[str, int], str] = {
+    **{("libero_10", task_id): "basket_1" for task_id in (0, 1, 7)},
+    ("libero_10", 2): "flat_stove_1",
+    ("libero_10", 3): "white_cabinet_1",
+    ("libero_10", 4): "plate_1",
+    ("libero_10", 5): "study_table",
+    ("libero_10", 6): "plate_1",
+    ("libero_10", 8): "flat_stove_1",
+    ("libero_10", 9): "microwave_1",
+    ("libero_goal", 0): "main_table",
+    ("libero_goal", 1): "flat_stove_1",
+    ("libero_goal", 2): "wooden_cabinet_1",
+    ("libero_goal", 3): "wooden_cabinet_1",
+    ("libero_goal", 4): "wooden_cabinet_1",
+    ("libero_goal", 5): "main_table",
+    ("libero_goal", 6): "main_table",
+    ("libero_goal", 7): "flat_stove_1",
+    ("libero_goal", 8): "plate_1",
+    ("libero_goal", 9): "main_table",
+    **{("libero_object", task_id): "basket_1" for task_id in range(10)},
+    **{("libero_spatial", task_id): "plate_1" for task_id in range(10)},
 }
-for _task_id in (0, 1, 8, 9):
-    D03_FEEDBACK_OVERRIDES[("libero_spatial", _task_id)] = {
-        "event_duration_steps": ("48",),
-        "receiver_trigger_distance_m": ("0.24",),
-        "asset_scale": ("0.80",),
-        "support_surface": ("plate_1",),
+
+D03_ASSET_OFFSETS: dict[tuple[str, int], tuple[str, str, str]] = {
+    ("libero_10", 9): ("0.0", "-0.08", "0.0"),
+    ("libero_goal", 0): ("0.07", "0.12", "-0.16"),
+    ("libero_goal", 2): ("-0.055", "0.0", "0.0"),
+    ("libero_goal", 6): ("0.0", "0.14", "0.0"),
+    ("libero_goal", 9): ("0.14", "0.05", "-0.22"),
+}
+
+
+def d03_persistent_updates(
+    suite: str, task_id: int
+) -> tuple[dict[str, tuple[str, ...]], dict[str, tuple[str, ...]]]:
+    """Return the complete task-local contract for one published D03."""
+
+    key = (str(suite), int(task_id))
+    if key not in D03_SUPPORT_SURFACES:
+        raise KeyError(f"Missing D03 support surface for {key}")
+    trigger_distance = "0.24"
+    if key == ("libero_10", 2):
+        trigger_distance = "0.32"
+    elif key == ("libero_10", 9) or (
+        key[0] == "libero_object" and key[1] in {0, 1, 2}
+    ):
+        trigger_distance = "0.28"
+    params: dict[str, tuple[str, ...]] = {
+        "receiver_trigger_distance_m": (trigger_distance,),
+        "support_surface": (D03_SUPPORT_SURFACES[key],),
+        "asset_offset_xyz": D03_ASSET_OFFSETS.get(
+            key, ("0.0", "0.0", "0.0")
+        ),
+        "staging_position_xyz": ("0.0", "0.0", "-5.0"),
     }
-D03_FEEDBACK_OVERRIDES.update(
-    {
-        ("libero_goal", 0): {
-            "event_duration_steps": ("72",),
-            "receiver_trigger_distance_m": ("0.24",),
-            "asset_id": ("generated/barrier_panel",),
-            "asset_scale": ("0.55",),
-            "receiver_anchor": ("wooden_cabinet_1_middle_region",),
-            "asset_offset_xyz": ("0.07", "0.12", "-0.16"),
-            "support_surface": ("main_table",),
-        },
-        ("libero_goal", 2): {
-            "event_duration_steps": ("72",),
-            "receiver_trigger_distance_m": ("0.24",),
-            "asset_id": ("prl/plastic_plate",),
-            "asset_scale": ("0.60",),
-            "asset_offset_xyz": ("-0.055", "0.0", "0.025"),
-            "support_surface": ("wooden_cabinet_1",),
-        },
-        ("libero_goal", 3): {
-            "event_duration_steps": ("72",),
-            "receiver_trigger_distance_m": ("0.24",),
-        },
-        ("libero_goal", 6): {
-            "event_duration_steps": ("72",),
-            "receiver_trigger_distance_m": ("0.24",),
-            "asset_scale": ("0.80",),
-            "asset_offset_xyz": ("0.0", "0.14", "0.025"),
-            "support_surface": ("main_table",),
-        },
-        ("libero_goal", 9): {
-            "event_duration_steps": ("72",),
-            "receiver_trigger_distance_m": ("0.24",),
-        },
-    }
-)
+    anchor = D03_RECEIVER_ANCHORS.get(key)
+    if anchor is not None:
+        params["receiver_anchor"] = (anchor,)
+    fields = {"variant": ("persistent_triggered_receiver_occupation",)}
+    if key == ("libero_10", 8):
+        fields["references"] = ("none",)
+        params.update(
+            persistent_movable_asset=("true",),
+            asset_id=("prl/can",),
+            asset_scale=("1.0",),
+        )
+    else:
+        params["persistent_existing_obstacle"] = ("true",)
+    return params, fields
 
 
 def is_excluded(suite: str, task_id: int, case_id: str) -> bool:
@@ -297,7 +312,9 @@ def case_updates(
     elif case_id == "S20":
         params["delay_steps"] = ("7",)
     elif case_id == "D03":
-        params.update(D03_FEEDBACK_OVERRIDES.get((suite, task_id), {}))
+        d03_params, d03_fields = d03_persistent_updates(suite, task_id)
+        params.update(d03_params)
+        fields.update(d03_fields)
     elif case_id == "D05":
         params.update(
             visual_only_asset=("false",),
@@ -536,6 +553,9 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
             "obstacle_part",
             "receiver_anchor",
             "receiver_trigger_distance_m",
+            "persistent_existing_obstacle",
+            "persistent_movable_asset",
+            "staging_position_xyz",
             "support_surface",
             "visual_only_asset",
         }
@@ -562,7 +582,16 @@ def canonical_hash(path: Path) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def apply(*, check_only: bool = False) -> dict[str, Any]:
+def apply(
+    *,
+    check_only: bool = False,
+    case_filter: set[str] | None = None,
+) -> dict[str, Any]:
+    selected_cases = (
+        {str(case_id).upper() for case_id in case_filter}
+        if case_filter
+        else None
+    )
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     entries = list(manifest["tasks"])
     changed: list[Path] = []
@@ -572,6 +601,8 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
         suite = str(item["suite"])
         task_id = int(item["base_task_id"])
         case_id = str(item["case_id"]).upper()
+        if selected_cases is not None and case_id not in selected_cases:
+            continue
         if is_excluded(suite, task_id, case_id):
             continue
         params, fields = case_updates(suite, task_id, case_id)
@@ -615,6 +646,10 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
     excluded_entries = [
         item
         for item in entries
+        if (
+            selected_cases is None
+            or str(item["case_id"]).upper() in selected_cases
+        )
         if is_excluded(item["suite"], int(item["base_task_id"]), item["case_id"])
     ]
     deleted: list[Path] = []
@@ -631,10 +666,13 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
             f"Expected {PUBLISHED_TASK_COUNT} retained tasks, found {len(retained)}"
         )
     if not check_only:
+        changed_set = set(changed)
         for item in retained:
             path = ASSETS / str(item["bddl_path"])
             if not path.is_file():
                 raise FileNotFoundError(path)
+            if selected_cases is not None and path not in changed_set:
+                continue
             item["bddl_sha256"] = canonical_hash(path)
             item["task_version"] = PUBLISHED_VERSION
         manifest.update(
@@ -650,6 +688,7 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
 
     return {
         "check_only": check_only,
+        "case_filter": sorted(selected_cases) if selected_cases is not None else None,
         "changed_bddl_count": len(changed),
         "deleted_bddl_count": len(deleted),
         "retained_task_count": len(retained),
@@ -662,9 +701,18 @@ def apply(*, check_only: bool = False) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-only", action="store_true")
+    parser.add_argument(
+        "--case",
+        action="append",
+        default=[],
+        help="Limit updates to one or more case IDs (for example: --case D03).",
+    )
     parser.add_argument("--report", type=Path, default=None)
     args = parser.parse_args()
-    result = apply(check_only=args.check_only)
+    result = apply(
+        check_only=args.check_only,
+        case_filter=set(args.case) if args.case else None,
+    )
     if args.report is not None and not args.check_only:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(

@@ -323,9 +323,15 @@
         (:targets white_cabinet_1)
         (:references wine_bottle_1)
         (:trigger preplace)
-        (:variant occupy_or_release_receiver)
+        (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
+          (:receiver_trigger_distance_m 0.24)
+          (:support_surface white_cabinet_1)
+          (:asset_offset_xyz 0.0 0.0 0.0)
+          (:staging_position_xyz 0.0 0.0 -5.0)
+          (:receiver_anchor white_cabinet_1_bottom_region)
+          (:persistent_existing_obstacle true)
         )
       )
       (D04

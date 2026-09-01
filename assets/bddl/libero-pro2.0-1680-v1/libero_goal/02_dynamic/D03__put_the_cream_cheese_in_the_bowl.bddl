@@ -357,14 +357,14 @@
         (:targets akita_black_bowl_1)
         (:references wine_bottle_1)
         (:trigger preplace)
-        (:variant occupy_or_release_receiver)
+        (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
-          (:event_duration_steps 72)
           (:receiver_trigger_distance_m 0.24)
-          (:asset_scale 0.80)
-          (:asset_offset_xyz 0.0 0.14 0.025)
           (:support_surface main_table)
+          (:asset_offset_xyz 0.0 0.14 0.0)
+          (:staging_position_xyz 0.0 0.0 -5.0)
+          (:persistent_existing_obstacle true)
         )
       )
       (D04

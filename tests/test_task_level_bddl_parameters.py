@@ -562,7 +562,7 @@ def test_functional_anchor_allows_task_local_receiver_site_override() -> None:
     np.testing.assert_array_equal(override_position, positions["cabinet_middle"])
 
 
-def test_goal_task2_d03_uses_declared_plate_without_changing_default_d03_asset() -> None:
+def test_goal_d03_tasks_use_persistent_existing_obstacles() -> None:
     parser_path = (
         ROOT
         / "simulator-source"
@@ -596,17 +596,19 @@ def test_goal_task2_d03_uses_declared_plate_without_changing_default_d03_asset()
         / "perturbation_assets"
     )
 
-    reviewed = RUNTIME.build_execution_plan(
+    task2 = RUNTIME.build_execution_plan(
         parser.parse_bddl_perturbation_config(by_task[2]), asset_root
     )
-    untouched = RUNTIME.build_execution_plan(
+    task1 = RUNTIME.build_execution_plan(
         parser.parse_bddl_perturbation_config(by_task[1]), asset_root
     )
 
-    assert reviewed.assets[0].asset_id == "prl/plastic_plate"
-    assert reviewed.assets[0].scale == 0.60
-    assert untouched.assets[0].asset_id == "ycb/YcbFoamBrick"
-    assert untouched.assets[0].scale == 1.0
+    assert task2.assets == ()
+    assert task2.references == ("akita_black_bowl_1",)
+    assert task2.params["persistent_existing_obstacle"] is True
+    assert task1.assets == ()
+    assert task1.references == ("cream_cheese_1",)
+    assert task1.params["persistent_existing_obstacle"] is True
 
 
 def test_object_task0_feedback_strength_values_are_task_local() -> None:

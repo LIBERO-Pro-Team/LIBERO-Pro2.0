@@ -10,6 +10,66 @@ from libero.libero.envs import *
 from libero.libero.envs.nonphysical_perturbations import describe_execution_plan
 
 
+def _task_compatible_init_state(env, mujoco_state):
+    """Merge one task-local injected free joint into a BASE init state."""
+
+    plan = getattr(env, "perturbation_plan", None)
+    params = getattr(plan, "params", {}) if plan is not None else {}
+    if not (
+        getattr(plan, "case_id", None) == "D03"
+        and bool(params.get("persistent_movable_asset", False))
+    ):
+        return mujoco_state
+
+    incoming = np.asarray(mujoco_state, dtype=np.float64).reshape(-1)
+    current = np.asarray(env.sim.get_state().flatten(), dtype=np.float64)
+    if incoming.size == current.size:
+        return mujoco_state
+
+    obstacle = env.perturbation_runtime._persistent_d03_obstacle_name()
+    scene_object = getattr(env, "objects_dict", {}).get(obstacle)
+    joints = list(getattr(scene_object, "joints", []) or [])
+    free_joints = []
+    for joint in joints:
+        joint_id = int(env.sim.model.joint_name2id(joint))
+        if int(env.sim.model.jnt_type[joint_id]) == 0:
+            free_joints.append(joint_id)
+    if len(free_joints) != 1:
+        raise ValueError(
+            "D03 persistent_movable_asset init compatibility requires one free joint"
+        )
+
+    joint_id = free_joints[0]
+    qpos_address = int(env.sim.model.jnt_qposadr[joint_id])
+    dof_address = int(env.sim.model.jnt_dofadr[joint_id])
+    new_nq = int(env.sim.model.nq)
+    new_nv = int(env.sim.model.nv)
+    old_nq = new_nq - 7
+    old_nv = new_nv - 6
+    old_tail = 1 + old_nq + old_nv
+    new_tail = 1 + new_nq + new_nv
+    if (
+        old_nq < 0
+        or old_nv < 0
+        or incoming.size - old_tail != current.size - new_tail
+    ):
+        raise ValueError(
+            "D03 persistent_movable_asset init state must differ by one free joint"
+        )
+
+    merged = current.copy()
+    merged[0] = incoming[0]
+    old_qpos = incoming[1 : 1 + old_nq]
+    merged[1 : 1 + qpos_address] = old_qpos[:qpos_address]
+    merged[1 + qpos_address + 7 : 1 + new_nq] = old_qpos[qpos_address:]
+    old_qvel = incoming[1 + old_nq : old_tail]
+    qvel_start = 1 + new_nq
+    merged[qvel_start : qvel_start + dof_address] = old_qvel[:dof_address]
+    merged[qvel_start + dof_address + 6 : new_tail] = old_qvel[dof_address:]
+    merged[new_tail:] = incoming[old_tail:]
+    return merged
+
+
 class ControlEnv:
     def __init__(
         self,
@@ -170,7 +230,7 @@ class ControlEnv:
 
     def regenerate_obs_from_state(self, mujoco_state):
         self.env.perturbation_runtime.prepare_reset(self.env)
-        self.set_state(mujoco_state)
+        self.set_state(_task_compatible_init_state(self.env, mujoco_state))
         self.env.sim.forward()
         self.env._perturbation_step = 0
         self.env.perturbation_runtime.reset()

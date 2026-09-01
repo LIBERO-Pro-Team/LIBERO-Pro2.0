@@ -146,8 +146,12 @@ class SchemaExecutionPlanTests(unittest.TestCase):
             PARSER.parse_bddl_perturbation_config(d04), ASSET_ROOT
         )
         self.assertEqual(d01_plan.params["trigger_distance_m"], 0.17)
-        self.assertEqual(d03_plan.params, {"interaction_mode": "placement"})
-        self.assertEqual(d03_plan.assets[0].scale, 1.0)
+        self.assertTrue(d03_plan.params["persistent_existing_obstacle"])
+        self.assertEqual(d03_plan.params["receiver_trigger_distance_m"], 0.24)
+        self.assertEqual(
+            d03_plan.variant, "persistent_triggered_receiver_occupation"
+        )
+        self.assertEqual(d03_plan.assets, ())
         self.assertEqual(d04_plan.params["event_duration_steps"], 50)
         self.assertEqual(d04_plan.assets[0].scale, 1.25)
         self.assertEqual(
