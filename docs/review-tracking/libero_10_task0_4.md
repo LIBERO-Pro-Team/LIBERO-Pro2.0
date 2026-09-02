@@ -5,7 +5,7 @@
 - manifest 条目数：430
 - 基础任务数：10
 - 默认 seed/init：`143/0`
-- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；`task5-task9` 尚未导入。
+- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；`task5-task9` 见 [`libero_10_task5_9.md`](libero_10_task5_9.md)。
 
 ## 基础任务索引
 
