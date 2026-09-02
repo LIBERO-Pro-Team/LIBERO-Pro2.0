@@ -243,6 +243,9 @@
           (:support_surface table)
           (:visual_only_asset false)
           (:clear_of_task_entities true)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11

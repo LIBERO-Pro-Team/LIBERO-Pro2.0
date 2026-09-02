@@ -253,9 +253,12 @@
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.45)
-          (:visual_only_asset true)
+          (:asset_id github/object_sim_bowl)
+          (:asset_scale 0.70)
+          (:visual_only_asset false)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:clear_of_task_entities true)
         )
       )
       (S12

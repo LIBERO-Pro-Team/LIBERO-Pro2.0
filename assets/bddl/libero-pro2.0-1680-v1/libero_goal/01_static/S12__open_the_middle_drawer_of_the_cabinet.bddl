@@ -258,6 +258,7 @@
           (:interaction_mode articulation)
           (:asset_scale 1.45)
           (:occlusion_fraction 0.58)
+          (:occlusion_offset_xyz -0.05 0.0 0.0)
         )
       )
       (S13

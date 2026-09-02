@@ -197,7 +197,12 @@
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
-          (:visual_only_asset true)
+          (:visual_only_asset false)
+          (:clutter_offsets_xy 0.14 0.10)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:clear_of_task_entities true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11

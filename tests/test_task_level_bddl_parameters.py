@@ -159,7 +159,7 @@ def test_libero10_task8_d06_uses_a_welded_runtime_distractor() -> None:
     assert "(:asset_initial_offset_xy 0.134437 0.194625)" in block
 
 
-def test_goal_task0_s11_uses_a_welded_yellow_cabinet_asset() -> None:
+def test_goal_task0_s11_uses_a_movable_rigid_yellow_cabinet_asset() -> None:
     path = (
         ROOT
         / "assets"
@@ -176,7 +176,10 @@ def test_goal_task0_s11_uses_a_welded_yellow_cabinet_asset() -> None:
     assert "(On yellow_cabinet_2 " not in text
     assert "(:targets wooden_cabinet_1)" in block
     assert "(:asset_id libero/yellow_cabinet)" in block
-    assert "(:weld_asset_joints true)" in block
+    assert "(:movable_asset true)" in block
+    assert "(:physical_collision true)" in block
+    assert "(:weld_internal_asset_joints true)" in block
+    assert "(:weld_asset_joints true)" not in block
     assert "(:clutter_offsets_xy -0.067791 0.639295)" in block
 
 
@@ -245,6 +248,62 @@ def test_object_task9_s06_keeps_the_original_sampling_envelope() -> None:
     assert "(:sampler_compatible true)" in block
     assert "(:grounded_replacement true)" in block
     assert "(:support_surface floor)" in block
+
+
+def _object_case_block(folder: str, case_id: str, object_name: str) -> str:
+    path = (
+        ROOT
+        / "assets"
+        / "bddl"
+        / "libero-pro2.0-1680-v1"
+        / "libero_object"
+        / folder
+        / f"{case_id}__pick_up_the_{object_name}_and_place_it_in_the_basket.bddl"
+    )
+    text = path.read_text(encoding="utf-8")
+    _, _, block = FIXER.case_slice(text, case_id)
+    return block
+
+
+def test_object_review_feedback_keeps_d02_original_and_strengthens_reviewed_bddls() -> None:
+    d02_task0 = _object_case_block("02_dynamic", "D02", "alphabet_soup")
+    assert "(:offset_xy -0.12 0.09)" in d02_task0
+    assert "(:yaw_rad -0.24)" in d02_task0
+    assert "(:receiver_trigger_distance_m" not in d02_task0
+
+    for object_name in (
+        "alphabet_soup",
+        "cream_cheese",
+        "salad_dressing",
+        "bbq_sauce",
+        "ketchup",
+        "tomato_sauce",
+        "butter",
+        "milk",
+        "chocolate_pudding",
+        "orange_juice",
+    ):
+        s02_block = _object_case_block("01_static", "S02", object_name)
+        assert "(:offset_xy -0.12 0.09)" in s02_block
+        assert "(:yaw_rad -0.30)" in s02_block
+
+    for object_name in ("alphabet_soup", "cream_cheese"):
+        d03_block = _object_case_block("02_dynamic", "D03", object_name)
+        assert "(:receiver_trigger_distance_m 0.28)" in d03_block
+        assert "(:persistent_existing_obstacle true)" in d03_block
+        assert "(:event_duration_steps" not in d03_block
+
+    d03_task2 = _object_case_block("02_dynamic", "D03", "salad_dressing")
+    assert "(:receiver_trigger_distance_m 0.28)" in d03_task2
+    assert "(:persistent_existing_obstacle true)" in d03_task2
+    assert "(:event_duration_steps" not in d03_task2
+
+    for object_name in ("cream_cheese", "salad_dressing"):
+        s05_block = _object_case_block("01_static", "S05", object_name)
+        assert "(:barrier_scale 1.35)" in s05_block
+        assert "(:barrier_path_fraction 0.50)" in s05_block
+        assert "(:barrier_lateral_offset_m -0.07)" in s05_block
+        assert "(:visual_only_asset false)" in s05_block
 
 
 def test_s16_default_image_shift_keeps_legacy_height_rule() -> None:

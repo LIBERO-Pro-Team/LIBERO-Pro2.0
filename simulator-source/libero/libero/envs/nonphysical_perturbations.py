@@ -751,6 +751,12 @@ def inject_plan_assets(
             )
         if weld_asset_joints:
             _remove_object_joints(obj)
+        if _param_bool(plan.params, "weld_internal_asset_joints", False):
+            if not movable_injected_asset:
+                raise PerturbationConfigurationError(
+                    "weld_internal_asset_joints requires a movable injected asset"
+                )
+            _remove_nonfree_asset_joints(obj)
         if plan.case_id == "S03" and "asset_geometry_factors" in plan.params:
             factors = _param_vector(
                 plan.params, "asset_geometry_factors", (1.0, 1.0, 1.0)
@@ -806,6 +812,16 @@ def _remove_object_joints(obj: Any) -> None:
         for parent in root.iter():
             for child in list(parent):
                 if child.tag == "joint":
+                    parent.remove(child)
+
+
+def _remove_nonfree_asset_joints(obj: Any) -> None:
+    """Keep the injected object's free joint while welding internal articulation."""
+
+    for root in _mujoco_xml_roots(obj):
+        for parent in root.iter():
+            for child in list(parent):
+                if child.tag == "joint" and child.get("type", "hinge") != "free":
                     parent.remove(child)
 
 
@@ -906,6 +922,29 @@ def _scale_xml_vector(raw: str | None, factors: tuple[float, float, float]) -> s
     return " ".join(str(value * factor) for value, factor in zip(values, applied))
 
 
+def _scale_articulation_joint_ranges(obj: Any, factor: float) -> None:
+    if factor <= 0.0:
+        raise PerturbationConfigurationError(
+            "articulation_joint_range_scale must be positive"
+        )
+    for joint in obj.worldbody.findall(".//joint"):
+        raw_range = joint.get("range")
+        if not raw_range or joint.get("type", "hinge") == "free":
+            continue
+        values = [float(value) for value in raw_range.split()]
+        if len(values) != 2:
+            raise PerturbationConfigurationError(
+                "articulation joint ranges must contain two values"
+            )
+        joint.set("range", " ".join(str(value * factor) for value in values))
+
+    articulation = getattr(obj, "object_properties", {}).get("articulation", {})
+    for key in ("default_open_ranges", "default_close_ranges"):
+        values = articulation.get(key)
+        if values:
+            articulation[key] = [float(value) * factor for value in values]
+
+
 def apply_precompile_geometry(
     objects_dict: dict[str, Any],
     fixtures_dict: dict[str, Any],
@@ -984,13 +1023,18 @@ def apply_precompile_geometry(
                 old_scale = mesh.get("scale", "1 1 1")
                 mesh.set("scale", _scale_xml_vector(old_scale, factors))
                 changed.append(name)
+        if "articulation_joint_range_scale" in plan.params:
+            _scale_articulation_joint_ranges(
+                obj,
+                _required_param_float(
+                    plan.params, "articulation_joint_range_scale"
+                ),
+            )
         if name == receiver_name or plan.case_id == "S07":
             site_factors = goal_region_scale if plan.case_id == "S07" else factors
             for site in obj.worldbody.findall(".//site"):
                 if site.get("size"):
                     site.set("size", _scale_xml_vector(site.get("size"), site_factors))
-                if plan.case_id == "S07" and site.get("pos"):
-                    site.set("pos", _scale_xml_vector(site.get("pos"), site_factors))
     if not changed:
         raise PerturbationConfigurationError(
             f"{plan.case_id} could not find scalable collision or mesh geometry in {plan.targets}"
@@ -1781,7 +1825,11 @@ def _injected_name(plan: ExecutionPlan, index: int = 0) -> str:
 
 
 def _camera_occluder_pose(
-    env: Any, target_name: str, camera_name: str = "agentview", fraction: float = 0.62
+    env: Any,
+    target_name: str,
+    camera_name: str = "agentview",
+    fraction: float = 0.62,
+    offset_xyz: tuple[float, ...] | np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     target, _ = _entity_pose(env, target_name)
     try:
@@ -1794,6 +1842,13 @@ def _camera_occluder_pose(
     center = camera + float(fraction) * (target - camera)
     root_position = center.copy()
     root_position[2] -= 0.08
+    if offset_xyz is not None:
+        offset = np.asarray(offset_xyz, dtype=np.float64)
+        if offset.shape != (3,) or not np.all(np.isfinite(offset)):
+            raise PerturbationConfigurationError(
+                "occlusion_offset_xyz must contain three finite values"
+            )
+        root_position += offset
     normal_xy = camera[:2] - center[:2]
     yaw = math.atan2(-normal_xy[0], normal_xy[1])
     return root_position, _yaw_quaternion(yaw)
@@ -1862,6 +1917,30 @@ def _functional_anchor(
             continue
     position, _ = _entity_pose(env, entity_name)
     return position, entity_name
+
+
+def _configured_trigger_anchor(env: Any, params: dict[str, Any]) -> np.ndarray | None:
+    configured = _name_tuple(params.get("trigger_anchor"))
+    if not configured:
+        return None
+    if len(configured) != 1:
+        raise PerturbationConfigurationError(
+            "trigger_anchor must name exactly one site or scene entity"
+        )
+    name = configured[0]
+    if name in getattr(env, "object_sites_dict", {}):
+        try:
+            return np.asarray(env.sim.data.get_site_xpos(name), dtype=np.float64).copy()
+        except Exception as exc:
+            raise PerturbationValidationError(
+                f"trigger_anchor {name!r} is unavailable"
+            ) from exc
+    if _entity_exists(env, name):
+        position, _ = _entity_pose(env, name)
+        return position
+    raise PerturbationConfigurationError(
+        f"trigger_anchor {name!r} is not a site or scene entity"
+    )
 
 
 def _goal_path_anchors(env: Any) -> tuple[str, np.ndarray, str, np.ndarray]:
@@ -3403,7 +3482,9 @@ class NonPhysicalPerturbationRuntime:
                     candidate, support_geom = selected_candidate
                     placed_assets.append(asset_name)
                     self._log_once(
-                        "static_asset_placed" if index == 0 else "static_asset_placed_additional",
+                        "static_asset_placed"
+                        if index == 0
+                        else f"static_asset_placed_additional_{index}",
                         0,
                         asset=asset_name,
                         asset_id=self.plan.assets[index].asset_id,
@@ -3419,7 +3500,14 @@ class NonPhysicalPerturbationRuntime:
                     self.plan.params, "occlusion_fraction", 0.62
                 )
                 position, quaternion = _camera_occluder_pose(
-                    env, reference_name, fraction=fraction
+                    env,
+                    reference_name,
+                    fraction=fraction,
+                    offset_xyz=_param_vector(
+                        self.plan.params,
+                        "occlusion_offset_xyz",
+                        (0.0, 0.0, 0.0),
+                    ),
                 )
             if not _candidate_is_clear(
                 env,
@@ -4277,7 +4365,14 @@ class NonPhysicalPerturbationRuntime:
                     direction = receiver[:2] - target[:2]
                     length = float(np.linalg.norm(direction))
                     direction = direction / length if length >= 1e-6 else np.array([0.0, 1.0])
-                    position = target + 0.62 * (receiver - target)
+                    path_fraction = _param_float(
+                        self.plan.params, "barrier_path_fraction", 0.62
+                    )
+                    if not 0.0 < path_fraction < 1.0:
+                        raise PerturbationConfigurationError(
+                            "D05 barrier_path_fraction must be between 0 and 1"
+                        )
+                    position = target + path_fraction * (receiver - target)
                     lateral_offset = _param_float(
                         self.plan.params, "lateral_offset_m", 0.025
                     )
@@ -4620,6 +4715,9 @@ class NonPhysicalPerturbationRuntime:
             if eef is None:
                 return False
             threshold = float(self.plan.params.get("trigger_distance_m", 0.15))
+            anchor = _configured_trigger_anchor(env, self.plan.params)
+            if anchor is not None:
+                return bool(np.linalg.norm(eef - anchor) <= threshold)
             for name in _goal_interaction_targets(env):
                 position, _ = _entity_pose(env, name)
                 if np.linalg.norm(eef - position) <= threshold:

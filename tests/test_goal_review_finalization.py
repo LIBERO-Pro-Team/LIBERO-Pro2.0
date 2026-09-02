@@ -66,6 +66,49 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
             "barrier_path_fraction": ("0.50",),
             "barrier_lateral_offset_m": ("0.100",),
         },
+        ("libero_goal", 3): {
+            "barrier_scale": ("0.60",),
+            "barrier_path_fraction": ("0.30",),
+            "barrier_lateral_offset_m": ("0.08",),
+        },
+        ("libero_goal", 9): {
+            "barrier_scale": ("1.0",),
+            "barrier_path_fraction": ("0.62",),
+            "barrier_lateral_offset_m": ("0.025",),
+        },
+    }
+    s09_safety_overrides = {
+        ("libero_goal", 1): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        },
+        ("libero_goal", 2): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        },
+        ("libero_goal", 3): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        },
+        ("libero_goal", 4): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        },
+        ("libero_goal", 7): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        },
+        ("libero_goal", 9): {
+            "target_geometry_factors": ("1.2", "1.2", "1.2"),
+            "receiver_geometry_factors": ("0.90", "0.90", "1.0"),
+        },
+    }
+    s07_goal_overrides = {
+        ("libero_goal", task_id): {
+            "geometry_factors": ("1.0", "0.64", "1.20"),
+            "goal_region_scale": ("1.0", "0.64", "1.20"),
+        }
+        for task_id in (2, 3, 4, 9)
     }
     for suite in FINALIZER.SUITES:
         for task_id in range(10):
@@ -77,14 +120,20 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
             })
             assert expected_s05.items() <= s05_params.items()
             assert s05_params["visual_only_asset"] == ("false",)
-            assert {
+            expected_s07 = s07_goal_overrides.get((suite, task_id), {
                 "geometry_factors": ("1.0", "0.64", "1.20"),
                 "goal_region_scale": ("1.0", "1.0", "1.0"),
-            }.items() <= FINALIZER.case_updates(suite, task_id, "S07")[0].items()
-            assert {
+            })
+            assert expected_s07.items() <= FINALIZER.case_updates(
+                suite, task_id, "S07"
+            )[0].items()
+            expected_s09 = s09_safety_overrides.get((suite, task_id), {
                 "target_geometry_factors": ("1.2", "1.2", "1.2"),
                 "receiver_geometry_factors": ("0.8", "0.8", "0.8"),
-            }.items() <= FINALIZER.case_updates(suite, task_id, "S09")[0].items()
+            })
+            assert expected_s09.items() <= FINALIZER.case_updates(
+                suite, task_id, "S09"
+            )[0].items()
             assert {
                 "eef_offset_xyz": ("0.050", "-0.040", "0.030"),
                 "joint_zero_offset_rad": ("0.050", "-0.040", "0.030"),
@@ -96,22 +145,22 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
             assert FINALIZER.case_updates(suite, task_id, "D12")[0][
                 "delay_steps"
             ] == ("10",)
-            assert FINALIZER.case_updates(suite, task_id, "D13")[0] == {
+            assert {
                 "arm_delay_steps": ("8",),
                 "gripper_delay_steps": ("8",),
-            }
-            assert FINALIZER.case_updates(suite, task_id, "D05")[0] == {
+            }.items() <= FINALIZER.case_updates(suite, task_id, "D13")[0].items()
+            assert {
                 "visual_only_asset": ("false",),
                 "physical_collision": ("true",),
-            }
-            assert FINALIZER.case_updates(suite, task_id, "D14")[0] == {
+            }.items() <= FINALIZER.case_updates(suite, task_id, "D05")[0].items()
+            assert {
                 "repeat_count": ("8",),
                 "event_duration_steps": ("8",),
-            }
-            assert FINALIZER.case_updates(suite, task_id, "D15")[0] == {
+            }.items() <= FINALIZER.case_updates(suite, task_id, "D14")[0].items()
+            assert {
                 "chunk_size": ("12",),
                 "stale_chunk_steps": ("8",),
-            }
+            }.items() <= FINALIZER.case_updates(suite, task_id, "D15")[0].items()
 
 
 def test_published_all_task_parameters_cover_all_four_suites() -> None:
@@ -134,13 +183,48 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
         "D05": {"visual_only_asset": False, "physical_collision": True},
     }
     counts = {case_id: 0 for case_id in expected}
+    s09_overrides = {
+        ("libero_10", 2): {
+            "target_geometry_factors": [1.1, 1.1, 1.1],
+            "receiver_geometry_factors": [0.95, 0.95, 0.95],
+        },
+        ("libero_10", 9): {
+            "target_geometry_factors": [1.1, 1.1, 1.1],
+            "receiver_geometry_factors": [1.0, 1.0, 1.0],
+        },
+        ("libero_goal", 1): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.8, 0.8, 1.0],
+        },
+        ("libero_goal", 2): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.8, 0.8, 1.0],
+        },
+        ("libero_goal", 3): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.8, 0.8, 1.0],
+        },
+        ("libero_goal", 4): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.8, 0.8, 1.0],
+        },
+        ("libero_goal", 7): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.8, 0.8, 1.0],
+        },
+        ("libero_goal", 9): {
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [0.9, 0.9, 1.0],
+        },
+    }
 
     for item in payload["tasks"]:
         case_id = str(item["case_id"])
         if case_id not in expected:
             continue
         params = _active_params(ROOT / "assets" / item["bddl_path"], case_id)
-        assert expected[case_id].items() <= params.items(), (
+        expected_params = s09_overrides.get((item["suite"], item["base_task_id"]), expected[case_id]) if case_id == "S09" else expected[case_id]
+        assert expected_params.items() <= params.items(), (
             item["suite"],
             item["base_task_id"],
             case_id,
@@ -156,62 +240,37 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
         "D13": 39,
         "D14": 40,
         "D15": 40,
-        "D05": 40,
+        "D05": 38,
     }
 
 
-def _expected_d03_value(values: tuple[str, ...]):
-    parsed = []
-    for value in values:
-        try:
-            parsed.append(float(value))
-        except ValueError:
-            parsed.append(value)
-    return parsed[0] if len(parsed) == 1 else parsed
-
-
-def test_published_d03_only_tunes_reviewed_tasks() -> None:
+def test_published_d03_uses_persistent_updates_for_active_tasks() -> None:
     payload = json.loads(FINALIZER.MANIFEST.read_text(encoding="utf-8"))
-    tuned: set[tuple[str, int]] = set()
-    baseline: set[tuple[str, int]] = set()
+    published: set[tuple[str, int]] = set()
 
     for item in payload["tasks"]:
         if item["case_id"] != "D03":
             continue
         key = (str(item["suite"]), int(item["base_task_id"]))
         params = _active_params(ROOT / "assets" / item["bddl_path"], "D03")
-        expected = FINALIZER.D03_FEEDBACK_OVERRIDES.get(key)
-        if expected is None:
-            assert params == {"interaction_mode": params["interaction_mode"]}, (
-                item["suite"],
-                item["base_task_id"],
-                params,
-            )
-            baseline.add(key)
-            continue
+        assert params["receiver_trigger_distance_m"] > 0
+        assert params["staging_position_xyz"] == [0.0, 0.0, -5.0]
+        assert params.get("persistent_existing_obstacle") is True or params.get(
+            "persistent_movable_asset"
+        ) is True
+        published.add(key)
 
-        for name, values in expected.items():
-            assert params[name] == _expected_d03_value(values), (key, name, params)
-        assert set(params) == {"interaction_mode", *expected}
-        tuned.add(key)
-
-    assert tuned == set(FINALIZER.D03_FEEDBACK_OVERRIDES)
-    assert len(tuned) == 16
-    assert len(baseline) == 24
-    assert {task_id for suite, task_id in tuned if suite == "libero_goal"} == {
-        0,
-        2,
-        3,
-        6,
-        9,
-    }
+    assert len(published) == 39
 
 
-def test_d03_feedback_overrides_do_not_apply_to_unreviewed_tasks() -> None:
-    assert FINALIZER.case_updates("libero_goal", 1, "D03") == ({}, {})
-    assert FINALIZER.case_updates("libero_10", 3, "D03") == ({}, {})
-    assert FINALIZER.case_updates("libero_object", 1, "D03") == ({}, {})
-    assert FINALIZER.case_updates("libero_spatial", 2, "D03") == ({}, {})
+def test_d03_persistent_updates_are_explicit_for_each_suite_task() -> None:
+    for suite in FINALIZER.SUITES:
+        for task_id in range(10):
+            params, fields = FINALIZER.case_updates(suite, task_id, "D03")
+            assert params.get("persistent_existing_obstacle") == ("true",) or params.get(
+                "persistent_movable_asset"
+            ) == ("true",)
+            assert fields["variant"] == ("persistent_triggered_receiver_occupation",)
 
 
 def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_cases() -> None:
@@ -223,7 +282,7 @@ def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_c
         if FINALIZER.is_excluded(suite, task_id, case_id)
     }
 
-    assert len(excluded) == 54
+    assert len(excluded) == 59
     assert sum(case_id == "D19" for _, _, case_id in excluded) == 40
     assert ("libero_10", 8, "S04") in excluded
     assert excluded - {
@@ -283,7 +342,10 @@ def test_goal_task_specific_review_updates_are_scoped() -> None:
     assert task8_s03["height_delta_m"] == ("0.05",)
     assert task9_s03["height_delta_m"] == ("0.07",)
     assert task0_s11["asset_id"] == ("libero/yellow_cabinet",)
-    assert task0_s11["weld_asset_joints"] == ("true",)
+    assert task0_s11["movable_asset"] == ("true",)
+    assert task0_s11["physical_collision"] == ("true",)
+    assert task0_s11["weld_internal_asset_joints"] == ("true",)
+    assert "weld_asset_joints" not in task0_s11
     assert task0_s11["clutter_offsets_xy"] == ("-0.067791", "0.639295")
     assert task0_s11_fields["targets"] == ("wooden_cabinet_1",)
     assert task5_s13_fields["targets"] == ("plate_1",)

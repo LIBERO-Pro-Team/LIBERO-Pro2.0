@@ -40,7 +40,9 @@ from scripts.audit_all_task_physics import (  # noqa: E402
 MANIFEST = ROOT / "assets" / "task_manifest.json"
 DEFAULT_OUTPUT = ROOT / "outputs" / "goal_review_seed143_render_20260829"
 VISIBLE_CASES = (
+    "S02",
     "S03",
+    "S04",
     "S05",
     "S06",
     "S07",

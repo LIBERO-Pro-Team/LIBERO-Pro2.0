@@ -355,7 +355,7 @@
       (D03
         (:operator occlusion_or_obstacle)
         (:targets wooden_cabinet_1)
-        (:references cream_cheese_1)
+        (:references plate_1)
         (:trigger preplace)
         (:variant persistent_triggered_receiver_occupation)
         (:params

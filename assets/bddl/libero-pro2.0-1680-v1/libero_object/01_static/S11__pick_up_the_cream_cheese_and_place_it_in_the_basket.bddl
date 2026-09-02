@@ -212,7 +212,10 @@
           (:interaction_mode placement)
           (:asset_id prl/cracker_box)
           (:asset_scale 0.7)
-          (:visual_only_asset true)
+          (:visual_only_asset false)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:clear_of_task_entities true)
         )
       )
       (S12

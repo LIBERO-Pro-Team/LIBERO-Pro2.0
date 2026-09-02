@@ -123,6 +123,9 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             visual_only_asset=("false",),
             physical_collision=("true",),
         )
+        if suite == "libero_10" and task_id == 1:
+            params["barrier_path_fraction"] = ("0.50",)
+            params["lateral_offset_m"] = ("0.055",)
         if suite == "libero_10" and task_id == 2:
             params["lateral_offset_m"] = ("0.105",)
         if suite == "libero_goal" and task_id in {5, 8}:
@@ -200,6 +203,9 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
                 trigger_eef_motion_m=("0.01",),
                 trigger_action_norm=("0.01",),
             )
+        if suite == "libero_10" and task_id == 1:
+            params["joint_delta_rad"] = ("0.14",)
+            params["min_eef_displacement_m"] = ("0.05",)
     elif case_id == "S01":
         params.update(offset_xy=("0.055", "0.035"), yaw_rad=("0.28",))
     elif case_id == "S02":
@@ -251,6 +257,8 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             params["asset_scale"] = ("0.38",)
         elif suite == "libero_spatial":
             params["asset_scale"] = ("0.26",)
+        elif suite == "libero_10" and task_id == 1:
+            params["asset_scale"] = ("0.55",)
         elif suite == "libero_10" and task_id in {6, 7, 9}:
             params["asset_scale"] = ("0.58",)
         elif suite == "libero_10":
@@ -287,6 +295,16 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
             support_surface=("table",),
             clutter_offsets_xy=("0.09", "-0.08", "-0.09", "-0.08"),
         )
+        if suite == "libero_10" and task_id == 1:
+            params["asset_count"] = ("3",)
+            params["clutter_offsets_xy"] = (
+                "0.11",
+                "-0.10",
+                "0.11",
+                "0.10",
+                "-0.11",
+                "0.10",
+            )
         if suite == "libero_object":
             params["asset_count"] = ("3",)
             params["clutter_offsets_xy"] = (

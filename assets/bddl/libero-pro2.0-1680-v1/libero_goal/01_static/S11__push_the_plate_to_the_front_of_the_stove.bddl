@@ -255,6 +255,9 @@
           (:visual_only_asset false)
           (:clear_of_task_entities true)
           (:asset_quat 1.0 0.0 0.0 0.0)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:asset_contact_margin_m 0.004)
         )
       )
       (S12

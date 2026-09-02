@@ -386,6 +386,7 @@
           (:barrier_height_m 0.05)
           (:visual_only_asset false)
           (:physical_collision true)
+          (:receiver_trigger_distance_m 0.28)
         )
       )
       (D06

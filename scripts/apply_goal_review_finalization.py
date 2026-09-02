@@ -29,7 +29,7 @@ ASSETS = ROOT / "assets"
 DATASET = ASSETS / "bddl" / "libero-pro2.0-1680-v1"
 MANIFEST = ASSETS / "task_manifest.json"
 PUBLISHED_VERSION = "libero-pro2.0-1706-v1"
-PUBLISHED_TASK_COUNT = 1706
+PUBLISHED_TASK_COUNT = 1701
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 PUBLISHED_CASES = (
     "BASE",
@@ -51,6 +51,129 @@ GOAL_NOT_APPLICABLE = {
     ("libero_goal", 7, "D02"),
     ("libero_goal", 7, "D18"),
     ("libero_goal", 7, "S02"),
+    ("libero_goal", 0, "D05"),
+    ("libero_goal", 0, "D17"),
+    ("libero_goal", 7, "D03"),
+    ("libero_goal", 7, "D05"),
+    ("libero_goal", 7, "S05"),
+}
+
+GOAL_REVIEW_ROUND3_FEEDBACK_KEYS = {
+    *((0, case_id) for case_id in ("D04", "D05", "D08", "D09", "D10", "D11", "D12", "D16", "D17", "S04", "S12")),
+    *((1, case_id) for case_id in ("D02", "D03", "D05", "S02", "S06", "S09")),
+    *((2, case_id) for case_id in ("D01", "D02", "D05", "D17", "S02", "S07", "S09")),
+    *((3, case_id) for case_id in ("D02", "D05", "D16", "S05", "S07", "S09")),
+    *((4, case_id) for case_id in ("D02", "D03", "D05", "S02", "S07", "S09")),
+    (5, "D05"),
+    *((6, case_id) for case_id in ("D03", "D05", "S03", "S06")),
+    *((7, case_id) for case_id in ("D03", "D05", "S04", "S05", "S09")),
+    *((8, case_id) for case_id in ("D03", "S03")),
+    *((9, case_id) for case_id in ("S02", "S05", "S07", "S09")),
+}
+
+GOAL_REVIEW_ROUND3_DELETIONS = {
+    (0, "D05"),
+    (0, "D17"),
+    (7, "D03"),
+    (7, "D05"),
+    (7, "S05"),
+}
+
+GOAL_REVIEW_ROUND3_PARAMS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    **{
+        (0, case_id): {
+            "trigger_anchor": ("wooden_cabinet_1_middle_region",),
+            "trigger_distance_m": ("0.30",),
+        }
+        for case_id in ("D04", "D08", "D09", "D10", "D11", "D12", "D16")
+    },
+    (0, "S12"): {"occlusion_offset_xyz": ("-0.05", "0.0", "0.0")},
+    (1, "D02"): {"offset_xy": ("-0.12", "0.09"), "yaw_rad": ("-0.24",)},
+    (1, "D05"): {
+        "barrier_path_fraction": ("0.35",),
+        "lateral_offset_m": ("0.0",),
+    },
+    (1, "S02"): {"offset_xy": ("-0.12", "0.09"), "yaw_rad": ("-0.30",)},
+    (1, "S06"): {
+        "asset_id": ("github/object_sim_bowl",),
+        "asset_scale": ("0.70",),
+        "sampler_compatible": ("true",),
+    },
+    (1, "S09"): {"receiver_geometry_factors": ("0.8", "0.8", "1.0")},
+    (2, "D01"): {
+        "trigger_distance_m": ("0.20",),
+        "offset_xy": ("0.10", "-0.08"),
+        "yaw_rad": ("0.28",),
+    },
+    (2, "D02"): {
+        "offset_xy": ("-0.12", "-0.09"),
+        "yaw_rad": ("-0.24",),
+        "receiver_trigger_distance_m": ("0.24",),
+    },
+    (2, "D05"): {"asset_scale": ("0.85",)},
+    (2, "D17"): {
+        "grasp_initial_tolerance_m": ("0.05",),
+        "grasp_distance_m": ("0.16",),
+        "contact_fallback_distance_m": ("0.08",),
+        "wrapper_fallback_distance_m": ("0.16",),
+    },
+    (2, "S02"): {"offset_xy": ("-0.12", "-0.09"), "yaw_rad": ("-0.30",)},
+    (2, "S07"): {"goal_region_scale": ("1.0", "0.64", "1.20")},
+    (2, "S09"): {"receiver_geometry_factors": ("0.8", "0.8", "1.0")},
+    (3, "D02"): {"offset_xy": ("-0.12", "-0.09"), "yaw_rad": ("-0.24",)},
+    (3, "D05"): {"asset_scale": ("0.75",)},
+    (3, "D16"): {"takeover_duration_steps": ("20",)},
+    (3, "S05"): {
+        "barrier_scale": ("0.60",),
+        "barrier_path_fraction": ("0.30",),
+        "barrier_lateral_offset_m": ("0.08",),
+    },
+    (3, "S07"): {
+        "goal_region_scale": ("1.0", "0.64", "1.20"),
+        "articulation_joint_range_scale": ("0.64",),
+    },
+    (3, "S09"): {
+        "receiver_geometry_factors": ("0.8", "0.8", "1.0"),
+        "articulation_joint_range_scale": ("0.80",),
+    },
+    (4, "D02"): {"offset_xy": ("-0.12", "-0.09"), "yaw_rad": ("-0.24",)},
+    (4, "D05"): {"asset_scale": ("0.85",)},
+    (4, "S02"): {"offset_xy": ("-0.12", "-0.09"), "yaw_rad": ("-0.30",)},
+    (4, "S07"): {"goal_region_scale": ("1.0", "0.64", "1.20")},
+    (4, "S09"): {"receiver_geometry_factors": ("0.8", "0.8", "1.0")},
+    (5, "D05"): {"receiver_trigger_distance_m": ("0.28",)},
+    (6, "D03"): {
+        "receiver_trigger_distance_m": ("0.24",),
+        "support_surface": ("akita_black_bowl_1",),
+        "asset_offset_xyz": ("0.0", "0.0", "0.02"),
+    },
+    (6, "D05"): {
+        "barrier_path_fraction": ("0.58",),
+        "lateral_offset_m": ("-0.05",),
+    },
+    (6, "S03"): {"asset_geometry_factors": ("0.60", "0.60", "2.0")},
+    (6, "S06"): {"asset_scale": ("0.70",)},
+    (7, "S09"): {"receiver_geometry_factors": ("0.8", "0.8", "1.0")},
+    (8, "D03"): {"receiver_trigger_distance_m": ("0.32",)},
+    (8, "S03"): {"asset_geometry_factors": ("0.70", "0.70", "2.0")},
+    (9, "S02"): {"offset_xy": ("0.0", "0.09"), "yaw_rad": ("-0.24",)},
+    (9, "S05"): {
+        "barrier_scale": ("1.0",),
+        "barrier_path_fraction": ("0.62",),
+        "barrier_lateral_offset_m": ("0.025",),
+        "barrier_height_m": ("0.0",),
+    },
+    (9, "S07"): {"goal_region_scale": ("1.0", "0.64", "1.20")},
+    (9, "S09"): {"receiver_geometry_factors": ("0.90", "0.90", "1.0")},
+}
+
+GOAL_REVIEW_ROUND3_FIELDS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    (4, "D03"): {"references": ("plate_1",)},
+    (6, "D03"): {"references": ("plate_1",)},
 }
 
 GLOBAL_CASES = {
@@ -189,6 +312,16 @@ def case_updates(
     case_id = str(case_id).upper()
     params: dict[str, tuple[str, ...]] = {}
     fields: dict[str, tuple[str, ...]] = {}
+
+    if case_id in {"S10", "S11"}:
+        params.update(
+            clear_of_task_entities=("true",),
+            movable_asset=("true",),
+            physical_collision=("true",),
+            visual_only_asset=("false",),
+        )
+        if case_id == "S10":
+            params["asset_contact_margin_m"] = ("0.006",)
 
     if (suite, task_id, case_id) == ("libero_10", 8, "D06"):
         fields["disturbance_targets"] = ("none",)
@@ -338,6 +471,13 @@ def case_updates(
             stale_chunk_steps=("8",),
         )
 
+    if (suite, task_id, case_id) == ("libero_spatial", 9, "S11"):
+        params.update(
+            asset_contact_margin_m=("0.004",),
+            clutter_offsets_xy=("0.17", "0.10"),
+            support_surface=("table",),
+        )
+
     if suite != "libero_goal":
         return params, fields
 
@@ -369,7 +509,7 @@ def case_updates(
                 asset_scale=("1.0",),
                 asset_count=("1",),
                 asset_quat=("1.0", "0.0", "0.0", "0.0"),
-                weld_asset_joints=("true",),
+                weld_internal_asset_joints=("true",),
                 clutter_minimum_gap_m=("0.080",),
                 clutter_offsets_xy=("-0.067791", "0.639295"),
                 support_surface=("main_table",),
@@ -386,15 +526,22 @@ def case_updates(
                 asset_quat=("1.0", "0.0", "0.0", "0.0"),
             )
             if task_id == 1:
-                params.update(asset_id=("prl/plastic_bowl",), asset_scale=("0.45",))
+                params.update(asset_id=("github/object_sim_bowl",), asset_scale=("0.70",))
             elif task_id == 5:
-                params.update(asset_id=("prl/plastic_plate",), asset_scale=("0.55",))
+                params.update(
+                    asset_id=("prl/plastic_plate",),
+                    asset_scale=("0.55",),
+                    asset_contact_margin_m=("0.004",),
+                )
             else:
                 params.update(asset_id=("prl/gelatin_box",), asset_scale=("0.45",))
     elif case_id == "S12" and task_id == 0:
         params.update(asset_scale=("1.45",), occlusion_fraction=("0.58",))
     elif case_id == "S13" and task_id == 5:
         fields["targets"] = ("plate_1",)
+
+    params.update(GOAL_REVIEW_ROUND3_PARAMS.get((task_id, case_id), {}))
+    fields.update(GOAL_REVIEW_ROUND3_FIELDS.get((task_id, case_id), {}))
 
     return params, fields
 
@@ -573,6 +720,7 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
         return {
             "fixture_distractor",
             "fixture_distractor_targets",
+            "weld_asset_joints",
         }
     return set()
 
@@ -586,6 +734,7 @@ def apply(
     *,
     check_only: bool = False,
     case_filter: set[str] | None = None,
+    goal_review_round3_only: bool = False,
 ) -> dict[str, Any]:
     selected_cases = (
         {str(case_id).upper() for case_id in case_filter}
@@ -601,6 +750,11 @@ def apply(
         suite = str(item["suite"])
         task_id = int(item["base_task_id"])
         case_id = str(item["case_id"]).upper()
+        if goal_review_round3_only and (
+            suite != "libero_goal"
+            or (task_id, case_id) not in GOAL_REVIEW_ROUND3_FEEDBACK_KEYS
+        ):
+            continue
         if selected_cases is not None and case_id not in selected_cases:
             continue
         if is_excluded(suite, task_id, case_id):
@@ -641,11 +795,20 @@ def apply(
             }
         )
         if not check_only:
-            path.write_text(updated, encoding="utf-8", newline="\n")
+            with path.open("w", encoding="utf-8", newline="\n") as handle:
+                handle.write(updated)
 
     excluded_entries = [
         item
         for item in entries
+        if (
+            not goal_review_round3_only
+            or (
+                str(item["suite"]) == "libero_goal"
+                and (int(item["base_task_id"]), str(item["case_id"]).upper())
+                in GOAL_REVIEW_ROUND3_DELETIONS
+            )
+        )
         if (
             selected_cases is None
             or str(item["case_id"]).upper() in selected_cases
@@ -666,12 +829,23 @@ def apply(
             f"Expected {PUBLISHED_TASK_COUNT} retained tasks, found {len(retained)}"
         )
     if not check_only:
-        changed_set = set(changed)
         for item in retained:
             path = ASSETS / str(item["bddl_path"])
             if not path.is_file():
                 raise FileNotFoundError(path)
-            if selected_cases is not None and path not in changed_set:
+            if (
+                selected_cases is not None
+                and str(item["case_id"]).upper() not in selected_cases
+            ):
+                continue
+            if goal_review_round3_only and (
+                str(item["suite"]) != "libero_goal"
+                or (
+                    int(item["base_task_id"]),
+                    str(item["case_id"]).upper(),
+                )
+                not in GOAL_REVIEW_ROUND3_FEEDBACK_KEYS
+            ):
                 continue
             item["bddl_sha256"] = canonical_hash(path)
             item["task_version"] = PUBLISHED_VERSION
@@ -680,15 +854,13 @@ def apply(
             task_count=len(retained),
             tasks=retained,
         )
-        MANIFEST.write_text(
-            json.dumps(manifest, ensure_ascii=True, indent=2) + "\n",
-            encoding="utf-8",
-            newline="\n",
-        )
+        with MANIFEST.open("w", encoding="utf-8", newline="\n") as handle:
+            handle.write(json.dumps(manifest, ensure_ascii=True, indent=2) + "\n")
 
     return {
         "check_only": check_only,
         "case_filter": sorted(selected_cases) if selected_cases is not None else None,
+        "goal_review_round3_only": goal_review_round3_only,
         "changed_bddl_count": len(changed),
         "deleted_bddl_count": len(deleted),
         "retained_task_count": len(retained),
@@ -702,6 +874,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-only", action="store_true")
     parser.add_argument(
+        "--goal-review-round3-only",
+        action="store_true",
+        help="Limit edits and hash updates to the Goal round-3 review keys.",
+    )
+    parser.add_argument(
         "--case",
         action="append",
         default=[],
@@ -712,6 +889,7 @@ def main() -> None:
     result = apply(
         check_only=args.check_only,
         case_filter=set(args.case) if args.case else None,
+        goal_review_round3_only=args.goal_review_round3_only,
     )
     if args.report is not None and not args.check_only:
         args.report.parent.mkdir(parents=True, exist_ok=True)

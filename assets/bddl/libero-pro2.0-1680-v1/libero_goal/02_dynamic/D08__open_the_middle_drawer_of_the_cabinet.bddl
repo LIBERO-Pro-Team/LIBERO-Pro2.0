@@ -408,6 +408,8 @@
         (:params
           (:interaction_mode articulation)
           (:event_duration_steps 50)
+          (:trigger_anchor wooden_cabinet_1_middle_region)
+          (:trigger_distance_m 0.30)
         )
       )
       (D09

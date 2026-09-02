@@ -445,6 +445,8 @@
           (:interaction_mode articulation)
           (:delay_steps 10)
           (:event_duration_steps 36)
+          (:trigger_anchor wooden_cabinet_1_middle_region)
+          (:trigger_distance_m 0.30)
         )
       )
       (D13

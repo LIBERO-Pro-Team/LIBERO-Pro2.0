@@ -122,7 +122,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
         self.assertEqual(
             plan.disturbance_targets,
-            ("akita_black_bowl_2", "cookies_1", "glazed_rim_porcelain_ramekin_1"),
+            ("cookies_1", "glazed_rim_porcelain_ramekin_1"),
         )
 
     def test_goal_weak_fields_are_task_local_and_runtime_resolved(self):
@@ -215,7 +215,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1706)
+        self.assertEqual(len(files), 1701)
         self.assertNotIn(
             "S04__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl",
             {path.name for path in files},

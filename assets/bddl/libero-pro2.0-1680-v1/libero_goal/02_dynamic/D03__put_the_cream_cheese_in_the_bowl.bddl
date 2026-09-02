@@ -355,14 +355,14 @@
       (D03
         (:operator occlusion_or_obstacle)
         (:targets akita_black_bowl_1)
-        (:references wine_bottle_1)
+        (:references plate_1)
         (:trigger preplace)
         (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
           (:receiver_trigger_distance_m 0.24)
-          (:support_surface main_table)
-          (:asset_offset_xyz -0.03 0.14 0.0)
+          (:support_surface akita_black_bowl_1)
+          (:asset_offset_xyz 0.0 0.0 0.02)
           (:staging_position_xyz 0.0 0.0 -5.0)
           (:persistent_existing_obstacle true)
         )

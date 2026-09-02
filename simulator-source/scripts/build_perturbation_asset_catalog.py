@@ -19,7 +19,7 @@ EVERYDAY_OBJECTS = (
     "prl/herring_tin",
     "prl/lunchbox",
     "prl/notebook",
-    "prl/plastic_bowl",
+    "github/object_sim_bowl",
     "prl/plastic_glass",
     "prl/plastic_plate",
     "prl/pocky_box",
@@ -150,7 +150,7 @@ COVERAGE = (
     coverage(
         "S11",
         "external_asset",
-        asset_ids=SEMANTIC_PAIRS,
+        asset_ids=("libero/yellow_cabinet",) + SEMANTIC_PAIRS,
         note=(
             "Use same-category and highly similar LIBERO, PRL, and YCB candidates "
             "for grounding distractors."
@@ -205,7 +205,7 @@ COVERAGE = (
     coverage(
         "D06",
         "external_asset",
-        asset_ids=EVERYDAY_OBJECTS,
+        asset_ids=("libero/red_coffee_mug",) + EVERYDAY_OBJECTS,
         note="Move non-task objects from the common clutter pool without teleport overlap.",
     ),
     coverage("D07", "runtime_configuration", note="Schedule camera shake, drift, or a permanent pose jump."),

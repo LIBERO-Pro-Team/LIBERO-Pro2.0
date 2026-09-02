@@ -80,7 +80,7 @@ python3 smoke_test.py
 
 ## 5. 任务范围
 
-当前发布 manifest 包含 1706 个有效任务组合：40 个 BASE、874 个静态扰动和 792 个动态扰动。
+当前发布 manifest 包含 1701 个有效任务组合：40 个 BASE、873 个静态扰动和 788 个动态扰动。
 D19 已全部删除，Goal suite 另删除 13 个经审核标记为不适用的组合。
 
 `GET /v1/tasks` 是有效 suite、task ID 与 variant 组合的唯一

@@ -172,7 +172,7 @@ def asset_for_type(object_type: str) -> Tuple[str, float]:
     if any(token in value for token in ("mug", "glass")):
         return "prl/plastic_glass", 0.70
     if "bowl" in value:
-        return "prl/plastic_bowl", 0.45
+        return "github/object_sim_bowl", 0.70
     if "plate" in value:
         return "prl/plastic_plate", 0.55
     if "bottle" in value:

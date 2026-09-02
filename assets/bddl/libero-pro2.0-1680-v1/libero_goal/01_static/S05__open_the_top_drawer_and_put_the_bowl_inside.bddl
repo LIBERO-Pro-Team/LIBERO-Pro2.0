@@ -195,9 +195,9 @@
           (:lateral_offset_m 0.055)
           (:barrier_height_m -0.015)
           (:visual_only_asset false)
-          (:barrier_scale 0.65)
-          (:barrier_path_fraction 0.35)
-          (:barrier_lateral_offset_m 0.0)
+          (:barrier_scale 0.60)
+          (:barrier_path_fraction 0.30)
+          (:barrier_lateral_offset_m 0.08)
         )
       )
       (S06

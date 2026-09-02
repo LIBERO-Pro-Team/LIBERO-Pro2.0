@@ -42,7 +42,7 @@ CASE_IDS = (
     *(f"D{index:02d}" for index in range(1, 22)),
 )
 PUBLISHED_MANIFEST_VERSION = "libero-pro2.0-1706-v1"
-PUBLISHED_TASK_COUNT = 1706
+PUBLISHED_TASK_COUNT = 1701
 PUBLISHED_EXCLUDED = {("libero_10", 8, "S04")}
 GOAL_NOT_APPLICABLE = {
     ("libero_goal", 0, "D02"),
@@ -58,6 +58,11 @@ GOAL_NOT_APPLICABLE = {
     ("libero_goal", 7, "D02"),
     ("libero_goal", 7, "D18"),
     ("libero_goal", 7, "S02"),
+    ("libero_goal", 0, "D05"),
+    ("libero_goal", 0, "D17"),
+    ("libero_goal", 7, "D03"),
+    ("libero_goal", 7, "D05"),
+    ("libero_goal", 7, "S05"),
 }
 LEGACY_CASE_IDS = (
     *(f"S{index:02d}" for index in range(1, 22)),

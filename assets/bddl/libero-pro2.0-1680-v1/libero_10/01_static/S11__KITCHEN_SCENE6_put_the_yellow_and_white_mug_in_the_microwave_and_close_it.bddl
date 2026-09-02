@@ -203,6 +203,10 @@
           (:interaction_mode placement)
           (:asset_id prl/plastic_glass)
           (:asset_scale 0.7)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
         )
       )
       (S12

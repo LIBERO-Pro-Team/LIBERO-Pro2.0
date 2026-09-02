@@ -243,6 +243,9 @@
           (:clutter_offsets_xy 0.14 -0.10 0.10 0.12 -0.13 -0.08)
           (:visual_only_asset false)
           (:clear_of_task_entities true)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11
