@@ -326,8 +326,7 @@
       )
       (D06
         (:operator pose_transform)
-        (:targets moka_pot_2 moka_pot_1)
-        (:disturbance_targets none)
+        (:targets moka_pot_2)
         (:trigger task_phase)
         (:variant distractor_move_or_local_rearrangement)
         (:params
@@ -335,12 +334,6 @@
           (:minimum_displacement_m 0.10)
           (:minimum_clearance_m 0.10)
           (:offset_xy 0.12 -0.09)
-          (:asset_id libero/red_coffee_mug)
-          (:asset_scale 1.0)
-          (:asset_initial_anchor moka_pot_2)
-          (:asset_initial_offset_xy 0.134437 0.194625)
-          (:asset_initial_clearance_m 0.10)
-          (:support_surface kitchen_table)
         )
       )
       (D07
