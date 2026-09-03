@@ -469,9 +469,9 @@
         (:variant command_drop_or_repeat)
         (:params
           (:interaction_mode placement)
-          (:drop_count 2)
-          (:repeat_count 8)
-          (:event_duration_steps 8)
+          (:drop_count 0)
+          (:repeat_count 24)
+          (:event_duration_steps 24)
         )
       )
       (D15
