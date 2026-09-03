@@ -1008,16 +1008,28 @@ def apply_precompile_geometry(
             raise PerturbationConfigurationError(
                 "S07 goal_region_scale must be positive"
             )
+    scale_compiled_geometry = _param_bool(
+        plan.params, "scale_compiled_geometry", False
+    )
     for name, factors in transforms.items():
         obj = entities.get(name)
         if obj is None or not hasattr(obj, "worldbody"):
             continue
-        for element in obj.worldbody.findall(".//*[@pos]"):
-            element.set("pos", _scale_xml_vector(element.get("pos"), factors))
-        for geom in obj.worldbody.findall(".//geom"):
-            if geom.get("size"):
-                geom.set("size", _scale_xml_vector(geom.get("size"), factors))
-                changed.append(name)
+        geometry_roots = [obj.worldbody]
+        if scale_compiled_geometry:
+            get_obj = getattr(obj, "get_obj", None)
+            compiled_body = get_obj() if callable(get_obj) else None
+            if compiled_body is not None and all(
+                compiled_body is not root for root in geometry_roots
+            ):
+                geometry_roots.append(compiled_body)
+        for root in geometry_roots:
+            for element in root.findall(".//*[@pos]"):
+                element.set("pos", _scale_xml_vector(element.get("pos"), factors))
+            for geom in root.findall(".//geom"):
+                if geom.get("size"):
+                    geom.set("size", _scale_xml_vector(geom.get("size"), factors))
+                    changed.append(name)
         if hasattr(obj, "asset"):
             for mesh in obj.asset.findall("mesh"):
                 old_scale = mesh.get("scale", "1 1 1")
@@ -1032,9 +1044,12 @@ def apply_precompile_geometry(
             )
         if name == receiver_name or plan.case_id == "S07":
             site_factors = goal_region_scale if plan.case_id == "S07" else factors
-            for site in obj.worldbody.findall(".//site"):
-                if site.get("size"):
-                    site.set("size", _scale_xml_vector(site.get("size"), site_factors))
+            for root in geometry_roots:
+                for site in root.findall(".//site"):
+                    if site.get("size"):
+                        site.set(
+                            "size", _scale_xml_vector(site.get("size"), site_factors)
+                        )
     if not changed:
         raise PerturbationConfigurationError(
             f"{plan.case_id} could not find scalable collision or mesh geometry in {plan.targets}"
