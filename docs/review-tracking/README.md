@@ -82,6 +82,19 @@ seed 或 init state 不同，应建立不同记录，不得合并累计。
 
 `libero_10` 的人工审核按负责人拆分为：[`task0-task4`](libero_10_task0_4.md) 与 [`task5-task9`](libero_10_task5_9.md)。
 
+## 2026-09-03 新一轮审核进展
+
+四个标准 suite 均已开展新一轮问题项定向审核。“已开展”表示对应 rollout 已进入人工复核流程；只有取得可追溯审核结果的部分才标记为“已导入”，其余部分不得推测补写。
+
+| Suite | 发布称谓 | 本轮进展 | 仓库导入状态 | 后续动作 |
+|---|---|---|---|---|
+| `libero_10` | LIBERO-Long | task0-task9 均开展定向复审 | task5-task9 的 R005 已导入；task0-task4 本轮结果待负责人导入 | task5-task9 有 7 个 task/case 组进入 R006，见 [`R005 明细`](libero_10_task5_9_r005.md) |
+| `libero_goal` | LIBERO-Goal | 已开展新一轮定向复审 | 当前文件已导入至 R003；新一轮结果待负责人导入 | 取得原始 CSV、manifest 和视频证据后更新 R004 |
+| `libero_object` | LIBERO-Object | 已完成 R004 定向复审 | R004 的 200 条结果已导入，见 [`R004 明细`](libero_object_round4_0902.md) | 根据 R004 的 57 条存疑记录安排下一轮可观察性修复与复测 |
+| `libero_spatial` | LIBERO-Spatial | 已完成 R004 定向复审 | R004 结果和精确 rollout 清单已导入 | 依据 [`R004 rollout 清单`](libero_spatial_r004_rollout.md) 与当前复测队列继续处理 |
+
+> 这里的 LIBERO-Long 对应仓库中的 `libero_10` suite；不是额外新增的第五个 suite。
+
 ## 已确认规则
 
 - [x] 以连续三轮审核 `PASS`，而不是三次策略成功，作为免复测条件。

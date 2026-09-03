@@ -4,6 +4,13 @@
 > 范围：`libero_10/task5` ~ `libero_10/task9`<br>
 > 判定口径：唯一键为 `suite/task_id/case_id/seed/init_state`；`PASS`、`ISSUE`、`PENDING` 与策略执行结果分开记录。连续 3 次实际审核为 `PASS` 才进入 `STABLE_3_NO_RETEST`。某轮没有该 key 时记为 `-`，既不算通过，也不打断已有连续通过计数。
 
+## 最新轮次
+
+- 2026-09-03 已完成 R005 问题项定向复审：39 组、78 个 rollout。
+- R005 结果为 64 条 `PASS`、8 条 `ISSUE`、6 条 `PENDING`。
+- 本文件下方累计总表截至 R004；R005 的逐 rollout 证据和下一轮精确重跑清单见 [`libero_10_task5_9_r005.md`](libero_10_task5_9_r005.md)。
+- R005 后仍有 7 个 task/case 组需要在 R006 重新 rollout；未进入 R005 的稳定项没有被重复审核。
+
 ## 负责范围
 
 | Suite | Task | Task Name | 审核范围 |
