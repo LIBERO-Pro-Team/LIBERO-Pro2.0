@@ -88,7 +88,7 @@ seed 或 init state 不同，应建立不同记录，不得合并累计。
 
 | Suite | 发布称谓 | 本轮进展 | 仓库导入状态 | 后续动作 |
 |---|---|---|---|---|
-| `libero_10` | LIBERO-Long | task5-task9 已完成 R005 定向复审 | R005 已合并至 [`task5-task9 主记录`](libero_10_task5_9.md)；task0-task4 保持当前已上传状态 | task5-task9 有 7 个 task/case 组进入 R006，清单在主记录的 R005 章节中 |
+| `libero_10` | LIBERO-Long | task5-task9 已完成 R004 定向复审 | R004（0902rollout）已合并至 [`task5-task9 主记录`](libero_10_task5_9.md)；task0-task4 保持当前已上传状态 | task5-task9 有 7 个 task/case 组进入 R005，清单在主记录的 R004 章节中 |
 | `libero_goal` | LIBERO-Goal | 当前已上传至 R003 | R001-R003 均保留在 [`libero_goal.md`](libero_goal.md) | 按当前文件中的复测队列继续；未上传轮次不写入本表 |
 | `libero_object` | LIBERO-Object | 已完成 R004 定向复审 | R004 的 200 条结果已合并至 [`libero_object.md`](libero_object.md) | 根据 R004 的 57 条存疑记录安排下一轮可观察性修复与复测 |
 | `libero_spatial` | LIBERO-Spatial | 已完成 R004 定向复审 | R004 结果和精确 rollout 清单已合并至 [`libero_spatial.md`](libero_spatial.md) | 依据主记录中的 R004 rollout 清单与当前复测队列继续处理 |
