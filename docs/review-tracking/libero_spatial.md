@@ -5,7 +5,7 @@
 - 当前发布 manifest 条目数：430
 - 当前发布基础任务数：10
 - 实际审核 seed/init：`142/0`、`143/1`
-- 当前发布版本：`libero-pro2.0-1707-v1`（不含 D19）
+- 当前发布版本：`libero-pro2.0-1706-v1`（不含 D19）
 - 审核人：`ShiinaMahiruOvO`（由本地 Git 身份填入）
 - 当前状态：已从三批本地原始 manifest、审核进度和视频证据导入；缺失记录保持 `-`，未作推测。
 
@@ -2686,6 +2686,8 @@ R003 没有平均抽查全部 task，而是先用代表任务发现跨任务的�
 
 ## R004 正式 rollout 清单
 
+唯一逐条执行清单见 [`libero_spatial_r004_rollout.md`](./libero_spatial_r004_rollout.md)。生成流程只使用该文件，不读取下方自动复测候选表。
+
 下表是本轮实际生成范围，不使用后面的“自动复测候选”代替。每个 task-case 都按 `seed142/init0`、`seed143/init1` 生成两条视频。清单包括审核中已经出现的问题、后续明确要求加入的支撑关系复测、S03 全任务复测，以及 task6 的完整回归。
 
 | 优先级 | Case | Tasks | task-case 数 | 视频数 | 原因 |
@@ -2714,7 +2716,7 @@ task6 的范围为 `BASE`、`S01-S22`、`D01-D18`、`D20-D21`，共 43 个 task-
 
 | 日期 | Review Key | 原状态 | 失效原因 | 相关文件或 Commit | 新状态 |
 |---|---|---|---|---|---|
-| `2026-08-29` | `libero_spatial/task*/D19/seed*/init*` | `PENDING/ISSUE_OPEN` | 当前 1707 manifest 不再发布 D19 | `e0fc1f8fa02fa0c3465042b6f85833311eccc614` | `N/A` |
+| `2026-08-29` | `libero_spatial/task*/D19/seed*/init*` | `PENDING/ISSUE_OPEN` | 当前 1706 manifest 不再发布 D19 | `e0fc1f8fa02fa0c3465042b6f85833311eccc614` | `N/A` |
 
 ## 自动复测候选（非下一轮 rollout 清单）
 
