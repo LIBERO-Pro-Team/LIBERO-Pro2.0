@@ -100,10 +100,11 @@ def test_yellow_moka_pot_is_published_for_s06_and_s11() -> None:
         assert "libero/yellow_moka_pot" in coverage["asset_ids"]
 
 
-def test_task8_published_moka_cases_activate_only_the_yellow_moka_pot() -> None:
+def test_reviewed_moka_cases_activate_only_the_yellow_moka_pot() -> None:
     dataset_root = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1"
     static_root = dataset_root / "libero_10" / "01_static"
     task_name = "KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl"
+    task2_name = "KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl"
     yellow_moka_files = sorted(
         path.relative_to(dataset_root).as_posix()
         for path in dataset_root.rglob("*.bddl")
@@ -111,6 +112,7 @@ def test_task8_published_moka_cases_activate_only_the_yellow_moka_pot() -> None:
     )
     assert yellow_moka_files == [
         f"libero_10/01_static/S06__{task_name}",
+        f"libero_10/01_static/S11__{task2_name}",
         f"libero_10/01_static/S11__{task_name}",
     ]
 
