@@ -5,7 +5,7 @@
 - manifest 条目数：430
 - 基础任务数：10
 - 默认 seed/init：`143/0`
-- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；`task5-task9` 见 [`libero_10_task5_9.md`](libero_10_task5_9.md)。
+- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；R004（0902rollout）定向复审记录已追加在本文末尾；`task5-task9` 见 [`libero_10_task5_9.md`](libero_10_task5_9.md)。
 
 ## 基础任务索引
 
@@ -642,3 +642,166 @@
 | `P0` | `libero_10/task4/S11/seed142/init0` | 2 | 成功了，标签错误 | `R004` | `huang` |
 | `P2` | `libero_10/task4/S22/seed142/init0` | 2 | 未满连续三轮 PASS | `R004` | `huang` |
 | `P2` | `libero_10/task4/S22/seed143/init1` | 2 | 未满连续三轮 PASS | `R004` | `huang` |
+
+---
+
+## R004 定向复审记录
+
+> 负责人：huang<br>
+> 审核日期：2026-09-04<br>
+> 数据批次：`0902rollout` / `pi0-review-final-20260902-51bb70b`<br>
+> rollout commit：`51bb70b8f32dde58b61f53b4afe65bd18985f348`
+
+### 范围与证据
+
+本轮是问题项定向复审，不是全量审核。覆盖 `libero_10/task0-task4` 共 44 个 task/case 组、88 个独立 rollout；每组包含 seed142/init0 与 seed143/init1 两次尝试。未出现在本批次中的稳定项不视为漏审，也不新增审核结论。
+
+- 结果文件 SHA-256：`4b41b621167970c2283b43e5186d4834efc2779f0722f9851cc193cd864ee9c5`
+- 原始结果：`human_review_results 0902.csv`
+- 视频与 rollout 对应：同批次 `0902rollout/index.tsv`
+
+### 审核结果汇总
+
+| 结论 | 数量 | 占比 |
+|---|---:|---:|
+| 认可 | 74 | 84.1% |
+| 错误 | 5 | 5.7% |
+| 存疑 | 9 | 10.2% |
+| 异常 | 0 | 0.0% |
+| 合计 | 88 | 100.0% |
+
+| Task | 组数 | PASS | ISSUE | PENDING |
+|---:|---:|---:|---:|---:|
+| 0 | 12 | 21 | 1 | 2 |
+| 1 | 8 | 12 | 2 | 2 |
+| 2 | 7 | 8 | 1 | 5 |
+| 3 | 6 | 12 | 0 | 0 |
+| 4 | 11 | 21 | 1 | 0 |
+
+### R004 逐 rollout 记录
+
+| Review Key | 策略结果 | 触发状态 | 审核判定 | Episode ID | 视频证据 | 备注 |
+|---|---|---|---|---|---|---|
+| `libero_10/task0/D02/seed142/init0` | `FAILURE` | `TRIGGERED` | `ISSUE` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D02_seed142_init0.mp4` | 扰动没有触发 |
+| `libero_10/task0/D02/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D02_seed143_init1.mp4` | - |
+| `libero_10/task0/D03/seed142/init0` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D03_seed142_init0.mp4` | 第一次没有抓到，没有触发占用的这个扰动 |
+| `libero_10/task0/D03/seed143/init1` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D03_seed143_init1.mp4` | 第一次没有抓到，没有触发占用的这个扰动 |
+| `libero_10/task0/D05/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D05_seed142_init0.mp4` | - |
+| `libero_10/task0/D05/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D05_seed143_init1.mp4` | - |
+| `libero_10/task0/D12/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D12_seed142_init0.mp4` | - |
+| `libero_10/task0/D12/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D12_seed143_init1.mp4` | - |
+| `libero_10/task0/D17/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D17_seed142_init0.mp4` | - |
+| `libero_10/task0/D17/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D17_seed143_init1.mp4` | - |
+| `libero_10/task0/D18/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D18_seed142_init0.mp4` | - |
+| `libero_10/task0/D18/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D18_seed143_init1.mp4` | - |
+| `libero_10/task0/D20/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_D20_seed142_init0.mp4` | - |
+| `libero_10/task0/D20/seed143/init1` | `SUCCESS` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task0_D20_seed143_init1.mp4` | - |
+| `libero_10/task0/S05/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S05_seed142_init0.mp4` | - |
+| `libero_10/task0/S05/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S05_seed143_init1.mp4` | - |
+| `libero_10/task0/S06/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task0_S06_seed142_init0.mp4` | - |
+| `libero_10/task0/S06/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S06_seed143_init1.mp4` | - |
+| `libero_10/task0/S09/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S09_seed142_init0.mp4` | - |
+| `libero_10/task0/S09/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S09_seed143_init1.mp4` | - |
+| `libero_10/task0/S10/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S10_seed142_init0.mp4` | - |
+| `libero_10/task0/S10/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S10_seed143_init1.mp4` | - |
+| `libero_10/task0/S11/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task0_S11_seed142_init0.mp4` | - |
+| `libero_10/task0/S11/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task0_S11_seed143_init1.mp4` | - |
+| `libero_10/task1/D03/seed142/init0` | `SUCCESS` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task1_D03_seed142_init0.mp4` | - |
+| `libero_10/task1/D03/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D03_seed143_init1.mp4` | - |
+| `libero_10/task1/D05/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D05_seed142_init0.mp4` | - |
+| `libero_10/task1/D05/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D05_seed143_init1.mp4` | - |
+| `libero_10/task1/D06/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D06_seed142_init0.mp4` | - |
+| `libero_10/task1/D06/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D06_seed143_init1.mp4` | - |
+| `libero_10/task1/D14/seed142/init0` | `SUCCESS` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/success/pi0_libero_10_task1_D14_seed142_init0.mp4` | 肉眼看不太出来 |
+| `libero_10/task1/D14/seed143/init1` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D14_seed143_init1.mp4` | 肉眼看不太出来 |
+| `libero_10/task1/D20/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D20_seed142_init0.mp4` | - |
+| `libero_10/task1/D20/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_D20_seed143_init1.mp4` | - |
+| `libero_10/task1/S06/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `ISSUE` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_S06_seed142_init0.mp4` | 替换的这个同类型实例大于机械臂夹爪的最大限度，任务不可能成功，不太合理，应该替换个大小差不多的吧 |
+| `libero_10/task1/S06/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `ISSUE` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_S06_seed143_init1.mp4` | 替换的这个同类型实例大于机械臂夹爪的最大限度，任务不可能成功，不太合理，应该替换个大小差不多的吧 |
+| `libero_10/task1/S10/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task1_S10_seed142_init0.mp4` | - |
+| `libero_10/task1/S10/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_S10_seed143_init1.mp4` | - |
+| `libero_10/task1/S11/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_S11_seed142_init0.mp4` | - |
+| `libero_10/task1/S11/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task1_S11_seed143_init1.mp4` | - |
+| `libero_10/task2/D02/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D02_seed142_init0.mp4` | - |
+| `libero_10/task2/D02/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D02_seed143_init1.mp4` | - |
+| `libero_10/task2/D03/seed142/init0` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D03_seed142_init0.mp4` | 没抓到，没有触发扰动 |
+| `libero_10/task2/D03/seed143/init1` | `FAILURE` | `TRIGGERED` | `ISSUE` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D03_seed143_init1.mp4` | 没抓到但是触发扰动，推测是这个摩卡壶倒在这个电磁炉的范围之内了，然后就判定应该出现临时占用物体 |
+| `libero_10/task2/D04/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D04_seed142_init0.mp4` | - |
+| `libero_10/task2/D04/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D04_seed143_init1.mp4` | - |
+| `libero_10/task2/D05/seed142/init0` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D05_seed142_init0.mp4` | 没有找到，未触发扰动 |
+| `libero_10/task2/D05/seed143/init1` | `FAILURE` | `TRIGGERED` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_D05_seed143_init1.mp4` | 没有找到，未触发扰动 |
+| `libero_10/task2/S09/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task2_S09_seed142_init0.mp4` | - |
+| `libero_10/task2/S09/seed143/init1` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task2_S09_seed143_init1.mp4` | - |
+| `libero_10/task2/S10/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_S10_seed142_init0.mp4` | - |
+| `libero_10/task2/S10/seed143/init1` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task2_S10_seed143_init1.mp4` | - |
+| `libero_10/task2/S11/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PENDING` | `-` | `data/videos_0902/success/pi0_libero_10_task2_S11_seed142_init0.mp4` | 感觉这个干扰物不是算同类或视觉相似的 |
+| `libero_10/task2/S11/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PENDING` | `-` | `data/videos_0902/failure/pi0_libero_10_task2_S11_seed143_init1.mp4` | 感觉这个干扰物不是算同类或视觉相似的 |
+| `libero_10/task3/D03/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D03_seed142_init0.mp4` | - |
+| `libero_10/task3/D03/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D03_seed143_init1.mp4` | - |
+| `libero_10/task3/D05/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D05_seed142_init0.mp4` | - |
+| `libero_10/task3/D05/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D05_seed143_init1.mp4` | - |
+| `libero_10/task3/D15/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D15_seed142_init0.mp4` | - |
+| `libero_10/task3/D15/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D15_seed143_init1.mp4` | - |
+| `libero_10/task3/D20/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D20_seed142_init0.mp4` | - |
+| `libero_10/task3/D20/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_D20_seed143_init1.mp4` | - |
+| `libero_10/task3/S10/seed142/init0` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task3_S10_seed142_init0.mp4` | - |
+| `libero_10/task3/S10/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_S10_seed143_init1.mp4` | - |
+| `libero_10/task3/S11/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_S11_seed142_init0.mp4` | - |
+| `libero_10/task3/S11/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task3_S11_seed143_init1.mp4` | - |
+| `libero_10/task4/D03/seed142/init0` | `FAILURE` | `TRIGGERED` | `ISSUE` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D03_seed142_init0.mp4` | 第二个杯子放到接收区域了，但是没有出现临时占用的物体 |
+| `libero_10/task4/D03/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D03_seed143_init1.mp4` | - |
+| `libero_10/task4/D05/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D05_seed142_init0.mp4` | - |
+| `libero_10/task4/D05/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D05_seed143_init1.mp4` | - |
+| `libero_10/task4/D06/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D06_seed142_init0.mp4` | - |
+| `libero_10/task4/D06/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D06_seed143_init1.mp4` | - |
+| `libero_10/task4/D12/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D12_seed142_init0.mp4` | - |
+| `libero_10/task4/D12/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D12_seed143_init1.mp4` | - |
+| `libero_10/task4/D13/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D13_seed142_init0.mp4` | - |
+| `libero_10/task4/D13/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D13_seed143_init1.mp4` | - |
+| `libero_10/task4/D21/seed142/init0` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D21_seed142_init0.mp4` | - |
+| `libero_10/task4/D21/seed143/init1` | `FAILURE` | `TRIGGERED` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_D21_seed143_init1.mp4` | - |
+| `libero_10/task4/S06/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S06_seed142_init0.mp4` | - |
+| `libero_10/task4/S06/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S06_seed143_init1.mp4` | - |
+| `libero_10/task4/S08/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S08_seed142_init0.mp4` | - |
+| `libero_10/task4/S08/seed143/init1` | `SUCCESS` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/success/pi0_libero_10_task4_S08_seed143_init1.mp4` | - |
+| `libero_10/task4/S09/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S09_seed142_init0.mp4` | - |
+| `libero_10/task4/S09/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S09_seed143_init1.mp4` | - |
+| `libero_10/task4/S10/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S10_seed142_init0.mp4` | - |
+| `libero_10/task4/S10/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S10_seed143_init1.mp4` | - |
+| `libero_10/task4/S11/seed142/init0` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S11_seed142_init0.mp4` | - |
+| `libero_10/task4/S11/seed143/init1` | `FAILURE` | `NOT_APPLICABLE` | `PASS` | `-` | `data/videos_0902/failure/pi0_libero_10_task4_S11_seed143_init1.mp4` | - |
+
+### 下一轮必须重新 rollout
+
+下列组在 R004 中至少有一次 `ISSUE` 或 `PENDING`。下一轮应整组重跑两次尝试，不能只补其中一条；动态扰动需保证事件实际触发并提供可观察证据。
+
+| 优先级 | Task | Case | 本轮结论 | 需要修复或验证的问题 | 下一轮目标 |
+|---|---:|---|---|---|---|
+| `P0` | 0 | `D02` | 错误/认可 | 扰动没有触发 | 修复后 R005，两次 rollout 均需 PASS |
+| `P1` | 0 | `D03` | 存疑/存疑 | 第一次没有抓到，没有触发占用的这个扰动 | 修复后 R005，两次 rollout 均需 PASS |
+| `P1` | 1 | `D14` | 存疑/存疑 | 肉眼看不太出来 | 修复后 R005，两次 rollout 均需 PASS |
+| `P0` | 1 | `S06` | 错误/错误 | 替换的这个同类型实例大于机械臂夹爪的最大限度，任务不可能成功，不太合理，应该替换个大小差不多的吧 | 修复后 R005，两次 rollout 均需 PASS |
+| `P0` | 2 | `D03` | 存疑/错误 | 没抓到，没有触发扰动；没抓到但是触发扰动，推测是这个摩卡壶倒在这个电磁炉的范围之内了，然后就判定应该出现临时占用物体 | 修复后 R005，两次 rollout 均需 PASS |
+| `P1` | 2 | `D05` | 存疑/存疑 | 没有找到，未触发扰动 | 修复后 R005，两次 rollout 均需 PASS |
+| `P1` | 2 | `S11` | 存疑/存疑 | 感觉这个干扰物不是算同类或视觉相似的 | 修复后 R005，两次 rollout 均需 PASS |
+| `P0` | 4 | `D03` | 错误/认可 | 第二个杯子放到接收区域了，但是没有出现临时占用的物体 | 修复后 R005，两次 rollout 均需 PASS |
+
+#### R005 精确 key 清单
+
+- `libero_10/task0/D02/seed142/init0`；`libero_10/task0/D02/seed143/init1`。
+- `libero_10/task0/D03/seed142/init0`；`libero_10/task0/D03/seed143/init1`。
+- `libero_10/task1/D14/seed142/init0`；`libero_10/task1/D14/seed143/init1`。
+- `libero_10/task1/S06/seed142/init0`；`libero_10/task1/S06/seed143/init1`。
+- `libero_10/task2/D03/seed142/init0`；`libero_10/task2/D03/seed143/init1`。
+- `libero_10/task2/D05/seed142/init0`；`libero_10/task2/D05/seed143/init1`。
+- `libero_10/task2/S11/seed142/init0`；`libero_10/task2/S11/seed143/init1`。
+- `libero_10/task4/D03/seed142/init0`；`libero_10/task4/D03/seed143/init1`。
+
+### 本轮问题归纳
+
+- `D03`：task0、task2、task4 仍有未触发、误触发或接收区域占用不正确的问题。
+- `S06`：task1 替换物体过大，超出夹爪合理抓取范围。
+- `D05`：task2 两次都未观察到运输路径障碍物扰动。
+- `D14`：task1 动作丢失/重复现象肉眼不明显，保留存疑。
+- `S11`：task2 新增干扰物与目标不够同类或视觉相似，保留存疑。
+- `D02`：task0 有一次未观察到接收器移动扰动。
