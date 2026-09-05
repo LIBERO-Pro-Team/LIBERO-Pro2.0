@@ -7,7 +7,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
-import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,29 +49,38 @@ RUNTIME = _load_module(
 )
 
 
-def test_only_spatial_task3_d01_opts_into_support_preservation() -> None:
+def test_only_spatial_task3_and_task5_s01_d01_opt_into_support_group_motion() -> None:
     manifest = json.loads(
         (ROOT / "assets" / "task_manifest.json").read_text(encoding="utf-8")
     )
-    enabled: list[tuple[str, int, dict[str, object]]] = []
+    enabled: dict[tuple[str, int, str], dict[str, object]] = {}
 
     for item in manifest["tasks"]:
-        if item["case_id"] != "D01":
+        if item["case_id"] not in {"S01", "D01"}:
             continue
         path = ROOT / "assets" / item["bddl_path"]
         plan = RUNTIME.build_execution_plan(
             PARSER.parse_bddl_perturbation_config(path), ASSET_ROOT
         )
-        if plan.params.get("preserve_original_support_relation") is True:
-            enabled.append((str(item["suite"]), int(item["base_task_id"]), plan.params))
+        if plan.params.get("move_support_with_target") is True:
+            key = (
+                str(item["suite"]),
+                int(item["base_task_id"]),
+                str(item["case_id"]),
+            )
+            enabled[key] = plan.params
 
-    assert len(enabled) == 1
-    suite, task_id, params = enabled[0]
-    assert (suite, task_id) == ("libero_spatial", 3)
-    assert params["offset_xy"] == [0.020, -0.015]
-    assert params["yaw_rad"] == 0.28
-    assert params["support_surface"] == "cookies_1"
-    assert params["support_relation_clearance_m"] == 0.018
+    assert set(enabled) == {
+        ("libero_spatial", 3, "S01"),
+        ("libero_spatial", 3, "D01"),
+        ("libero_spatial", 5, "S01"),
+        ("libero_spatial", 5, "D01"),
+    }
+    expected_supports = {3: "cookies_1", 5: "glazed_rim_porcelain_ramekin_1"}
+    for (_, task_id, _), params in enabled.items():
+        assert params["support_object"] == expected_supports[task_id]
+        assert params["support_ground_surface"] == "main_table"
+        assert params["group_minimum_clearance_m"] == 0.018
 
 
 class _SupportSceneSim:
@@ -80,8 +88,8 @@ class _SupportSceneSim:
         body_positions = np.array(
             [
                 [0.0, 0.0, 0.88],
-                [0.08, 0.03, 0.91],
-                [0.08, 0.03, 0.963],
+                [0.08, 0.03, 0.933],
+                [0.09, 0.04, 0.986],
             ],
             dtype=float,
         )
@@ -122,27 +130,9 @@ class _SupportSceneSim:
         self.data.geom_xpos[:] = self.model.body_pos
 
 
-def test_opted_in_d01_moves_locally_and_stays_on_declared_support() -> None:
-    plan = RUNTIME.ExecutionPlan(
-        case_id="D01",
-        schedule="dynamic",
-        operator="pose_transform",
-        variant="xy_yaw_update",
-        targets=("akita_black_bowl_1",),
-        references=(),
-        mechanisms=("dynamic_pose",),
-        assets=(),
-        trigger="approach_or_pregrasp",
-        params={
-            "offset_xy": [0.020, -0.015],
-            "yaw_rad": 0.28,
-            "support_surface": "cookies_1",
-            "preserve_original_support_relation": True,
-            "support_relation_clearance_m": 0.018,
-        },
-    )
+def _support_scene_env() -> SimpleNamespace:
     sim = _SupportSceneSim()
-    env = SimpleNamespace(
+    return SimpleNamespace(
         obj_body_id={
             "main_table": 0,
             "cookies_1": 1,
@@ -155,20 +145,113 @@ def test_opted_in_d01_moves_locally_and_stays_on_declared_support() -> None:
         workspace_offset=np.array([0.0, 0.0, 0.9]),
         sim=sim,
     )
+
+
+def _assert_relative_pose_preserved(
+    before_support: tuple[np.ndarray, np.ndarray],
+    before_target: tuple[np.ndarray, np.ndarray],
+    after_support: tuple[np.ndarray, np.ndarray],
+    after_target: tuple[np.ndarray, np.ndarray],
+) -> None:
+    before_relative = before_target[0] - before_support[0]
+    after_relative = after_target[0] - after_support[0]
+    before_support_rotation = RUNTIME._quaternion_to_rotation_matrix(before_support[1])
+    after_support_rotation = RUNTIME._quaternion_to_rotation_matrix(after_support[1])
+    np.testing.assert_allclose(
+        after_support_rotation.T @ after_relative,
+        before_support_rotation.T @ before_relative,
+        atol=1e-9,
+    )
+    before_relative_quaternion = RUNTIME._quaternion_multiply(
+        RUNTIME._quaternion_conjugate(before_support[1]), before_target[1]
+    )
+    after_relative_quaternion = RUNTIME._quaternion_multiply(
+        RUNTIME._quaternion_conjugate(after_support[1]), after_target[1]
+    )
+    np.testing.assert_allclose(
+        after_relative_quaternion, before_relative_quaternion, atol=1e-9
+    )
+
+
+def _group_params(offset_xy: list[float], yaw_rad: float) -> dict[str, object]:
+    return {
+        "offset_xy": offset_xy,
+        "yaw_rad": yaw_rad,
+        "move_support_with_target": True,
+        "support_object": "cookies_1",
+        "support_ground_surface": "main_table",
+        "group_minimum_clearance_m": 0.018,
+    }
+
+
+def test_opted_in_s01_moves_support_group_without_changing_relative_pose() -> None:
+    plan = RUNTIME.ExecutionPlan(
+        case_id="S01",
+        schedule="static",
+        operator="pose_transform",
+        variant="xy_yaw",
+        targets=("akita_black_bowl_1",),
+        references=(),
+        mechanisms=("pose",),
+        assets=(),
+        params=_group_params([0.055, 0.035], 0.28),
+    )
+    env = _support_scene_env()
+    before_support = RUNTIME._entity_pose(env, "cookies_1")
+    before_target = RUNTIME._entity_pose(env, "akita_black_bowl_1")
+    runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
+
+    runtime.apply_static(env)
+
+    after_support = RUNTIME._entity_pose(env, "cookies_1")
+    after_target = RUNTIME._entity_pose(env, "akita_black_bowl_1")
+    np.testing.assert_allclose(
+        after_support[0] - before_support[0], [0.055, 0.035, 0.0], atol=1e-9
+    )
+    _assert_relative_pose_preserved(
+        before_support, before_target, after_support, after_target
+    )
+    assert [event["event"] for event in runtime.events] == [
+        "support_group_transform",
+        "static_pose_transform",
+    ]
+
+
+def test_opted_in_d01_moves_support_group_without_changing_relative_pose() -> None:
+    plan = RUNTIME.ExecutionPlan(
+        case_id="D01",
+        schedule="dynamic",
+        operator="pose_transform",
+        variant="xy_yaw_update",
+        targets=("akita_black_bowl_1",),
+        references=(),
+        mechanisms=("dynamic_pose",),
+        assets=(),
+        trigger="approach_or_pregrasp",
+        params=_group_params([0.10, -0.08], 0.28),
+    )
+    env = _support_scene_env()
+    before_support = RUNTIME._entity_pose(env, "cookies_1")
+    before_target = RUNTIME._entity_pose(env, "akita_black_bowl_1")
     runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
     runtime._dynamic_triggered = lambda _env, _step: True
 
     runtime.before_simulation_step(env, step=12)
 
+    after_support = RUNTIME._entity_pose(env, "cookies_1")
+    after_target = RUNTIME._entity_pose(env, "akita_black_bowl_1")
     np.testing.assert_allclose(
-        sim.data.body_xpos[2], [0.10, 0.015, 0.963], atol=1e-9
+        after_support[0] - before_support[0], [0.10, -0.08, 0.0], atol=1e-9
+    )
+    _assert_relative_pose_preserved(
+        before_support, before_target, after_support, after_target
     )
     assert [event["event"] for event in runtime.events] == [
-        "support_relation_preserved",
+        "support_group_transform",
         "dynamic_state_change",
     ]
-    assert runtime.events[0]["support"] == "cookies_1"
-    assert runtime.events[0]["support_geom"] == "cookies_1_g0"
+    assert runtime.events[0]["support_object"] == "cookies_1"
+    assert runtime.events[0]["support_ground_geom"] == "table_collision"
 
 
 def test_d01_without_opt_in_keeps_existing_clearance_behavior() -> None:
@@ -184,71 +267,15 @@ def test_d01_without_opt_in_keeps_existing_clearance_behavior() -> None:
         trigger="approach_or_pregrasp",
         params={"offset_xy": [0.020, -0.015]},
     )
-    sim = _SupportSceneSim()
-    env = SimpleNamespace(
-        obj_body_id={
-            "main_table": 0,
-            "cookies_1": 1,
-            "akita_black_bowl_1": 2,
-        },
-        objects_dict={
-            "cookies_1": SimpleNamespace(joints=None),
-            "akita_black_bowl_1": SimpleNamespace(joints=None),
-        },
-        workspace_offset=np.array([0.0, 0.0, 0.9]),
-        sim=sim,
-    )
+    env = _support_scene_env()
     runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
     runtime._dynamic_triggered = lambda _env, _step: True
 
     runtime.before_simulation_step(env, step=12)
 
-    cookie_xy = sim.data.body_xpos[1, :2]
-    bowl_xy = sim.data.body_xpos[2, :2]
+    cookie_xy = env.sim.data.body_xpos[1, :2]
+    bowl_xy = env.sim.data.body_xpos[2, :2]
     assert np.linalg.norm(bowl_xy - cookie_xy) >= 0.08
     assert all(
-        event["event"] != "support_relation_preserved" for event in runtime.events
+        event["event"] != "support_group_transform" for event in runtime.events
     )
-
-
-def test_opted_in_d01_rejects_a_candidate_outside_declared_support() -> None:
-    plan = RUNTIME.ExecutionPlan(
-        case_id="D01",
-        schedule="dynamic",
-        operator="pose_transform",
-        variant="xy_yaw_update",
-        targets=("akita_black_bowl_1",),
-        references=(),
-        mechanisms=("dynamic_pose",),
-        assets=(),
-        trigger="approach_or_pregrasp",
-        params={
-            "offset_xy": [0.20, 0.0],
-            "support_surface": "cookies_1",
-            "preserve_original_support_relation": True,
-            "support_relation_clearance_m": 0.018,
-        },
-    )
-    sim = _SupportSceneSim()
-    original_pose = sim.data.body_xpos[2].copy()
-    env = SimpleNamespace(
-        obj_body_id={
-            "main_table": 0,
-            "cookies_1": 1,
-            "akita_black_bowl_1": 2,
-        },
-        objects_dict={
-            "cookies_1": SimpleNamespace(joints=None),
-            "akita_black_bowl_1": SimpleNamespace(joints=None),
-        },
-        workspace_offset=np.array([0.0, 0.0, 0.9]),
-        sim=sim,
-    )
-    runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
-    runtime._dynamic_triggered = lambda _env, _step: True
-
-    with pytest.raises(RUNTIME.PerturbationValidationError):
-        runtime.before_simulation_step(env, step=12)
-
-    np.testing.assert_array_equal(sim.data.body_xpos[2], original_pose)
-    assert runtime.events == []

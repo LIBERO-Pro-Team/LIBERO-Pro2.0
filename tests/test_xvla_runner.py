@@ -193,6 +193,7 @@ def test_remote_episode_runs_until_success_and_closes_session() -> None:
         init_state_id=4,
         seed=11,
         max_steps=20,
+        variant="D01",
     )
 
     result = run_remote_episode(env, policy, spec)
@@ -206,6 +207,7 @@ def test_remote_episode_runs_until_success_and_closes_session() -> None:
         "camera_width": 256,
         "max_steps": 20,
         "control_mode": "absolute",
+        "variant": "D01",
     }
     assert len(env.actions) == 2
     assert policy.reset_calls == 1

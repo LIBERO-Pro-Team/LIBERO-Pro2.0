@@ -1,0 +1,19 @@
+{
+  "name": "support_riser_wide_top",
+  "description": "Task-local narrow support column with a wide top deck",
+  "perturbations": [
+    "S03"
+  ],
+  "parameters": {
+    "column_half_extents": [
+      0.035,
+      0.035,
+      0.0225
+    ],
+    "deck_half_extents": [
+      0.075,
+      0.075,
+      0.0025
+    ]
+  }
+}

@@ -166,6 +166,10 @@
           (:interaction_mode placement)
           (:offset_xy 0.055 0.035)
           (:yaw_rad 0.28)
+          (:move_support_with_target true)
+          (:support_object glazed_rim_porcelain_ramekin_1)
+          (:support_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
         )
       )
       (S02

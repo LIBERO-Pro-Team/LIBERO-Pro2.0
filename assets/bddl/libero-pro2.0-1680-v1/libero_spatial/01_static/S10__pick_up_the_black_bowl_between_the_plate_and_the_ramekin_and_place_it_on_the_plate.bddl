@@ -247,7 +247,7 @@
           (:visual_only_asset false)
           (:asset_count 3)
           (:clutter_minimum_gap_m 0.065)
-          (:clutter_offsets_xy 0.11 -0.10 -0.11 -0.10 0.0 0.13)
+          (:clutter_offsets_xy 0.16 -0.14 -0.16 -0.14 0.0 0.18)
           (:support_surface main_table)
           (:movable_asset true)
           (:physical_collision true)

@@ -87,7 +87,22 @@ GOAL_REVIEW_ROUND3_PARAMS: dict[
             "trigger_anchor": ("wooden_cabinet_1_middle_region",),
             "trigger_distance_m": ("0.30",),
         }
-        for case_id in ("D04", "D08", "D09", "D10", "D11", "D12", "D16")
+        for case_id in (
+            "D01",
+            "D04",
+            "D06",
+            "D07",
+            "D08",
+            "D09",
+            "D10",
+            "D11",
+            "D12",
+            "D13",
+            "D14",
+            "D15",
+            "D16",
+            "D20",
+        )
     },
     (0, "S12"): {"occlusion_offset_xyz": ("-0.05", "0.0", "0.0")},
     (1, "D02"): {"offset_xy": ("-0.12", "0.09"), "yaw_rad": ("-0.24",)},
@@ -474,8 +489,15 @@ def case_updates(
     if (suite, task_id, case_id) == ("libero_spatial", 9, "S11"):
         params.update(
             asset_contact_margin_m=("0.004",),
-            clutter_offsets_xy=("0.17", "0.10"),
-            support_surface=("table",),
+            clutter_offsets_xy=("-0.10", "0.00"),
+            support_surface=("wooden_cabinet_1",),
+        )
+
+    if (suite, task_id, case_id) == ("libero_spatial", 2, "S03"):
+        params.update(
+            asset_id=("generated/support_riser_wide_top",),
+            asset_geometry_factors=("1.0", "1.0", "2.0"),
+            height_delta_m=("0.10",),
         )
 
     if suite != "libero_goal":

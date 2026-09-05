@@ -22,7 +22,11 @@ ASSET_ROOT = (
     / "assets"
     / "perturbation_assets"
 )
-INJECTED_OBSTACLE_TASKS = {("libero_10", 4), ("libero_10", 8)}
+INJECTED_OBSTACLE_TASKS = {
+    ("libero_10", 4),
+    ("libero_10", 8),
+    ("libero_spatial", 0),
+}
 TABLE_SUPPORTED_MICROWAVE_TASK = ("libero_10", 9)
 CREAM_CHEESE_IN_BOWL_TASK = ("libero_goal", 6)
 TABLE_SUPPORTED_WINE_RACK_TASK = ("libero_goal", 9)
@@ -164,6 +168,11 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
                 assert plan.params["support_surface"] == "living_room_table"
                 assert plan.assets[0].asset_id == "ycb/YcbTomatoSoupCan"
                 assert plan.assets[0].scale == 0.50
+            elif key == ("libero_spatial", 0):
+                assert plan.targets == ("plate_1",)
+                assert plan.params["support_surface"] == "plate_1"
+                assert plan.assets[0].asset_id == "ycb/YcbTomatoSoupCan"
+                assert plan.assets[0].scale == 0.80
             else:
                 assert plan.assets[0].asset_id == "prl/can"
                 assert plan.assets[0].scale == 1.0

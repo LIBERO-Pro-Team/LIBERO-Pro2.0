@@ -229,8 +229,7 @@
         (:params
           (:interaction_mode placement)
           (:target_geometry_factors 1.2 1.2 1.2)
-          (:receiver_geometry_factors 0.8 0.8 1.0)
-          (:articulation_joint_range_scale 0.80)
+          (:receiver_geometry_factors 1.0 1.0 1.0)
         )
       )
       (S10

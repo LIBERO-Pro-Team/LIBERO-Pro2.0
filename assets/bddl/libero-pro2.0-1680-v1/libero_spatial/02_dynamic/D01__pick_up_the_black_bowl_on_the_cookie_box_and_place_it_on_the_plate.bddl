@@ -348,11 +348,12 @@
         (:params
           (:interaction_mode placement)
           (:trigger_distance_m 0.17)
-          (:offset_xy 0.020 -0.015)
+          (:offset_xy 0.10 -0.08)
           (:yaw_rad 0.28)
-          (:support_surface cookies_1)
-          (:preserve_original_support_relation true)
-          (:support_relation_clearance_m 0.018)
+          (:move_support_with_target true)
+          (:support_object cookies_1)
+          (:support_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
         )
       )
       (D02

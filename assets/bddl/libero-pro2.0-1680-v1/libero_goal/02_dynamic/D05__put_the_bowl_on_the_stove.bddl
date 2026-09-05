@@ -383,7 +383,7 @@
           (:interaction_mode placement)
           (:lateral_offset_m 0.0)
           (:barrier_height_m 0.05)
-          (:asset_scale 1.10)
+          (:asset_scale 0.65)
           (:visual_only_asset false)
           (:physical_collision true)
           (:barrier_path_fraction 0.35)

@@ -237,9 +237,9 @@
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
-          (:asset_count 3)
-          (:clutter_minimum_gap_m 0.080)
-          (:clutter_offsets_xy 0.14 -0.10 0.10 0.12 -0.13 -0.08)
+          (:asset_count 2)
+          (:clutter_minimum_gap_m 0.14)
+          (:clutter_offsets_xy 0.24 0.18 0.24 -0.18)
           (:support_surface table)
           (:visual_only_asset false)
           (:clear_of_task_entities true)

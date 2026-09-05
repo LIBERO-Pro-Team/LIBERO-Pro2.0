@@ -339,7 +339,8 @@
         (:variant xy_yaw_update)
         (:params
           (:interaction_mode articulation)
-          (:trigger_distance_m 0.17)
+          (:trigger_anchor wooden_cabinet_1_middle_region)
+          (:trigger_distance_m 0.30)
           (:offset_xy 0.10 -0.08)
           (:yaw_rad 0.28)
         )

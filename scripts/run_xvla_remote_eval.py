@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--suite", default="libero_goal")
     parser.add_argument("--task-id", type=int, default=0)
+    parser.add_argument("--variant", default="base")
     parser.add_argument("--init-state-id", type=int, default=0)
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
@@ -76,7 +77,7 @@ def main() -> None:
         )
     try:
         max_steps = args.max_steps or resolve_catalog_max_steps(
-            catalog, args.suite, args.task_id, "base"
+            catalog, args.suite, args.task_id, args.variant
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
@@ -93,6 +94,7 @@ def main() -> None:
         evaluation={
             "suite": args.suite,
             "task_id": args.task_id,
+            "variant": args.variant,
             "initial_init_state_id": args.init_state_id,
             "episodes": args.episodes,
             "initial_seed": args.seed,
@@ -119,6 +121,7 @@ def main() -> None:
             init_state_id=args.init_state_id + episode_index,
             seed=args.seed + episode_index,
             max_steps=max_steps,
+            variant=args.variant,
         )
         try:
             if args.record_video:

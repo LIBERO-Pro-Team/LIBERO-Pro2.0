@@ -204,6 +204,7 @@
           (:asset_scale 0.72)
           (:asset_quat 1.0 0.0 0.0 0.0)
           (:grounded_replacement true)
+          (:sampler_compatible true)
         )
       )
       (S07

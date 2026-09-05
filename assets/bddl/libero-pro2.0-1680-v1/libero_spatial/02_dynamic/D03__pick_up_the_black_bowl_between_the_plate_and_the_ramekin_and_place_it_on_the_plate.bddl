@@ -362,7 +362,7 @@
       (D03
         (:operator occlusion_or_obstacle)
         (:targets plate_1)
-        (:references akita_black_bowl_2)
+        (:references none)
         (:trigger preplace)
         (:variant persistent_triggered_receiver_occupation)
         (:params
@@ -371,7 +371,10 @@
           (:support_surface plate_1)
           (:asset_offset_xyz 0.0 0.0 0.0)
           (:staging_position_xyz 0.0 0.0 -5.0)
-          (:persistent_existing_obstacle true)
+          (:persistent_movable_asset true)
+          (:asset_id ycb/YcbTomatoSoupCan)
+          (:asset_scale 0.80)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (D04

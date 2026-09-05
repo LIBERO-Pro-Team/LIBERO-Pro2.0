@@ -498,7 +498,7 @@
           (:grasp_initial_tolerance_m 0.035)
           (:contact_fallback_distance_m 0.055)
           (:wrapper_fallback_distance_m 0.12)
-          (:articulation_grasp_distance_m 0.16)
+          (:articulation_grasp_distance_m 0.24)
         )
       )
       (D18

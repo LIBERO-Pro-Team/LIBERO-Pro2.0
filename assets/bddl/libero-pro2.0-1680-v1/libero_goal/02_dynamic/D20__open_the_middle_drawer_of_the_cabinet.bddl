@@ -536,6 +536,8 @@
         (:constraints single_trigger joint_limits collision_free no_self_collision workspace_clearance)
         (:params
           (:interaction_mode articulation)
+          (:trigger_anchor wooden_cabinet_1_middle_region)
+          (:trigger_distance_m 0.30)
           (:trigger_eef_motion_m 0.025)
           (:trigger_action_norm 0.05)
           (:joint_delta_rad 0.1)

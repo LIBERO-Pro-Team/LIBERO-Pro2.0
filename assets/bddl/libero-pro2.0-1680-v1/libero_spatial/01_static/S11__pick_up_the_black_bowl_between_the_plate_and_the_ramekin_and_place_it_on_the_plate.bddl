@@ -256,6 +256,7 @@
           (:asset_id github/object_sim_bowl)
           (:asset_scale 0.70)
           (:support_surface table)
+          (:clutter_offsets_xy -0.14 -0.12)
           (:visual_only_asset false)
           (:movable_asset true)
           (:physical_collision true)

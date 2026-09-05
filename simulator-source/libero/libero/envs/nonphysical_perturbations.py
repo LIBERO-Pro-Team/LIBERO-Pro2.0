@@ -485,7 +485,7 @@ def build_execution_plan(
         else 1.0
     )
     asset_ids = list(CASE_ASSETS.get(case_id, ()))
-    if case_id in {"D03", "D06"} and "asset_id" in params:
+    if case_id in {"S03", "D03", "D06"} and "asset_id" in params:
         configured_assets = _name_tuple(params.get("asset_id"))
         if len(configured_assets) != 1:
             raise PerturbationConfigurationError(
@@ -1266,6 +1266,29 @@ def _quaternion_multiply(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     return result / np.linalg.norm(result)
 
 
+def _quaternion_conjugate(quaternion: np.ndarray) -> np.ndarray:
+    value = np.asarray(quaternion, dtype=np.float64)
+    result = value.copy()
+    result[1:] *= -1.0
+    return result / np.linalg.norm(result)
+
+
+def _quaternion_to_rotation_matrix(quaternion: np.ndarray) -> np.ndarray:
+    w, x, y, z = np.asarray(quaternion, dtype=np.float64)
+    norm = math.sqrt(w * w + x * x + y * y + z * z)
+    if norm <= 1e-12:
+        raise PerturbationValidationError("Quaternion norm must be positive")
+    w, x, y, z = w / norm, x / norm, y / norm, z / norm
+    return np.array(
+        [
+            [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - z * w), 2.0 * (x * z + y * w)],
+            [2.0 * (x * y + z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - x * w)],
+            [2.0 * (x * z - y * w), 2.0 * (y * z + x * w), 1.0 - 2.0 * (x * x + y * y)],
+        ],
+        dtype=np.float64,
+    )
+
+
 def _workspace_bounds(env: Any) -> tuple[float, float, float, float]:
     center = np.asarray(getattr(env, "workspace_offset", [0.0, 0.0, 0.9]))
     return (
@@ -1750,6 +1773,132 @@ def _safe_offset_pose(
             return before, candidate, delta
     raise PerturbationValidationError(
         f"No collision-clear workspace position for {name!r} near {before[:2].tolist()}"
+    )
+
+
+def _support_group_transform(
+    env: Any,
+    target: str,
+    requested_offset: tuple[float, float],
+    yaw: float,
+    params: dict[str, Any],
+) -> dict[str, Any]:
+    """Move a target and its movable support as one rigid planar group."""
+
+    support_objects = _name_tuple(params.get("support_object"))
+    ground_surfaces = _name_tuple(params.get("support_ground_surface"))
+    if len(support_objects) != 1 or len(ground_surfaces) != 1:
+        raise PerturbationConfigurationError(
+            "Support-group motion requires exactly one support_object and support_ground_surface"
+        )
+    support_object = support_objects[0]
+    ground_surface = ground_surfaces[0]
+    if support_object == target:
+        raise PerturbationConfigurationError(
+            "Support-group target and support_object must be distinct"
+        )
+    if not _entity_exists(env, support_object) or not _entity_exists(env, ground_surface):
+        raise PerturbationValidationError(
+            f"Support-group entities are absent: {support_object!r}, {ground_surface!r}"
+        )
+    minimum_gap = _required_param_float(params, "group_minimum_clearance_m")
+    if not 0.0 < minimum_gap <= 0.10:
+        raise PerturbationConfigurationError(
+            "group_minimum_clearance_m must be between 0 and 0.10"
+        )
+
+    support_before = _entity_pose(env, support_object)
+    target_before = _entity_pose(env, target)
+    relative_position = target_before[0] - support_before[0]
+    yaw_quaternion = _yaw_quaternion(yaw)
+    yaw_rotation = _quaternion_to_rotation_matrix(yaw_quaternion)
+    support_after_quaternion = _quaternion_multiply(
+        yaw_quaternion, support_before[1]
+    )
+    target_after_quaternion = _quaternion_multiply(yaw_quaternion, target_before[1])
+    baseline_contacts = {
+        support_object: _entity_deep_contacts(env, support_object),
+        target: _entity_deep_contacts(env, target),
+    }
+    ground_params = dict(params)
+    ground_params["support_surface"] = ground_surface
+
+    requested = np.asarray(requested_offset, dtype=np.float64)
+    candidate_deltas = (
+        requested,
+        np.array([-requested[0], requested[1]]),
+        np.array([requested[0], -requested[1]]),
+        -requested,
+        np.array([requested[1], requested[0]]),
+        np.array([-requested[1], -requested[0]]),
+    )
+    for delta in candidate_deltas:
+        support_after = support_before[0].copy()
+        support_after[:2] += delta
+        rotated_relative = yaw_rotation @ relative_position
+        target_after = support_after + rotated_relative
+        ignored = (target, support_object, ground_surface)
+        if not _candidate_is_clear(
+            env, support_object, support_after[:2], minimum_gap, ignored=ignored
+        ) or not _candidate_is_clear(
+            env, target, target_after[:2], minimum_gap, ignored=ignored
+        ):
+            continue
+        grounded = _grounded_entity_position(
+            env,
+            support_object,
+            support_after[:2],
+            ground_params,
+            ignored=(target, support_object),
+        )
+        if grounded is None or not _support_geom_belongs_to_entity(
+            env, grounded[1], ground_surface
+        ):
+            continue
+        # Both selected tasks move across the same flat table. Keeping the
+        # established support Z avoids injecting a vertical impulse.
+        support_after[2] = support_before[0][2]
+        target_after = support_after + rotated_relative
+        _set_entity_pose(env, support_object, support_after, support_after_quaternion)
+        _set_entity_pose(env, target, target_after, target_after_quaternion)
+
+        invalid_contacts: list[dict[str, Any]] = []
+        for name in (support_object, target):
+            previous = {
+                tuple(sorted((str(item["first"]), str(item["second"])))): float(
+                    item["depth_m"]
+                )
+                for item in baseline_contacts[name]
+            }
+            for item in _entity_deep_contacts(env, name):
+                pair = tuple(sorted((str(item["first"]), str(item["second"]))))
+                previous_depth = previous.get(pair)
+                if previous_depth is None or float(item["depth_m"]) > previous_depth + 0.002:
+                    invalid_contacts.append(item)
+        if invalid_contacts:
+            _set_entity_pose(env, target, target_before[0], target_before[1])
+            _set_entity_pose(env, support_object, support_before[0], support_before[1])
+            continue
+
+        for name in (support_object, target):
+            scene_object = getattr(env, "objects_dict", {}).get(name)
+            if list(getattr(scene_object, "joints", []) or []):
+                _zero_entity_free_joint_velocity(env, name)
+        return {
+            "target": target,
+            "support_object": support_object,
+            "support_ground_surface": ground_surface,
+            "support_ground_geom": grounded[1],
+            "delta_xy": np.asarray(delta, dtype=np.float64),
+            "yaw_rad": float(yaw),
+            "support_position": support_after,
+            "target_position": target_after,
+        }
+
+    _set_entity_pose(env, target, target_before[0], target_before[1])
+    _set_entity_pose(env, support_object, support_before[0], support_before[1])
+    raise PerturbationValidationError(
+        f"No collision-clear support-group position for {target!r} and {support_object!r}"
     )
 
 
@@ -3107,6 +3256,41 @@ class NonPhysicalPerturbationRuntime:
 
         if case_id in {"S01", "S02"}:
             target = self.plan.targets[0]
+            if case_id == "S01" and _param_bool(
+                self.plan.params, "move_support_with_target", False
+            ):
+                requested_offset = _param_vector(
+                    self.plan.params, "offset_xy", (0.075, 0.045)
+                )
+                yaw = _param_float(self.plan.params, "yaw_rad", 0.32)
+                result = _support_group_transform(
+                    env,
+                    target,
+                    tuple(float(value) for value in requested_offset),
+                    yaw,
+                    self.plan.params,
+                )
+                self._log_once(
+                    "support_group_transform",
+                    0,
+                    target=target,
+                    support_object=result["support_object"],
+                    support_ground_surface=result["support_ground_surface"],
+                    support_ground_geom=result["support_ground_geom"],
+                    support_position=result["support_position"].tolist(),
+                    target_position=result["target_position"].tolist(),
+                    delta_xy=result["delta_xy"].tolist(),
+                    yaw=result["yaw_rad"],
+                )
+                self._log_once(
+                    "static_pose_transform",
+                    0,
+                    target=target,
+                    support_object=result["support_object"],
+                    delta_xy=result["delta_xy"].tolist(),
+                    yaw=result["yaw_rad"],
+                )
+                return
             before, original_quat = _entity_pose(env, target)
             requested_offset = _param_vector(
                 self.plan.params,
@@ -4111,6 +4295,36 @@ class NonPhysicalPerturbationRuntime:
             target = targets[0]
             delta = _dynamic_pose_requested_delta(case_id, target, self.plan.params)
             support_relation_state = None
+            if case_id == "D01" and _param_bool(
+                self.plan.params, "move_support_with_target", False
+            ):
+                yaw = _param_float(self.plan.params, "yaw_rad", 0.28)
+                result = _support_group_transform(
+                    env, target, delta, yaw, self.plan.params
+                )
+                self._log_once(
+                    "support_group_transform",
+                    step,
+                    target=target,
+                    support_object=result["support_object"],
+                    support_ground_surface=result["support_ground_surface"],
+                    support_ground_geom=result["support_ground_geom"],
+                    support_position=result["support_position"].tolist(),
+                    target_position=result["target_position"].tolist(),
+                    delta_xy=result["delta_xy"].tolist(),
+                    yaw=result["yaw_rad"],
+                )
+                self._log_once(
+                    "dynamic_state_change",
+                    step,
+                    target=target,
+                    support_object=result["support_object"],
+                    delta_xy=result["delta_xy"].tolist(),
+                    position=result["target_position"].tolist(),
+                )
+                self._dynamic_event_step = int(step)
+                self._dynamic_applied = True
+                return
             if case_id == "D19":
                 before, current_quaternion = _entity_pose(env, target)
                 initial = self._saved_poses.get(target, (before, current_quaternion))[0]
@@ -4512,7 +4726,12 @@ class NonPhysicalPerturbationRuntime:
             eef = None
 
         if case_id == "D01" and target and eef is not None:
-            position, _ = _entity_pose(env, target)
+            configured_anchor = _configured_trigger_anchor(env, self.plan.params)
+            position = (
+                configured_anchor
+                if configured_anchor is not None
+                else _entity_pose(env, target)[0]
+            )
             threshold = _param_float(
                 self.plan.params, "trigger_distance_m", 0.12
             )
@@ -4524,6 +4743,16 @@ class NonPhysicalPerturbationRuntime:
         if case_id == "D20":
             if eef is None:
                 return False
+            configured_anchor = _configured_trigger_anchor(env, self.plan.params)
+            if configured_anchor is not None:
+                threshold = _param_float(
+                    self.plan.params, "trigger_distance_m", 0.15
+                )
+                if threshold <= 0.0:
+                    raise PerturbationConfigurationError(
+                        "D20 trigger_distance_m must be positive"
+                    )
+                return bool(np.linalg.norm(eef - configured_anchor) <= threshold)
             if self._initial_eef_position is None:
                 self._initial_eef_position = eef.copy()
                 return False
@@ -4615,6 +4844,17 @@ class NonPhysicalPerturbationRuntime:
                         and np.linalg.norm(eef - anchor) <= threshold
                     )
                 return bool(np.linalg.norm(eef - anchor) <= threshold)
+        if case_id == "D05":
+            configured_anchor = _configured_trigger_anchor(env, self.plan.params)
+            if configured_anchor is not None:
+                threshold = _param_float(
+                    self.plan.params, "trigger_distance_m", 0.15
+                )
+                if threshold <= 0.0:
+                    raise PerturbationConfigurationError(
+                        "D05 trigger_distance_m must be positive"
+                    )
+                return bool(np.linalg.norm(eef - configured_anchor) <= threshold)
         if case_id in {"D02", "D03", "D05", "D19"}:
             candidates = _goal_path_anchor_candidates(env)
             for goal_target, position, _, receiver in candidates:
@@ -4730,6 +4970,16 @@ class NonPhysicalPerturbationRuntime:
         if self.plan.trigger == "state_change":
             if eef is None:
                 return False
+            configured_anchor = _configured_trigger_anchor(env, self.plan.params)
+            if configured_anchor is not None:
+                threshold = _param_float(
+                    self.plan.params, "trigger_distance_m", 0.15
+                )
+                if threshold <= 0.0:
+                    raise PerturbationConfigurationError(
+                        "state_change trigger_distance_m must be positive"
+                    )
+                return bool(np.linalg.norm(eef - configured_anchor) <= threshold)
             lift_threshold = float(self.plan.params.get("trigger_lift_m", 0.025))
             move_threshold = float(self.plan.params.get("trigger_move_m", 0.05))
             grasp_distance = float(self.plan.params.get("grasp_distance_m", 0.18))
