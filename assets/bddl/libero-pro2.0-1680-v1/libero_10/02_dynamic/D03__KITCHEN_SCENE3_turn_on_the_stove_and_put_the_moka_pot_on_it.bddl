@@ -301,6 +301,7 @@
         (:params
           (:interaction_mode placement)
           (:receiver_trigger_distance_m 0.32)
+          (:require_grasp_for_trigger true)
           (:support_surface flat_stove_1)
           (:asset_offset_xyz 0.0 0.0 0.0)
           (:staging_position_xyz 0.0 0.0 -5.0)

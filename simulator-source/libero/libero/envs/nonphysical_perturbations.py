@@ -4665,6 +4665,32 @@ class NonPhysicalPerturbationRuntime:
                     and np.linalg.norm(eef - receiver)
                     <= self._receiver_trigger_distance_m(case_id)
                 ):
+                    if case_id == "D03" and _param_bool(
+                        self.plan.params, "require_grasp_for_trigger", False
+                    ):
+                        closing = bool(
+                            self.previous_action is not None
+                            and self.previous_action.size
+                            and self.previous_action[-1] > 0.0
+                        )
+                        gripper = getattr(env.robots[0], "gripper", None)
+                        target_object = getattr(env, "objects_dict", {}).get(
+                            goal_target
+                        )
+                        check_grasp = getattr(env, "_check_grasp", None)
+                        grasped = False
+                        if (
+                            closing
+                            and gripper is not None
+                            and target_object is not None
+                            and callable(check_grasp)
+                        ):
+                            try:
+                                grasped = bool(check_grasp(gripper, target_object))
+                            except Exception:
+                                grasped = False
+                        if not grasped:
+                            continue
                     if case_id == "D03" and self._d03_receiver_selection() == "active_goal_path":
                         self._dynamic_active_goal_target = goal_target
                     return True
