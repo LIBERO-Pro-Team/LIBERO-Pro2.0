@@ -80,6 +80,21 @@ seed 或 init state 不同，应建立不同记录，不得合并累计。
 
 每个 suite 文件包含：基础任务索引、审核总表、逐轮审核日志、状态失效记录和待复测队列。正式导入时，应从 manifest 展开每个已发布审核键，再依据原始审核文件、视频和提交记录写入结果。
 
+`libero_10` 的人工审核按负责人拆分为：[`task0-task4`](libero_10_task0_4.md) 与 [`task5-task9`](libero_10_task5_9.md)。
+
+## 2026-09-03 已上传审核进展
+
+本表只汇总已经上传到本目录、且具有可追溯证据的审核结果。尚未上传的轮次不标记、不推测，也不据此改写复测状态。
+
+| Suite | 发布称谓 | 本轮进展 | 仓库导入状态 | 后续动作 |
+|---|---|---|---|---|
+| `libero_10` | LIBERO-Long | task5-task9 已完成 R004 定向复审 | R004（0902rollout）已合并至 [`task5-task9 主记录`](libero_10_task5_9.md)；task0-task4 保持当前已上传状态 | task5-task9 有 7 个 task/case 组进入 R005，清单在主记录的 R004 章节中 |
+| `libero_goal` | LIBERO-Goal | 当前已上传至 R003 | R001-R003 均保留在 [`libero_goal.md`](libero_goal.md) | 按当前文件中的复测队列继续；未上传轮次不写入本表 |
+| `libero_object` | LIBERO-Object | 已完成 R004 定向复审 | R004 的 200 条结果已合并至 [`libero_object.md`](libero_object.md) | 根据 R004 的 57 条存疑记录安排下一轮可观察性修复与复测 |
+| `libero_spatial` | LIBERO-Spatial | 已完成 R004 定向复审 | R004 结果和精确 rollout 清单已合并至 [`libero_spatial.md`](libero_spatial.md) | 依据主记录中的 R004 rollout 清单与当前复测队列继续处理 |
+
+> 这里的 LIBERO-Long 对应仓库中的 `libero_10` suite；不是额外新增的第五个 suite。
+
 ## 已确认规则
 
 - [x] 以连续三轮审核 `PASS`，而不是三次策略成功，作为免复测条件。

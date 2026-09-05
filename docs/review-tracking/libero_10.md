@@ -5,7 +5,7 @@
 - manifest 条目数：429
 - 基础任务数：10
 - 默认 seed/init：`143/0`
-- 当前状态：模板已确认，尚未导入历史审核结果。
+- 当前状态：历史审核已按负责人拆分导入：[`task0-task4`](libero_10_task0_4.md)、[`task5-task9`](libero_10_task5_9.md)。task5-task9 的 R004（0902rollout）已合并在其主记录内。
 
 ## 基础任务索引
 
