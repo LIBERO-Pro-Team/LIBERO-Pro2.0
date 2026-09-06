@@ -324,7 +324,7 @@
         (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
-          (:receiver_trigger_distance_m 0.34)
+          (:receiver_trigger_distance_m 0.30)
           (:support_surface basket_1)
           (:asset_offset_xyz 0.0 0.0 0.0)
           (:staging_position_xyz 0.0 0.0 -5.0)
