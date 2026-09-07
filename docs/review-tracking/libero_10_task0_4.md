@@ -5,7 +5,7 @@
 - manifest 条目数：430
 - 基础任务数：10
 - 默认 seed/init：`143/0`
-- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；R004（0902rollout）定向复审记录已追加在本文末尾；`task5-task9` 见 [`libero_10_task5_9.md`](libero_10_task5_9.md)。
+- 当前状态：已按模板导入 huang 负责范围 `task0-task4` 的三轮审核结果；R004（0902rollout）与 R005（0906rollout）定向复审记录已追加在本文末尾；`task5-task9` 见 [`libero_10_task5_9.md`](libero_10_task5_9.md)。
 
 ## 基础任务索引
 
@@ -805,3 +805,88 @@
 - `D14`：task1 动作丢失/重复现象肉眼不明显，保留存疑。
 - `S11`：task2 新增干扰物与目标不够同类或视觉相似，保留存疑。
 - `D02`：task0 有一次未观察到接收器移动扰动。
+---
+
+## R005 定向复审记录
+
+> 负责人：huang<br>
+> 审核日期：2026-09-06<br>
+> 数据批次：`0906rollout` / `pi0-review-final-20260905-e9c8d10`<br>
+> rollout commit：`e9c8d10677e102f6ec12fb7257d4a6e29225e2f6`
+
+### 范围与证据
+
+本轮覆盖 `libero_10/task0-task4` 中源批次实际提供的 44 个 task/case 组、88 个独立 rollout，每组包含 seed142/init0 与 seed143/init1 两次尝试。未出现在本批次中的稳定项不视为漏审。
+
+- 结果文件 SHA-256：`275ba3705cdc8c7b411cdd6025e307f58cc1a8101b0e88b05c6991f8fa73b3d3`
+- 原始结果：`human_review_results 0906.csv`
+- 视频与 rollout 对应：同批次 `0906rollout/index.tsv`
+
+### 审核结果汇总
+
+| 结论 | 数量 | 占比 |
+|---|---:|---:|
+| 认可 | 80 | 90.9% |
+| 错误 | 2 | 2.3% |
+| 存疑 | 6 | 6.8% |
+| 异常 | 0 | 0.0% |
+| 合计 | 88 | 100.0% |
+
+| Task | 组数 | PASS | ISSUE | PENDING | 本轮状态 |
+|---:|---:|---:|---:|---:|---|
+| 0 | 12 | 20 | 0 | 4 | D03、D18 存疑，其余通过 |
+| 1 | 8 | 14 | 2 | 0 | S06 错误，其余通过 |
+| 2 | 7 | 12 | 0 | 2 | D03 存疑，其余通过 |
+| 3 | 6 | 12 | 0 | 0 | 全部通过 |
+| 4 | 11 | 22 | 0 | 0 | 全部通过 |
+
+### 非认可项与处置
+
+| Task | Case | 尝试 | 策略结果 | 审核判定 | 备注 | 视频证据 | 后续处置 |
+|---:|---|---:|---|---|---|---|---|
+| 0 | `D03` | 1 | `FAILURE` | `PENDING` | 没有抓到，没有触发扰动 | `data/videos_0906/failure/pi0_libero_10_task0_D03_seed142_init0.mp4` | 需先保证抓取成功，再验证动态扰动是否触发 |
+| 0 | `D03` | 2 | `FAILURE` | `PENDING` | 没有抓到，没有触发扰动 | `data/videos_0906/failure/pi0_libero_10_task0_D03_seed143_init1.mp4` | 需先保证抓取成功，再验证动态扰动是否触发 |
+| 0 | `D18` | 1 | `FAILURE` | `PENDING` | 没有抓到，没有触发扰动 | `data/videos_0906/failure/pi0_libero_10_task0_D18_seed142_init0.mp4` | 需先保证抓取成功，再验证掉落恢复扰动是否触发 |
+| 0 | `D18` | 2 | `FAILURE` | `PENDING` | 没有抓到，没有触发扰动 | `data/videos_0906/failure/pi0_libero_10_task0_D18_seed143_init1.mp4` | 需先保证抓取成功，再验证掉落恢复扰动是否触发 |
+| 1 | `S06` | 1 | `FAILURE` | `ISSUE` | 替换的新实例太大了，大于夹抓的最大限度，不可能抓到的 | `data/videos_0906/failure/pi0_libero_10_task1_S06_seed142_init0.mp4` | 修复替换资产尺寸后进入 R006 复测 |
+| 1 | `S06` | 2 | `FAILURE` | `ISSUE` | 替换的新实例太大了，大于夹抓的最大限度，不可能抓到的 | `data/videos_0906/failure/pi0_libero_10_task1_S06_seed143_init1.mp4` | 修复替换资产尺寸后进入 R006 复测 |
+| 2 | `D03` | 1 | `FAILURE` | `PENDING` | 没有抓到，未触发扰动 | `data/videos_0906/failure/pi0_libero_10_task2_D03_seed142_init0.mp4` | 需先保证抓取成功，再验证动态扰动是否触发 |
+| 2 | `D03` | 2 | `FAILURE` | `PENDING` | 没有抓到，未触发扰动 | `data/videos_0906/failure/pi0_libero_10_task2_D03_seed143_init1.mp4` | 需先保证抓取成功，再验证动态扰动是否触发 |
+
+### R004 问题项关闭情况
+
+| Task/Case | R005 结论 | 后续 |
+|---|---|---|
+| `task0/D02` | 两次均通过 | 关闭 |
+| `task0/D03` | attempt1 存疑；attempt2 存疑 | 未关闭，R006 继续复测 |
+| `task1/D14` | 两次均通过 | 关闭 |
+| `task1/S06` | attempt1 错误；attempt2 错误 | 未关闭，修复替换资产尺寸后 R006 复测 |
+| `task2/D03` | attempt1 存疑；attempt2 存疑 | 未关闭，R006 继续复测 |
+| `task2/D05` | 两次均通过 | 关闭 |
+| `task2/S11` | 两次均通过 | 关闭 |
+| `task4/D03` | 两次均通过 | 关闭 |
+
+### R006 精确复测清单
+
+下列组在 R005 中至少有一次 `ISSUE` 或 `PENDING`。下一轮应整组重跑两次尝试，不能只补其中一条。
+
+| 优先级 | Task | Case | 本轮结论 | 需要修复或验证的问题 | 下一轮目标 |
+|---|---:|---|---|---|---|
+| `P1` | 0 | `D03` | 存疑/存疑 | 没有抓到，没有触发扰动 | 修复后 R006，两次 rollout 均需 PASS |
+| `P1` | 0 | `D18` | 存疑/存疑 | 没有抓到，没有触发扰动 | 修复后 R006，两次 rollout 均需 PASS |
+| `P0` | 1 | `S06` | 错误/错误 | 替换的新实例太大了，大于夹抓的最大限度，不可能抓到的 | 修复后 R006，两次 rollout 均需 PASS |
+| `P1` | 2 | `D03` | 存疑/存疑 | 没有抓到，未触发扰动 | 修复后 R006，两次 rollout 均需 PASS |
+
+#### R006 精确 key 清单
+
+- `libero_10/task0/D03/seed142/init0`；`libero_10/task0/D03/seed143/init1`。
+- `libero_10/task0/D18/seed142/init0`；`libero_10/task0/D18/seed143/init1`。
+- `libero_10/task1/S06/seed142/init0`；`libero_10/task1/S06/seed143/init1`。
+- `libero_10/task2/D03/seed142/init0`；`libero_10/task2/D03/seed143/init1`。
+
+### 本轮问题归纳
+
+- `D03`：task0、task2 仍因未抓到目标导致动态占用扰动未触发，保留存疑。
+- `D18`：task0 新增存疑，两次均未先抓到目标，因此运输中掉落恢复扰动没有触发机会。
+- `S06`：task1 替换实例仍过大，超出夹爪合理抓取范围，问题未解决。
+- R004 中的 `D02`、`D14`、`D05`、`S11`、`task4/D03` 本轮已通过，可关闭。
