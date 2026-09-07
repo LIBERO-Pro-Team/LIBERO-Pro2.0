@@ -1902,6 +1902,193 @@ def _support_group_transform(
     )
 
 
+def _support_group_swap_transform(
+    env: Any,
+    targets: tuple[str, str],
+    support_objects: tuple[str, str],
+    swap_offset: tuple[float, float],
+    params: dict[str, Any],
+) -> dict[str, Any]:
+    """Exchange two target/support groups without changing their local poses."""
+
+    if len(targets) != 2 or len(support_objects) != 2:
+        raise PerturbationConfigurationError(
+            "Support-group swap requires exactly two targets and two support_objects"
+        )
+    if len(set((*targets, *support_objects))) != 4:
+        raise PerturbationConfigurationError(
+            "Support-group swap targets and support_objects must be distinct"
+        )
+    ground_surfaces = _name_tuple(params.get("support_ground_surface"))
+    if len(ground_surfaces) != 1:
+        raise PerturbationConfigurationError(
+            "Support-group swap requires exactly one support_ground_surface"
+        )
+    ground_surface = ground_surfaces[0]
+    entities = (*targets, *support_objects)
+    missing = [
+        name for name in (*entities, ground_surface) if not _entity_exists(env, name)
+    ]
+    if missing:
+        raise PerturbationValidationError(
+            f"Support-group swap entities are absent: {missing!r}"
+        )
+    minimum_gap = _required_param_float(params, "group_minimum_clearance_m")
+    if not 0.0 < minimum_gap <= 0.10:
+        raise PerturbationConfigurationError(
+            "group_minimum_clearance_m must be between 0 and 0.10"
+        )
+    settle_steps = _param_int(params, "group_settle_steps", 0)
+    if not 0 <= settle_steps <= 500:
+        raise PerturbationConfigurationError(
+            "group_settle_steps must be between 0 and 500"
+        )
+    if settle_steps:
+        robot = env.robots[0]
+        robot_qpos_indices = [int(index) for index in robot._ref_joint_pos_indexes]
+        robot_qvel_indices = [int(index) for index in robot._ref_joint_vel_indexes]
+        robot_qpos = np.asarray(
+            env.sim.data.qpos[robot_qpos_indices], dtype=np.float64
+        ).copy()
+        robot_qvel = np.asarray(
+            env.sim.data.qvel[robot_qvel_indices], dtype=np.float64
+        ).copy()
+        for _ in range(settle_steps):
+            env.sim.step()
+        env.sim.data.qpos[robot_qpos_indices] = robot_qpos
+        env.sim.data.qvel[robot_qvel_indices] = robot_qvel
+        env.sim.forward()
+
+    before = {name: _entity_pose(env, name) for name in entities}
+    local_positions: dict[str, np.ndarray] = {}
+    local_quaternions: dict[str, np.ndarray] = {}
+    for target, support in zip(targets, support_objects):
+        support_position, support_quaternion = before[support]
+        target_position, target_quaternion = before[target]
+        support_rotation = _quaternion_to_rotation_matrix(support_quaternion)
+        local_positions[target] = support_rotation.T @ (target_position - support_position)
+        local_quaternions[target] = _quaternion_multiply(
+            _quaternion_conjugate(support_quaternion), target_quaternion
+        )
+
+    first_support_before = before[support_objects[0]][0]
+    second_support_before = before[support_objects[1]][0]
+    offset = np.asarray(swap_offset, dtype=np.float64)
+    support_positions = {
+        support_objects[0]: first_support_before.copy(),
+        support_objects[1]: second_support_before.copy(),
+    }
+    support_positions[support_objects[0]][:2] = second_support_before[:2] + offset
+    support_positions[support_objects[1]][:2] = first_support_before[:2] - offset
+
+    ground_params = dict(params)
+    ground_params["support_surface"] = ground_surface
+    ignored = (*entities, ground_surface)
+    candidate_targets: dict[str, np.ndarray] = {}
+    candidate_supports: dict[str, tuple[np.ndarray, np.ndarray, str, np.ndarray]] = {}
+    for support in support_objects:
+        position = support_positions[support]
+        if not _candidate_is_clear(env, support, position[:2], minimum_gap, ignored=ignored):
+            raise PerturbationValidationError(
+                f"Support-group swap destination for {support!r} is obstructed"
+            )
+        grounded = _grounded_entity_position(
+            env,
+            support,
+            position[:2],
+            ground_params,
+            ignored=entities,
+        )
+        if grounded is None or not _support_geom_belongs_to_entity(
+            env, grounded[1], ground_surface
+        ):
+            raise PerturbationValidationError(
+                f"Support-group swap destination for {support!r} is not on {ground_surface!r}"
+            )
+        support_quaternion = before[support][1]
+        candidate_supports[support] = (
+            position,
+            support_quaternion,
+            grounded[1],
+            grounded[0],
+        )
+
+    for target, support in zip(targets, support_objects):
+        support_position, support_quaternion, _, _ = candidate_supports[support]
+        rotation = _quaternion_to_rotation_matrix(support_quaternion)
+        target_position = support_position + rotation @ local_positions[target]
+        if not _candidate_is_clear(
+            env, target, target_position[:2], minimum_gap, ignored=ignored
+        ):
+            raise PerturbationValidationError(
+                f"Support-group swap destination for {target!r} is obstructed"
+            )
+        candidate_targets[target] = target_position
+
+    baseline_contacts = {
+        name: _entity_deep_contacts(env, name) for name in entities
+    }
+    try:
+        for support in support_objects:
+            position, quaternion, _, _ = candidate_supports[support]
+            _set_entity_pose(env, support, position, quaternion)
+        for target, support in zip(targets, support_objects):
+            support_quaternion = candidate_supports[support][1]
+            target_quaternion = _quaternion_multiply(
+                support_quaternion, local_quaternions[target]
+            )
+            _set_entity_pose(env, target, candidate_targets[target], target_quaternion)
+
+        invalid_contacts: list[dict[str, Any]] = []
+        for name in entities:
+            baseline = {
+                tuple(sorted((str(item["first"]), str(item["second"])))): float(
+                    item["depth_m"]
+                )
+                for item in baseline_contacts[name]
+            }
+            for item in _entity_deep_contacts(env, name):
+                pair = tuple(sorted((str(item["first"]), str(item["second"]))))
+                previous_depth = baseline.get(pair)
+                if previous_depth is None or float(item["depth_m"]) > previous_depth + 0.002:
+                    invalid_contacts.append(item)
+        if invalid_contacts:
+            raise PerturbationValidationError(
+                f"Support-group swap created deep penetration: {invalid_contacts}"
+            )
+    except Exception:
+        for name, (position, quaternion) in before.items():
+            _set_entity_pose(env, name, position, quaternion)
+        raise
+
+    for name in entities:
+        scene_object = getattr(env, "objects_dict", {}).get(name)
+        if list(getattr(scene_object, "joints", []) or []):
+            _zero_entity_free_joint_velocity(env, name)
+    return {
+        "targets": targets,
+        "support_objects": support_objects,
+        "support_ground_surface": ground_surface,
+        "support_ground_geoms": {
+            name: candidate_supports[name][2] for name in support_objects
+        },
+        "support_grounded_positions": {
+            name: candidate_supports[name][3] for name in support_objects
+        },
+        "support_positions": {
+            name: candidate_supports[name][0] for name in support_objects
+        },
+        "support_positions_before": {
+            name: before[name][0] for name in support_objects
+        },
+        "target_positions_before": {
+            name: before[name][0] for name in targets
+        },
+        "target_positions": candidate_targets,
+        "swap_offset_xy": offset,
+    }
+
+
 def _safe_dynamic_asset_pose(
     env: Any,
     name: str,
@@ -3349,6 +3536,45 @@ class NonPhysicalPerturbationRuntime:
             swap_offset = _param_vector(
                 self.plan.params, "swap_xy", (0.0, 0.0)
             )
+            if _param_bool(self.plan.params, "swap_support_groups", False):
+                support_objects = _name_tuple(self.plan.params.get("support_objects"))
+                result = _support_group_swap_transform(
+                    env,
+                    (first, second),
+                    support_objects,
+                    tuple(float(value) for value in swap_offset),
+                    self.plan.params,
+                )
+                self._log_once(
+                    "support_group_swap",
+                    0,
+                    targets=list(result["targets"]),
+                    support_objects=list(result["support_objects"]),
+                    support_ground_surface=result["support_ground_surface"],
+                    support_ground_geoms=result["support_ground_geoms"],
+                    support_grounded_positions={
+                        name: position.tolist()
+                        for name, position in result["support_grounded_positions"].items()
+                    },
+                    support_positions={
+                        name: position.tolist()
+                        for name, position in result["support_positions"].items()
+                    },
+                    support_positions_before={
+                        name: position.tolist()
+                        for name, position in result["support_positions_before"].items()
+                    },
+                    target_positions_before={
+                        name: position.tolist()
+                        for name, position in result["target_positions_before"].items()
+                    },
+                    target_positions={
+                        name: position.tolist()
+                        for name, position in result["target_positions"].items()
+                    },
+                    swap_offset_xy=result["swap_offset_xy"].tolist(),
+                )
+                return
             grounded_swap = _param_bool(self.plan.params, "grounded_swap", False)
             if grounded_swap:
                 support_params = self.plan.params

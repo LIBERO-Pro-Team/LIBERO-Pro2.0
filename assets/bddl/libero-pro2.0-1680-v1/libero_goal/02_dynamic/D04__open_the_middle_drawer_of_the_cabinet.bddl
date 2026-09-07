@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -374,7 +374,7 @@
           (:occlusion_offset_xyz 0.0 0.0 0.02)
           (:asset_scale 1.15)
           (:trigger_anchor wooden_cabinet_1_middle_region)
-          (:trigger_distance_m 0.30)
+          (:trigger_distance_m 0.20)
         )
       )
       (D05

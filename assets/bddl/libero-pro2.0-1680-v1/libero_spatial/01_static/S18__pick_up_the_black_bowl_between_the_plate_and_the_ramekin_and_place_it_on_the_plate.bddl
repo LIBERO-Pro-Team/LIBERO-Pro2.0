@@ -312,8 +312,8 @@
         (:variant base_tcp_joint_zero_or_grasp_center_calibration)
         (:params
           (:interaction_mode placement)
-          (:eef_offset_xyz 0.080 -0.060 0.050)
-          (:joint_zero_offset_rad 0.080 -0.060 0.050)
+          (:eef_offset_xyz 0.120 -0.090 0.075)
+          (:joint_zero_offset_rad 0.120 -0.090 0.075)
           (:grasp_center_offset_xyz 0.0 0.0 0.0)
         )
       )

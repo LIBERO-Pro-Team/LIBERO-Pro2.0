@@ -157,3 +157,101 @@ def test_spatial_task5_s04_preserves_the_two_stable_support_heights() -> None:
     text = path.read_text(encoding="utf-8")
 
     assert "(:preserve_swapped_support_heights true)" in text
+
+
+def test_spatial_task5_s04_opts_into_complete_support_group_swap_only() -> None:
+    dataset = ROOT / "assets" / "bddl" / "libero-pro2.0-1680-v1" / "libero_spatial"
+    enabled = []
+    for path in dataset.rglob("S04__*.bddl"):
+        text = path.read_text(encoding="utf-8")
+        if "(:swap_support_groups true)" in text:
+            enabled.append(path.name)
+
+    assert enabled == [
+        "S04__pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate.bddl"
+    ]
+    text = (dataset / "01_static" / enabled[0]).read_text(encoding="utf-8")
+    assert "(:support_objects glazed_rim_porcelain_ramekin_1 cookies_1)" in text
+    assert "(:support_ground_surface main_table)" in text
+    assert "(:group_minimum_clearance_m 0.018)" in text
+    assert "(:group_settle_steps 300)" in text
+
+
+def test_support_group_swap_exchanges_supports_and_preserves_local_poses(monkeypatch) -> None:
+    names = (
+        "akita_black_bowl_1",
+        "akita_black_bowl_2",
+        "glazed_rim_porcelain_ramekin_1",
+        "cookies_1",
+    )
+    identity = np.array([1.0, 0.0, 0.0, 0.0])
+    poses = {
+        "akita_black_bowl_1": (np.array([-0.21, 0.20, 0.94]), identity.copy()),
+        "akita_black_bowl_2": (np.array([0.06, 0.04, 0.918]), identity.copy()),
+        "glazed_rim_porcelain_ramekin_1": (
+            np.array([-0.20, 0.20, 0.90]), identity.copy()
+        ),
+        "cookies_1": (np.array([0.06, 0.04, 0.91]), identity.copy()),
+    }
+    applied = {}
+
+    monkeypatch.setattr(RUNTIME, "_entity_exists", lambda env, name: True)
+    monkeypatch.setattr(RUNTIME, "_entity_pose", lambda env, name: poses[name])
+    monkeypatch.setattr(
+        RUNTIME,
+        "_candidate_is_clear",
+        lambda env, name, xy, minimum_gap, ignored=(): True,
+    )
+    monkeypatch.setattr(
+        RUNTIME,
+        "_grounded_entity_position",
+        lambda env, name, xy, params, ignored=(): (
+            np.array([xy[0], xy[1], 0.90]),
+            "table_collision",
+        ),
+    )
+    monkeypatch.setattr(
+        RUNTIME,
+        "_support_geom_belongs_to_entity",
+        lambda env, geom, entity: entity == "main_table",
+    )
+    monkeypatch.setattr(RUNTIME, "_entity_deep_contacts", lambda env, name: [])
+    monkeypatch.setattr(
+        RUNTIME,
+        "_set_entity_pose",
+        lambda env, name, position, quaternion: applied.__setitem__(
+            name, (np.asarray(position).copy(), np.asarray(quaternion).copy())
+        ),
+    )
+
+    params = {
+        "support_ground_surface": "main_table",
+        "group_minimum_clearance_m": 0.018,
+    }
+    result = RUNTIME._support_group_swap_transform(
+        object(),
+        ("akita_black_bowl_1", "akita_black_bowl_2"),
+        ("glazed_rim_porcelain_ramekin_1", "cookies_1"),
+        (0.0, 0.0),
+        params,
+    )
+
+    np.testing.assert_allclose(
+        applied["glazed_rim_porcelain_ramekin_1"][0][:2], poses["cookies_1"][0][:2]
+    )
+    np.testing.assert_allclose(
+        applied["cookies_1"][0][:2], poses["glazed_rim_porcelain_ramekin_1"][0][:2]
+    )
+    assert applied["glazed_rim_porcelain_ramekin_1"][0][2] == poses[
+        "glazed_rim_porcelain_ramekin_1"
+    ][0][2]
+    assert applied["cookies_1"][0][2] == poses["cookies_1"][0][2]
+    np.testing.assert_allclose(
+        applied["akita_black_bowl_1"][0] - applied["glazed_rim_porcelain_ramekin_1"][0],
+        poses["akita_black_bowl_1"][0] - poses["glazed_rim_porcelain_ramekin_1"][0],
+    )
+    np.testing.assert_allclose(
+        applied["akita_black_bowl_2"][0] - applied["cookies_1"][0],
+        poses["akita_black_bowl_2"][0] - poses["cookies_1"][0],
+    )
+    assert result["support_ground_surface"] == "main_table"

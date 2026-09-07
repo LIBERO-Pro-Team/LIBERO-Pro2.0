@@ -195,6 +195,11 @@
           (:strict_swap_xy true)
           (:ground_support_from_declared_surface true)
           (:preserve_swapped_support_heights true)
+          (:swap_support_groups true)
+          (:support_objects glazed_rim_porcelain_ramekin_1 cookies_1)
+          (:support_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
+          (:group_settle_steps 300)
         )
       )
       (S05

@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -452,8 +452,6 @@
         (:variant delay_jitter_or_desynchronization)
         (:params
           (:interaction_mode articulation)
-          (:trigger_anchor wooden_cabinet_1_middle_region)
-          (:trigger_distance_m 0.30)
           (:arm_delay_steps 8)
           (:gripper_delay_steps 8)
           (:event_duration_steps 36)

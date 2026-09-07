@@ -175,6 +175,11 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
             strict_swap_xy=("true",),
             support_surface=_support("glazed_rim_porcelain_ramekin_1", "cookies_1"),
             preserve_swapped_support_heights=("true",),
+            swap_support_groups=("true",),
+            support_objects=_support("glazed_rim_porcelain_ramekin_1", "cookies_1"),
+            support_ground_surface=_support("main_table"),
+            group_minimum_clearance_m=("0.018",),
+            group_settle_steps=("300",),
         ),
     },
     ("libero_spatial", 7, "S04"): {

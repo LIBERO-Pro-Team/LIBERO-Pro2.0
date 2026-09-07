@@ -212,7 +212,8 @@
         (:params
           (:interaction_mode placement)
           (:geometry_factors 1.0 0.90 1.10)
-          (:goal_region_scale 0.75 0.25 1.0)
+          (:goal_region_scale 1.0 1.60 1.20)
+          (:scale_compiled_geometry true)
         )
       )
       (S08

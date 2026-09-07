@@ -319,17 +319,19 @@
       (D03
         (:operator occlusion_or_obstacle)
         (:targets basket_1)
-        (:references orange_juice_1)
+        (:references none)
         (:trigger preplace)
         (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
           (:receiver_trigger_distance_m 0.24)
           (:support_surface basket_1)
-          (:asset_offset_xyz 0.0 0.0 0.0)
+          (:asset_offset_xyz 0.0 0.0 0.10)
           (:staging_position_xyz 0.0 0.0 -5.0)
           (:receiver_anchor basket_1_contain_region)
-          (:persistent_existing_obstacle true)
+          (:persistent_movable_asset true)
+          (:asset_id prl/plastic_plate)
+          (:asset_scale 0.85)
         )
       )
       (D04

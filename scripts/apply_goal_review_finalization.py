@@ -29,7 +29,7 @@ ASSETS = ROOT / "assets"
 DATASET = ASSETS / "bddl" / "libero-pro2.0-1680-v1"
 MANIFEST = ASSETS / "task_manifest.json"
 PUBLISHED_VERSION = "libero-pro2.0-1706-v1"
-PUBLISHED_TASK_COUNT = 1701
+PUBLISHED_TASK_COUNT = 1696
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 PUBLISHED_CASES = (
     "BASE",
@@ -56,6 +56,8 @@ GOAL_NOT_APPLICABLE = {
     ("libero_goal", 7, "D03"),
     ("libero_goal", 7, "D05"),
     ("libero_goal", 7, "S05"),
+    ("libero_goal", 3, "S05"),
+    ("libero_goal", 9, "D03"),
 }
 
 GOAL_REVIEW_ROUND3_FEEDBACK_KEYS = {
@@ -77,6 +79,8 @@ GOAL_REVIEW_ROUND3_DELETIONS = {
     (7, "D03"),
     (7, "D05"),
     (7, "S05"),
+    (3, "S05"),
+    (9, "D03"),
 }
 
 GOAL_REVIEW_ROUND3_PARAMS: dict[
@@ -85,7 +89,7 @@ GOAL_REVIEW_ROUND3_PARAMS: dict[
     **{
         (0, case_id): {
             "trigger_anchor": ("wooden_cabinet_1_middle_region",),
-            "trigger_distance_m": ("0.30",),
+            "trigger_distance_m": ("0.20",),
         }
         for case_id in (
             "D01",
@@ -97,12 +101,21 @@ GOAL_REVIEW_ROUND3_PARAMS: dict[
             "D10",
             "D11",
             "D12",
-            "D13",
-            "D14",
-            "D15",
-            "D16",
-            "D20",
         )
+    },
+    (0, "D14"): {
+        "repeat_count": ("24",),
+        "event_duration_steps": ("24",),
+    },
+    (0, "D15"): {
+        "chunk_size": ("24",),
+        "stale_chunk_steps": ("24",),
+        "event_duration_steps": ("24",),
+    },
+    (0, "D16"): {
+        "event_duration_steps": ("6",),
+        "takeover_action": ("0.18", "-0.08"),
+        "takeover_duration_steps": ("12",),
     },
     (0, "S12"): {"occlusion_offset_xyz": ("-0.05", "0.0", "0.0")},
     (1, "D02"): {"offset_xy": ("-0.12", "0.09"), "yaw_rad": ("-0.24",)},
@@ -360,7 +373,17 @@ def case_updates(
                 support_surface=("kitchen_table",),
             )
         if (suite, task_id) == ("libero_spatial", 5):
-            params["preserve_swapped_support_heights"] = ("true",)
+            params.update(
+                preserve_swapped_support_heights=("true",),
+                swap_support_groups=("true",),
+                support_objects=(
+                    "glazed_rim_porcelain_ramekin_1",
+                    "cookies_1",
+                ),
+                support_ground_surface=("main_table",),
+                group_minimum_clearance_m=("0.018",),
+                group_settle_steps=("300",),
+            )
     elif case_id == "S05":
         params.update(
             barrier_scale=("0.65",),
@@ -710,6 +733,12 @@ def apply_published_structural_overrides(
 
 
 def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
+    if (
+        suite == "libero_goal"
+        and task_id == 0
+        and case_id in {"D13", "D14", "D15", "D16", "D20"}
+    ):
+        return {"trigger_anchor", "trigger_distance_m"}
     if case_id == "D03":
         return {
             "allow_compact_asset",

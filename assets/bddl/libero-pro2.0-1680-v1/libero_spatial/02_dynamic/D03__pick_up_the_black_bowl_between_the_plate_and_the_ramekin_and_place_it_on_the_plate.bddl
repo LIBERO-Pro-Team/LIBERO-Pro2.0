@@ -372,9 +372,9 @@
           (:asset_offset_xyz 0.0 0.0 0.0)
           (:staging_position_xyz 0.0 0.0 -5.0)
           (:persistent_movable_asset true)
-          (:asset_id ycb/YcbTomatoSoupCan)
-          (:asset_scale 0.80)
-          (:asset_contact_margin_m 0.006)
+          (:asset_id ycb/YcbFoamBrick)
+          (:asset_scale 0.85)
+          (:asset_contact_margin_m 0.0)
         )
       )
       (D04

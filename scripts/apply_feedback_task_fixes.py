@@ -218,6 +218,14 @@ def task_params(suite: str, task_id: int, case_id: str) -> tuple[dict[str, tuple
         params["support_surface"] = ("table",)
         if (suite, task_id) == ("libero_spatial", 5):
             params["preserve_swapped_support_heights"] = ("true",)
+            params["swap_support_groups"] = ("true",)
+            params["support_objects"] = (
+                "glazed_rim_porcelain_ramekin_1",
+                "cookies_1",
+            )
+            params["support_ground_surface"] = ("main_table",)
+            params["group_minimum_clearance_m"] = ("0.018",)
+            params["group_settle_steps"] = ("300",)
         if (suite, task_id) in {
             ("libero_10", 7),
             ("libero_10", 8),

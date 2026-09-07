@@ -138,27 +138,6 @@ def test_libero10_task2_s04_uses_collision_safe_grounded_swap() -> None:
     assert "(:support_surface kitchen_table)" in block
 
 
-def test_libero10_task8_d06_uses_a_welded_runtime_distractor() -> None:
-    path = (
-        ROOT
-        / "assets"
-        / "bddl"
-        / "libero-pro2.0-1680-v1"
-        / "libero_10"
-        / "02_dynamic"
-        / "D06__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl"
-    )
-    text = path.read_text(encoding="utf-8")
-    _, _, block = FIXER.case_slice(text, "D06")
-
-    assert "red_coffee_mug_1 - red_coffee_mug" not in text
-    assert "(On red_coffee_mug_1 " not in text
-    assert "(:disturbance_targets none)" in block
-    assert "(:asset_id libero/red_coffee_mug)" in block
-    assert "(:asset_initial_anchor moka_pot_2)" in block
-    assert "(:asset_initial_offset_xy 0.134437 0.194625)" in block
-
-
 def test_goal_task0_s11_uses_a_movable_rigid_yellow_cabinet_asset() -> None:
     path = (
         ROOT
@@ -287,15 +266,29 @@ def test_object_review_feedback_keeps_d02_original_and_strengthens_reviewed_bddl
         assert "(:offset_xy -0.12 0.09)" in s02_block
         assert "(:yaw_rad -0.30)" in s02_block
 
-    for object_name in ("alphabet_soup", "cream_cheese"):
+    expected_distances = {
+        "alphabet_soup": "0.28",
+        "cream_cheese": "0.34",
+    }
+    for object_name, distance in expected_distances.items():
         d03_block = _object_case_block("02_dynamic", "D03", object_name)
-        assert "(:receiver_trigger_distance_m 0.28)" in d03_block
-        assert "(:persistent_existing_obstacle true)" in d03_block
+        assert f"(:receiver_trigger_distance_m {distance})" in d03_block
+        assert "(:references none)" in d03_block
+        assert "(:persistent_movable_asset true)" in d03_block
+        assert "(:asset_id prl/plastic_plate)" in d03_block
+        assert "(:asset_scale 0.85)" in d03_block
+        assert "(:asset_offset_xyz 0.0 0.0 0.10)" in d03_block
+        assert "(:persistent_existing_obstacle true)" not in d03_block
         assert "(:event_duration_steps" not in d03_block
 
     d03_task2 = _object_case_block("02_dynamic", "D03", "salad_dressing")
     assert "(:receiver_trigger_distance_m 0.28)" in d03_task2
-    assert "(:persistent_existing_obstacle true)" in d03_task2
+    assert "(:references none)" in d03_task2
+    assert "(:persistent_movable_asset true)" in d03_task2
+    assert "(:asset_id prl/plastic_plate)" in d03_task2
+    assert "(:asset_scale 0.85)" in d03_task2
+    assert "(:asset_offset_xyz 0.0 0.0 0.10)" in d03_task2
+    assert "(:persistent_existing_obstacle true)" not in d03_task2
     assert "(:event_duration_steps" not in d03_task2
 
     for object_name in ("cream_cheese", "salad_dressing"):
@@ -621,7 +614,7 @@ def test_functional_anchor_allows_task_local_receiver_site_override() -> None:
     np.testing.assert_array_equal(override_position, positions["cabinet_middle"])
 
 
-def test_goal_d03_tasks_use_persistent_existing_obstacles() -> None:
+def test_goal_d03_tasks_use_persistent_receiver_obstacles() -> None:
     parser_path = (
         ROOT
         / "simulator-source"
@@ -662,12 +655,16 @@ def test_goal_d03_tasks_use_persistent_existing_obstacles() -> None:
         parser.parse_bddl_perturbation_config(by_task[1]), asset_root
     )
 
-    assert task2.assets == ()
-    assert task2.references == ("akita_black_bowl_1",)
-    assert task2.params["persistent_existing_obstacle"] is True
-    assert task1.assets == ()
-    assert task1.references == ("cream_cheese_1",)
-    assert task1.params["persistent_existing_obstacle"] is True
+    assert len(task2.assets) == 1
+    assert task2.assets[0].asset_id == "prl/plastic_plate"
+    assert task2.assets[0].scale == 0.60
+    assert task2.references == ()
+    assert task2.params["persistent_movable_asset"] is True
+    assert len(task1.assets) == 1
+    assert task1.assets[0].asset_id == "prl/plastic_plate"
+    assert task1.assets[0].scale == 0.55
+    assert task1.references == ()
+    assert task1.params["persistent_movable_asset"] is True
 
 
 def test_object_task0_feedback_strength_values_are_task_local() -> None:
@@ -700,7 +697,6 @@ def test_latest_nonspatial_review_values_are_task_local() -> None:
     task5_d03, _ = FIXER.task_params("libero_10", 5, "D03")
     task9_d03, _ = FIXER.task_params("libero_10", 9, "D03")
     task5_d13, _ = FIXER.task_params("libero_10", 5, "D13")
-    task8_d06, task8_d06_fields = FIXER.task_params("libero_10", 8, "D06")
     task0_d20, _ = FIXER.task_params("libero_10", 0, "D20")
     task2_d20, _ = FIXER.task_params("libero_10", 2, "D20")
     task5_s09, _ = FIXER.task_params("libero_10", 5, "S09")
@@ -726,11 +722,6 @@ def test_latest_nonspatial_review_values_are_task_local() -> None:
     assert task9_d03 == {}
     assert task5_d13["arm_delay_steps"] == ("8",)
     assert task5_d13["gripper_delay_steps"] == ("8",)
-    assert task8_d06["asset_id"] == ("libero/red_coffee_mug",)
-    assert task8_d06["asset_initial_anchor"] == ("moka_pot_2",)
-    assert task8_d06["asset_initial_offset_xy"] == ("0.134437", "0.194625")
-    assert task8_d06["minimum_clearance_m"] == ("0.10",)
-    assert task8_d06_fields["disturbance_targets"] == ("none",)
     assert task0_d20["trigger_eef_motion_m"] == ("0.01",)
     assert task0_d20["trigger_action_norm"] == ("0.01",)
     assert "trigger_eef_motion_m" not in task2_d20

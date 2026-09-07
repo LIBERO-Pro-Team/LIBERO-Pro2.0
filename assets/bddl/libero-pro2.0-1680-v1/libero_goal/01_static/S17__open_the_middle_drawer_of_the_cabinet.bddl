@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -296,7 +296,7 @@
         (:variant initial_joints_eef_orientation_or_gripper_opening)
         (:params
           (:interaction_mode articulation)
-          (:joint_offset_rad 0.090 -0.090 0.090 0.0 0.0 0.0 0.0)
+          (:joint_offset_rad 0.120 -0.120 0.120 0.0 0.0 0.0 0.0)
         )
       )
       (S18
