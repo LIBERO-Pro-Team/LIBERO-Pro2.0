@@ -33,6 +33,7 @@ def test_published_static_object_distractors_are_physical_and_hashed() -> None:
     entries = [
         item for item in manifest["tasks"] if item["case_id"] in {"S10", "S11"}
     ]
+    fixed_goal_s10_tasks = {3, 4, 5, 6, 7, 8, 9}
 
     assert len(entries) == 80
     for item in entries:
@@ -40,7 +41,17 @@ def test_published_static_object_distractors_are_physical_and_hashed() -> None:
         text = path.read_text(encoding="utf-8")
         block = _case_block(text, item["case_id"])
         assert "(:clear_of_task_entities true)" in block, path
-        assert "(:movable_asset true)" in block, path
+        reviewed_fixed_clutter = (
+            item["suite"] == "libero_goal"
+            and item["case_id"] == "S10"
+            and int(item["base_task_id"]) in fixed_goal_s10_tasks
+        )
+        expected_mobility = (
+            "(:movable_asset false)"
+            if reviewed_fixed_clutter
+            else "(:movable_asset true)"
+        )
+        assert expected_mobility in block, path
         assert "(:physical_collision true)" in block, path
         assert "(:visual_only_asset false)" in block, path
         assert "(:weld_asset_joints true)" not in block, path

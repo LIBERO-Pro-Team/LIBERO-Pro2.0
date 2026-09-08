@@ -182,6 +182,19 @@
       "readiness": "ready_mjcf"
     },
     {
+      "id": "prl/fuze_bottle_fitted_collision",
+      "format": "mjcf",
+      "path": "adapted/prl_objects/fuze_bottle_fitted_collision/fuze_bottle_fitted_collision.xml",
+      "source_asset": "vendor/prl_assets/src/prl_assets/objects/fuze_bottle",
+      "license": "MIT",
+      "dimensions_m": [
+        0.073,
+        0.073,
+        0.215
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
       "id": "prl/gelatin_box",
       "format": "mjcf",
       "path": "adapted/prl_objects/gelatin_box/gelatin_box.xml",

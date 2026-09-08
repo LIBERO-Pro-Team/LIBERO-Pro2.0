@@ -220,6 +220,7 @@
         (:params
           (:interaction_mode placement)
           (:geometry_factors 1.28 1.28 0.72)
+          (:scale_compiled_geometry true)
         )
       )
       (S09

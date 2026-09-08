@@ -197,7 +197,7 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
             "receiver_geometry_factors": [0.8, 0.8, 1.0],
         },
         ("libero_goal", 2): {
-            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "target_geometry_factors": [1.0, 1.0, 1.0],
             "receiver_geometry_factors": [0.8, 0.8, 1.0],
         },
         ("libero_goal", 3): {

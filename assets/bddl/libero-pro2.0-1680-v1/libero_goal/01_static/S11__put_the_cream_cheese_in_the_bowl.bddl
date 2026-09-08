@@ -250,7 +250,7 @@
           (:asset_scale 0.45)
           (:asset_count 1)
           (:clutter_minimum_gap_m 0.080)
-          (:clutter_offsets_xy 0.18 0.12)
+          (:clutter_offsets_xy 0.09 0.05)
           (:support_surface table)
           (:visual_only_asset false)
           (:clear_of_task_entities true)

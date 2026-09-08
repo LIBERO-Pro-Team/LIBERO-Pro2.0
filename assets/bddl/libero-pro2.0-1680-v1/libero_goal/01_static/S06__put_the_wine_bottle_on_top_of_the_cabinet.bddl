@@ -200,7 +200,7 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/fuze_bottle)
+          (:asset_id prl/fuze_bottle_fitted_collision)
           (:asset_scale 0.72)
           (:asset_quat 1.0 0.0 0.0 0.0)
           (:grounded_replacement true)

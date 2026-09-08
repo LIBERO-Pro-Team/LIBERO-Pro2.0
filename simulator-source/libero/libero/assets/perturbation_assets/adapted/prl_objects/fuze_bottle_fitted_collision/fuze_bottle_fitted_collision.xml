@@ -1,0 +1,23 @@
+<mujoco model="fuze_bottle_fitted_collision">
+  <compiler angle="radian" />
+  <asset>
+    <texture name="fuze_bottle_tex" type="2d" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/fuze_bottle/fuze_bottle_visual_0.png" />
+    <material name="fuze_bottle_mat" texture="fuze_bottle_tex" />
+    <mesh name="fuze_bottle_visual" file="../../../../../../../libero/libero/assets/perturbation_assets/vendor/prl_assets/src/prl_assets/objects/fuze_bottle/fuze_bottle_visual.obj" scale="1 1 1" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0.1075">
+        <geom name="fuze_bottle_collision_base" type="cylinder" pos="0 0 -0.05375" size="0.0375 0.05375" mass="0.28" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="fuze_bottle_collision_shoulder_1" type="cylinder" pos="0 0 0.01075" size="0.0348 0.01075" mass="0.05" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="fuze_bottle_collision_shoulder_2" type="cylinder" pos="0 0 0.03225" size="0.0295 0.01075" mass="0.035" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="fuze_bottle_collision_neck" type="cylinder" pos="0 0 0.05375" size="0.024 0.01075" mass="0.02" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="fuze_bottle_collision_cap" type="cylinder" pos="0 0 0.086" size="0.0225 0.0215" mass="0.015" friction="0.8 0.005 0.0001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="fuze_bottle_visual" type="mesh" mesh="fuze_bottle_visual" material="fuze_bottle_mat" contype="0" conaffinity="0" group="1" />
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.215" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.051618795 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

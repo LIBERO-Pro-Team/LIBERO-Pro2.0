@@ -383,6 +383,7 @@
           (:interaction_mode placement)
           (:visual_only_asset false)
           (:physical_collision true)
+          (:asset_scale 0.70)
         )
       )
       (D06
