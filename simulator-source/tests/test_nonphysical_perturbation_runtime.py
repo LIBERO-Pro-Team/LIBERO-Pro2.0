@@ -464,6 +464,91 @@ class RuntimeBehaviorTests(unittest.TestCase):
         config = PARSER.parse_bddl_perturbation_config(path)
         return RUNTIME.build_execution_plan(config, ASSET_ROOT)
 
+    def test_s09_closes_only_explicit_initial_articulation_regions(self):
+        regions = (
+            "wooden_cabinet_1_top_region",
+            "wooden_cabinet_1_middle_region",
+            "wooden_cabinet_1_bottom_region",
+        )
+        joints = tuple(region.replace("_region", "_level") for region in regions)
+        qpos = np.array([-0.08, -0.07, -0.01], dtype=float)
+        qvel = np.array([0.4, -0.3, 0.2], dtype=float)
+        joint_indices = {joint: index for index, joint in enumerate(joints)}
+
+        data = types.SimpleNamespace(qpos=qpos, qvel=qvel)
+        data.set_joint_qpos = lambda joint, value: qpos.__setitem__(
+            joint_indices[joint], value
+        )
+        model = types.SimpleNamespace(
+            get_joint_qvel_addr=lambda joint: joint_indices[joint]
+        )
+        sites = {
+            region: types.SimpleNamespace(
+                parent_name="wooden_cabinet_1",
+                joints=[joint],
+                object_properties={
+                    "articulation": {"default_close_ranges": [0.0, 0.005]}
+                },
+            )
+            for region, joint in zip(regions, joints)
+        }
+        env = types.SimpleNamespace(
+            object_sites_dict=sites,
+            sim=types.SimpleNamespace(model=model, data=data, forward=lambda: None),
+        )
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("wine_bottle_1", "wooden_cabinet_1"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+            params={"initial_closed_regions": list(regions)},
+        )
+
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
+        runtime.apply_static(env)
+
+        np.testing.assert_allclose(qpos, [0.0025, 0.0025, 0.0025])
+        np.testing.assert_allclose(qvel, 0.0)
+        self.assertEqual(
+            runtime.events[-1]["event"], "initial_articulation_regions_closed"
+        )
+        self.assertEqual(runtime.events[-1]["regions"], list(regions))
+
+        qpos[:] = [-0.09, -0.06, -0.02]
+        qvel[:] = [0.1, 0.2, 0.3]
+        runtime.begin_rollout(env)
+
+        np.testing.assert_allclose(qpos, [0.0025, 0.0025, 0.0025])
+        np.testing.assert_allclose(qvel, 0.0)
+
+    def test_s09_without_initial_closed_regions_preserves_joint_state(self):
+        qpos = np.array([-0.08], dtype=float)
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+        )
+        env = types.SimpleNamespace(
+            object_sites_dict={},
+            sim=types.SimpleNamespace(
+                model=types.SimpleNamespace(),
+                data=types.SimpleNamespace(qpos=qpos),
+            ),
+        )
+
+        RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(env)
+
+        np.testing.assert_allclose(qpos, [-0.08])
+
     def test_static_clutter_and_similar_distractor_use_distinct_anchors(self):
         clutter = self.plan("libero_spatial", "01_static", "S10")
         distractor = self.plan("libero_spatial", "01_static", "S11")

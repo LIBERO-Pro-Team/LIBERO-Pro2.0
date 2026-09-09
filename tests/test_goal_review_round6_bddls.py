@@ -98,6 +98,28 @@ def test_task2_s09_keeps_the_target_clear_while_scaling_the_receiver() -> None:
     assert p["receiver_geometry_factors"] == [0.8, 0.8, 1.0]
 
 
+def test_task2_s09_starts_with_all_cabinet_drawers_closed() -> None:
+    entry = entries()[2, "S09"]
+    text = (ASSETS / str(entry["bddl_path"])).read_text(encoding="utf-8")
+    assert "(Close wooden_cabinet_1_top_region)" in text
+    assert "(Close wooden_cabinet_1_middle_region)" in text
+    assert "(Close wooden_cabinet_1_bottom_region)" in text
+    assert params(2, "S09")["initial_closed_regions"] == [
+        "wooden_cabinet_1_top_region",
+        "wooden_cabinet_1_middle_region",
+        "wooden_cabinet_1_bottom_region",
+    ]
+
+
+def test_initial_closed_regions_is_scoped_to_task2_s09() -> None:
+    configured = {
+        (task, case)
+        for task, case in entries()
+        if case == "S09" and "initial_closed_regions" in params(task, case)
+    }
+    assert configured == {(2, "S09")}
+
+
 def test_only_reviewed_goal_s10_tasks_are_fixed() -> None:
     for task in range(10):
         p = params(task, "S10")

@@ -6976,7 +6976,7 @@
       "case_id": "S09",
       "case_kind": "static",
       "bddl_path": "bddl/libero-pro2.0-1680-v1/libero_goal/01_static/S09__put_the_wine_bottle_on_top_of_the_cabinet.bddl",
-      "bddl_sha256": "693d5d71a8277503670d1aa479813bffa1bef68548d44d8d34a8ed11559a65ac",
+      "bddl_sha256": "6793b384082c20f4775ae54673e92c3c2f4c4d7ff856cf3c4f4de6a13a779d71",
       "task_version": "libero-pro2.0-1706-v1",
       "max_steps": 300,
       "reset_stabilization_steps": 10,

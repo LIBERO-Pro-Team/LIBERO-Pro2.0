@@ -960,6 +960,57 @@ def _scale_articulation_joint_ranges(obj: Any, factor: float) -> None:
             articulation[key] = [float(value) * factor for value in values]
 
 
+def _close_initial_articulation_regions(
+    env: Any, plan: ExecutionPlan
+) -> dict[str, float]:
+    region_names = _name_tuple(plan.params.get("initial_closed_regions"))
+    if not region_names:
+        return {}
+
+    sites = getattr(env, "object_sites_dict", {})
+    data = env.sim.data
+    model = env.sim.model
+    closed_joints: dict[str, float] = {}
+    for region_name in region_names:
+        site = sites.get(region_name)
+        if site is None:
+            raise PerturbationConfigurationError(
+                f"initial_closed_regions site {region_name!r} is unavailable"
+            )
+        parent_name = str(getattr(site, "parent_name", ""))
+        if parent_name not in plan.targets:
+            raise PerturbationConfigurationError(
+                f"initial_closed_regions site {region_name!r} does not belong "
+                "to an S09 target"
+            )
+        joints = tuple(str(joint) for joint in (getattr(site, "joints", ()) or ()))
+        if not joints:
+            raise PerturbationConfigurationError(
+                f"initial_closed_regions site {region_name!r} has no articulation joint"
+            )
+        articulation = getattr(site, "object_properties", {}).get(
+            "articulation", {}
+        )
+        close_range = np.asarray(
+            articulation.get("default_close_ranges", ()), dtype=np.float64
+        ).reshape(-1)
+        if close_range.shape != (2,) or not np.all(np.isfinite(close_range)):
+            raise PerturbationConfigurationError(
+                f"initial_closed_regions site {region_name!r} has no valid close range"
+            )
+        close_position = float(np.mean(close_range))
+        for joint in joints:
+            data.set_joint_qpos(joint, close_position)
+            velocity_address = model.get_joint_qvel_addr(joint)
+            if isinstance(velocity_address, tuple):
+                data.qvel[velocity_address[0] : velocity_address[1]] = 0.0
+            else:
+                data.qvel[int(velocity_address)] = 0.0
+            closed_joints[joint] = close_position
+    env.sim.forward()
+    return closed_joints
+
+
 def apply_precompile_geometry(
     objects_dict: dict[str, Any],
     fixtures_dict: dict[str, Any],
@@ -2582,6 +2633,19 @@ class NonPhysicalPerturbationRuntime:
         """Start perturbation timing after environment-only settling steps."""
         if not self.plan.case_id.startswith("D"):
             self._clear_temporal_state()
+            if self.plan.case_id == "S09":
+                closed_joints = _close_initial_articulation_regions(env, self.plan)
+                if closed_joints:
+                    self._log_once(
+                        "initial_articulation_regions_closed",
+                        0,
+                        regions=list(
+                            _name_tuple(
+                                self.plan.params.get("initial_closed_regions")
+                            )
+                        ),
+                        joints=closed_joints,
+                    )
             return
 
         persistent_obstacle = self._persistent_d03_obstacle_name()
@@ -3454,6 +3518,19 @@ class NonPhysicalPerturbationRuntime:
         case_id = self.plan.case_id
         if not case_id.startswith("S"):
             self._stage_dynamic_assets(env)
+            return
+
+        if case_id == "S09":
+            closed_joints = _close_initial_articulation_regions(env, self.plan)
+            if closed_joints:
+                self._log_once(
+                    "initial_articulation_regions_closed",
+                    0,
+                    regions=list(
+                        _name_tuple(self.plan.params.get("initial_closed_regions"))
+                    ),
+                    joints=closed_joints,
+                )
             return
 
         if case_id in {"S01", "S02"}:
