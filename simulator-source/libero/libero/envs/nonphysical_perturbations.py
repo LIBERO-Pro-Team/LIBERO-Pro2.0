@@ -484,6 +484,11 @@ def build_execution_plan(
         if case_id == "S05"
         else 1.0
     )
+    static_asset_scale = (
+        _param_float(params, "asset_scale", 1.0)
+        if case_id == "S03"
+        else 1.0
+    )
     asset_ids = list(CASE_ASSETS.get(case_id, ()))
     if case_id in {"S03", "D03", "D06"} and "asset_id" in params:
         configured_assets = _name_tuple(params.get("asset_id"))
@@ -543,7 +548,13 @@ def build_execution_plan(
             asset_root,
             asset_index,
             staged=staged,
-            scale=(static_barrier_scale if case_id == "S05" else dynamic_asset_scale),
+            scale=(
+                static_barrier_scale
+                if case_id == "S05"
+                else static_asset_scale
+                if case_id == "S03"
+                else dynamic_asset_scale
+            ),
         )
         for index, asset_id in enumerate(asset_ids)
     ]
@@ -732,6 +743,10 @@ def inject_plan_assets(
         ) or (
             plan.case_id in {"S10", "S11"}
             and _param_bool(plan.params, "movable_asset", False)
+        ) or (
+            plan.case_id == "S03"
+            and _param_bool(plan.params, "receiver_lid_obstacle", False)
+            and _param_bool(plan.params, "movable_asset", True)
         )
         # Structural assets stay welded. Explicitly movable object distractors
         # receive a free joint so the policy can physically relocate them.
@@ -3753,6 +3768,85 @@ class NonPhysicalPerturbationRuntime:
             quaternion = _yaw_quaternion(0.0)
             anchor_name = reference_name
             if case_id == "S03":
+                if _param_bool(self.plan.params, "receiver_lid_obstacle", False):
+                    if len(self.plan.targets) < 1:
+                        raise PerturbationConfigurationError(
+                            "S03 receiver_lid_obstacle requires a receiver target"
+                        )
+                    receiver = self.plan.targets[0]
+                    if not _entity_exists(env, receiver):
+                        raise PerturbationValidationError(
+                            f"S03 receiver_lid_obstacle receiver {receiver!r} is absent"
+                        )
+                    offset_xy = _param_vector(
+                        self.plan.params,
+                        "receiver_lid_offset_xy",
+                        (0.0, 0.0),
+                    )
+                    clearance = _param_float(
+                        self.plan.params, "receiver_lid_clearance_m", 0.004
+                    )
+                    if clearance < 0.001 or clearance > 0.02:
+                        raise PerturbationConfigurationError(
+                            "S03 receiver_lid_clearance_m must be in [0.001, 0.02]"
+                        )
+                    receiver_position, receiver_quaternion = _entity_pose(env, receiver)
+                    grounded_receiver = _grounded_entity_position(
+                        env,
+                        receiver,
+                        receiver_position[:2],
+                        self.plan.params,
+                        ignored=(receiver, name),
+                    )
+                    if grounded_receiver is None:
+                        raise PerturbationValidationError(
+                            f"S03 receiver_lid_obstacle receiver {receiver!r} has no support surface"
+                        )
+                    receiver_position = grounded_receiver[0]
+                    _set_entity_pose(
+                        env, receiver, receiver_position, receiver_quaternion
+                    )
+                    _, receiver_top_offset = _entity_vertical_offsets(env, receiver)
+                    asset_bottom_offset, _ = _entity_vertical_offsets(env, name)
+                    position = receiver_position.copy()
+                    position[:2] += offset_xy
+                    position[2] = (
+                        receiver_position[2]
+                        + receiver_top_offset
+                        - asset_bottom_offset
+                        + clearance
+                    )
+                    quaternion = _param_vector(
+                        self.plan.params,
+                        "receiver_lid_quat",
+                        (1.0, 0.0, 0.0, 0.0),
+                    )
+                    if not np.all(np.isfinite(quaternion)) or np.linalg.norm(quaternion) < 1e-8:
+                        raise PerturbationConfigurationError(
+                            "S03 receiver_lid_quat must be a finite non-zero quaternion"
+                        )
+                    quaternion = quaternion / np.linalg.norm(quaternion)
+                    _set_entity_pose(env, name, position, quaternion)
+                    if _entity_deep_contacts(env, name, tolerance=0.001):
+                        _set_entity_pose(env, name, reference, _yaw_quaternion(0.0))
+                        raise PerturbationValidationError(
+                            "S03 receiver lid obstacle created deep penetration"
+                        )
+                    self._log_once(
+                        "receiver_lid_obstacle_placed",
+                        0,
+                        asset=name,
+                        asset_id=self.plan.assets[0].asset_id,
+                        receiver=receiver,
+                        position=position.tolist(),
+                        offset_xy=offset_xy.tolist(),
+                        receiver_position=receiver_position.tolist(),
+                        receiver_support=grounded_receiver[1],
+                        receiver_top_m=float(receiver_position[2] + receiver_top_offset),
+                        asset_bottom_offset_m=float(asset_bottom_offset),
+                        clearance_m=clearance,
+                    )
+                    return
                 height_delta = _param_float(
                     self.plan.params, "height_delta_m", 0.05
                 )
