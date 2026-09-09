@@ -137,10 +137,10 @@ def test_only_libero10_task9_s09_opts_into_compiled_geometry_scaling() -> None:
     assert "(:receiver_geometry_factors 1.20 1.20 1.20)" in text
     assert "(:scale_compiled_geometry true)" in text
 
-    dataset_root = S09_PATH.parents[2]
+    static_root = S09_PATH.parent
     opted_in = [
         path
-        for path in dataset_root.rglob("*.bddl")
+        for path in static_root.glob("S09__*.bddl")
         if "(:scale_compiled_geometry true)" in path.read_text(encoding="utf-8")
     ]
     assert opted_in == [S09_PATH]
