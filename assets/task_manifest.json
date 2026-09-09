@@ -8796,7 +8796,7 @@
       "case_id": "D05",
       "case_kind": "dynamic",
       "bddl_path": "bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D05__put_the_cream_cheese_in_the_bowl.bddl",
-      "bddl_sha256": "55fe9fc20c6de8e4beca76ba15d987bc2b058ba3db7a241f2404373e4f7159a6",
+      "bddl_sha256": "37487bb87fb37a28b88cad72943efa8ecce3456b9ddd9af7a2084fb17b88d310",
       "task_version": "libero-pro2.0-1706-v1",
       "max_steps": 300,
       "reset_stabilization_steps": 10,

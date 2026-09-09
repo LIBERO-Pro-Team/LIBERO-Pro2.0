@@ -147,10 +147,15 @@ def test_reviewed_d03_injects_a_new_plate_without_moving_the_scene_plate(
     assert p["asset_contact_margin_m"] == 0.004
 
 
-def test_task6_d05_moves_the_obstacle_toward_the_receiver_path() -> None:
+def test_task6_d05_places_the_obstacle_between_the_cheese_and_bowl() -> None:
     p = params(6, "D05")
-    assert p["barrier_path_fraction"] == 0.72
-    assert p["lateral_offset_m"] == -0.02
+    assert p["barrier_path_fraction"] == 0.60
+    assert p["lateral_offset_m"] == -0.025
+    assert "trigger_anchor" not in p
+    assert "trigger_distance_m" not in p
+    assert p["asset_scale"] == 0.804
+    assert p["barrier_height_m"] == -0.035
+    assert p["support_surface"] == "main_table"
 
 
 def test_task6_s11_places_the_similar_object_nearer_the_target() -> None:
