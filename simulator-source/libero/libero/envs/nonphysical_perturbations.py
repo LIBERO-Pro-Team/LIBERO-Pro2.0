@@ -415,6 +415,35 @@ def _case_entries(config: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return entries
 
 
+def _validate_single_support_swap(
+    config: dict[str, Any], case_id: str, targets: tuple[str, ...], params: dict[str, Any]
+) -> None:
+    source_task = "pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate"
+    if (
+        case_id != "S04"
+        or config.get("source_suite") != "libero_spatial"
+        or config.get("source_task") != source_task
+    ):
+        raise PerturbationConfigurationError(
+            "Single-support swap is restricted to libero_spatial task3/S04"
+        )
+    if targets != ("akita_black_bowl_1", "akita_black_bowl_2") or any(
+        _name_tuple(params.get(key)) != (name,)
+        for key, name in (
+            ("support_object", "cookies_1"),
+            ("support_ground_surface", "wooden_cabinet_1"),
+            ("second_ground_surface", "main_table"),
+        )
+    ):
+        raise PerturbationConfigurationError(
+            "Single-support swap task3/S04 object roles cannot be reassigned"
+        )
+    if _param_bool(params, "swap_support_groups", False):
+        raise PerturbationConfigurationError(
+            "Single-support and two-support swaps are mutually exclusive"
+        )
+
+
 def build_execution_plan(
     config: dict[str, Any], asset_root: str | Path
 ) -> ExecutionPlan:
@@ -474,6 +503,10 @@ def build_execution_plan(
     params = fields.get("params", {})
     if not isinstance(params, dict):
         params = {}
+    if _param_bool(params, "swap_single_support_group", False):
+        _validate_single_support_swap(
+            config, case_id, _name_tuple(fields.get("targets")), params
+        )
     dynamic_asset_scale = (
         _param_float(params, "asset_scale", 1.0)
         if case_id in {"D03", "D04", "D05", "D06"}
@@ -2155,6 +2188,81 @@ def _support_group_swap_transform(
     }
 
 
+def _single_support_group_swap_transform(
+    env: Any, targets: tuple[str, ...], params: dict[str, Any]
+) -> dict[str, Any]:
+    """Swap a bowl/support group with a bare bowl without moving either fixture."""
+
+    first, second = targets
+    support = _name_tuple(params.get("support_object"))[0]
+    first_ground = _name_tuple(params.get("support_ground_surface"))[0]
+    second_ground = _name_tuple(params.get("second_ground_surface"))[0]
+    moved = (first, second, support)
+    if any(not _entity_exists(env, name) for name in (*moved, first_ground, second_ground)):
+        raise PerturbationValidationError("Single-support swap entities are absent")
+    minimum_gap = _required_param_float(params, "group_minimum_clearance_m")
+    if not 0.0 < minimum_gap <= 0.10:
+        raise PerturbationConfigurationError(
+            "group_minimum_clearance_m must be between 0 and 0.10"
+        )
+    offset = _param_vector(params, "swap_xy", (0.0, 0.0))
+    before = {name: _entity_pose(env, name) for name in moved}
+    relative_position = before[first][0] - before[support][0]
+    first_xy = before[second][0][:2] + offset
+    requested = {
+        support: (first_xy - relative_position[:2], first_ground),
+        second: (before[first][0][:2] - offset, second_ground),
+    }
+    after: dict[str, np.ndarray] = {}
+    ground_geoms: dict[str, str] = {}
+    for name, (xy, ground) in requested.items():
+        grounded = _grounded_entity_position(
+            env, name, xy, {**params, "support_surface": ground}, ignored=moved
+        )
+        if grounded is None or not _support_geom_belongs_to_entity(env, grounded[1], ground):
+            raise PerturbationValidationError(
+                f"Single-support swap destination for {name!r} is not on {ground!r}"
+            )
+        after[name], ground_geoms[name] = grounded
+    after[first] = after[support] + relative_position
+    ignored = (*moved, first_ground, second_ground)
+    if any(
+        not _candidate_is_clear(env, name, after[name][:2], minimum_gap, ignored=ignored)
+        for name in moved
+    ):
+        raise PerturbationValidationError("Single-support swap destination is obstructed")
+
+    before_qvel = np.asarray(env.sim.data.qvel).copy()
+    try:
+        for name in (support, first, second):
+            _set_entity_pose(env, name, after[name], before[name][1])
+        deep_contacts = [contact for name in moved for contact in _entity_deep_contacts(env, name)]
+        if deep_contacts:
+            raise PerturbationValidationError(
+                f"Single-support swap created deep penetration: {deep_contacts}"
+            )
+        for name in moved:
+            _zero_entity_free_joint_velocity(env, name)
+    except Exception:
+        for name, (position, quaternion) in before.items():
+            _set_entity_pose(env, name, position, quaternion)
+        env.sim.data.qvel[:] = before_qvel
+        env.sim.forward()
+        raise
+
+    return {
+        "targets": list(targets),
+        "support_object": support,
+        "support_ground_surface": first_ground,
+        "second_ground_surface": second_ground,
+        "ground_geoms": ground_geoms,
+        "positions_before": {name: pose[0].tolist() for name, pose in before.items()},
+        "positions_after": {name: position.tolist() for name, position in after.items()},
+        "relative_position": relative_position.tolist(),
+        "swap_offset_xy": offset.tolist(),
+    }
+
+
 def _safe_dynamic_asset_pose(
     env: Any,
     name: str,
@@ -3614,6 +3722,12 @@ class NonPhysicalPerturbationRuntime:
                 "static_pose_transform", 0, target=target, delta_xy=delta.tolist(), yaw=yaw
             )
         elif case_id == "S04":
+            if _param_bool(self.plan.params, "swap_single_support_group", False):
+                config = getattr(env, "parsed_problem", {}).get("perturbation_config", {})
+                _validate_single_support_swap(config, case_id, self.plan.targets, self.plan.params)
+                result = _single_support_group_swap_transform(env, self.plan.targets, self.plan.params)
+                self._log_once("single_support_group_swap", 0, **result)
+                return
             if len(self.plan.targets) != 2:
                 raise PerturbationConfigurationError(
                     "S04 planar position swap requires exactly two movable targets"

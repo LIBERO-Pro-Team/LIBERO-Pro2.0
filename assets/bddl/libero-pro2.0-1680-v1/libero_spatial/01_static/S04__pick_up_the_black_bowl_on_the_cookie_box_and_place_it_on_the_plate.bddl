@@ -195,6 +195,11 @@
           (:support_surface cookies_1 wooden_cabinet_1)
           (:strict_swap_xy true)
           (:ground_support_from_declared_surface true)
+          (:swap_single_support_group true)
+          (:support_object cookies_1)
+          (:support_ground_surface wooden_cabinet_1)
+          (:second_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
         )
       )
       (S05

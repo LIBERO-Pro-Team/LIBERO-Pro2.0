@@ -18455,7 +18455,7 @@
       "case_id": "S04",
       "case_kind": "static",
       "bddl_path": "bddl/libero-pro2.0-1680-v1/libero_spatial/01_static/S04__pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate.bddl",
-      "bddl_sha256": "18aeb78994c06102efa304a096575ddfd9f5c88c3b912d2a537f06e01ca3b83a",
+      "bddl_sha256": "6ad3a34a7a630c733fb373d37989032602f082760de6e284e3a69ea428c162ac",
       "task_version": "libero-pro2.0-1706-v1",
       "max_steps": 220,
       "reset_stabilization_steps": 10,

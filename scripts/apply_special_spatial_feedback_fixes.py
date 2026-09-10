@@ -161,6 +161,11 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
         "params": _params(
             strict_swap_xy=("true",),
             support_surface=_support("cookies_1", "wooden_cabinet_1"),
+            swap_single_support_group=("true",),
+            support_object=_support("cookies_1"),
+            support_ground_surface=_support("wooden_cabinet_1"),
+            second_ground_surface=_support("main_table"),
+            group_minimum_clearance_m=("0.018",),
         ),
     },
     ("libero_spatial", 4, "S04"): {

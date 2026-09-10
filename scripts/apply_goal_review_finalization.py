@@ -372,6 +372,14 @@ def case_updates(
                 swap_cluster_radius_m=("0.18",),
                 support_surface=("kitchen_table",),
             )
+        if (suite, task_id) == ("libero_spatial", 3):
+            params.update(
+                swap_single_support_group=("true",),
+                support_object=("cookies_1",),
+                support_ground_surface=("wooden_cabinet_1",),
+                second_ground_surface=("main_table",),
+                group_minimum_clearance_m=("0.018",),
+            )
         if (suite, task_id) == ("libero_spatial", 5):
             params.update(
                 preserve_swapped_support_heights=("true",),
