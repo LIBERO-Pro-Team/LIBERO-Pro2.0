@@ -138,7 +138,7 @@
         (:params
           (:interaction_mode placement)
           (:asset_geometry_factors 0.70 0.70 2.0)
-          (:height_delta_m 0.10)
+          (:height_delta_m 0.18)
         )
       )
       (S04
