@@ -1031,7 +1031,11 @@ def _close_initial_articulation_regions(
             raise PerturbationConfigurationError(
                 f"initial_closed_regions site {region_name!r} has no valid close range"
             )
-        close_position = float(np.mean(close_range))
+        close_position = float(
+            close_range[0]
+            if _param_bool(plan.params, "initial_closed_region_endpoint", False)
+            else np.mean(close_range)
+        )
         for joint in joints:
             data.set_joint_qpos(joint, close_position)
             velocity_address = model.get_joint_qvel_addr(joint)
@@ -4098,6 +4102,21 @@ class NonPhysicalPerturbationRuntime:
                 position = target + path_fraction * (receiver - target)
                 position[:2] += np.array([-direction[1], direction[0]]) * lateral_offset
                 quaternion = _yaw_quaternion(math.atan2(direction[1], direction[0]) + math.pi / 2)
+                if _param_bool(
+                    self.plan.params, "ground_barrier_to_support", False
+                ):
+                    grounded = _grounded_entity_position(
+                        env,
+                        name,
+                        position[:2],
+                        self.plan.params,
+                        ignored=(name,),
+                    )
+                    if grounded is None:
+                        raise PerturbationValidationError(
+                            "S05 barrier has no declared support surface"
+                        )
+                    position, _ = grounded
             elif case_id in {"S10", "S11"}:
                 target_position, _ = _entity_pose(env, self.plan.targets[0])
                 count = len(asset_names)
@@ -4219,13 +4238,28 @@ class NonPhysicalPerturbationRuntime:
                         (0.0, 0.0, 0.0),
                     ),
                 )
-            if not _candidate_is_clear(
+            clearance_ignored = (reference_name, *self.plan.targets)
+            if case_id == "S05" and _param_bool(
+                self.plan.params, "ground_barrier_to_support", False
+            ):
+                clearance_ignored = (
+                    *clearance_ignored,
+                    *_support_entity_names(self.plan.params),
+                )
+            candidate_is_clear = _candidate_is_clear(
                 env,
                 name,
                 position[:2],
                 0.055,
-                ignored=(reference_name, *self.plan.targets),
+                ignored=clearance_ignored,
+            )
+            if not candidate_is_clear and case_id == "S05" and _param_bool(
+                self.plan.params, "ground_barrier_to_support", False
             ):
+                raise PerturbationValidationError(
+                    "S05 grounded barrier position is occupied"
+                )
+            if not candidate_is_clear:
                 position[1] += 0.11
             _set_entity_pose(env, name, position, quaternion)
             self._log_once(

@@ -71,6 +71,12 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
             "barrier_path_fraction": ("0.30",),
             "barrier_lateral_offset_m": ("0.08",),
         },
+        ("libero_goal", 8): {
+            "barrier_scale": ("0.65",),
+            "barrier_geometry_factors": ("1.25", "1.0", "1.25"),
+            "barrier_path_fraction": ("0.45",),
+            "barrier_lateral_offset_m": ("0.0",),
+        },
         ("libero_goal", 9): {
             "barrier_scale": ("1.0",),
             "barrier_path_fraction": ("0.62",),
@@ -260,7 +266,7 @@ def test_published_d03_uses_persistent_updates_for_active_tasks() -> None:
         ) is True
         published.add(key)
 
-    assert len(published) == 39
+    assert len(published) == 37
 
 
 def test_d03_persistent_updates_are_explicit_for_each_suite_task() -> None:

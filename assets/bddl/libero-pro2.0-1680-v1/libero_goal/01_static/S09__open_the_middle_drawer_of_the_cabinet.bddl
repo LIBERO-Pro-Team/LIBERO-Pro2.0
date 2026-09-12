@@ -229,6 +229,8 @@
           (:interaction_mode articulation)
           (:target_geometry_factors 1.2 1.2 1.2)
           (:receiver_geometry_factors 0.8 0.8 0.8)
+          (:scale_compiled_geometry true)
+          (:articulation_joint_range_scale 0.80)
         )
       )
       (S10

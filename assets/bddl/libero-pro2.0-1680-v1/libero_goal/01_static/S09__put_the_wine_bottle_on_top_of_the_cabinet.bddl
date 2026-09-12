@@ -235,6 +235,7 @@
           (:receiver_geometry_factors 0.8 0.8 1.0)
           (:scale_compiled_geometry true)
           (:initial_closed_regions wooden_cabinet_1_top_region wooden_cabinet_1_middle_region wooden_cabinet_1_bottom_region)
+          (:initial_closed_region_endpoint true)
         )
       )
       (S10

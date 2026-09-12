@@ -367,7 +367,7 @@
           (:receiver_anchor wooden_cabinet_1_top_side)
           (:persistent_movable_asset true)
           (:asset_id prl/plastic_plate)
-          (:asset_scale 0.60)
+          (:asset_scale 0.75)
         )
       )
       (D04

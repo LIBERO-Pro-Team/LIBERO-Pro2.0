@@ -206,6 +206,93 @@ GOAL_REVIEW_ROUND3_FIELDS: dict[
     (6, "D03"): {"references": ("plate_1",)},
 }
 
+GOAL_REVIEW_ROUND7_PARAMS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    (0, "S07"): {
+        "scale_compiled_geometry": ("true",),
+        "articulation_joint_range_scale": ("0.64",),
+    },
+    (0, "S08"): {
+        "geometry_factors": ("1.30", "0.76", "1.0"),
+        "scale_compiled_geometry": ("true",),
+        "articulation_joint_range_scale": ("0.76",),
+    },
+    (0, "S09"): {
+        "scale_compiled_geometry": ("true",),
+        "articulation_joint_range_scale": ("0.80",),
+    },
+    (0, "S10"): {
+        "asset_count": ("3",),
+        "clutter_minimum_gap_m": ("0.140",),
+        "clutter_offsets_xy": ("0.24", "0.18", "0.24", "-0.18", "-0.24", "-0.18"),
+        "movable_asset": ("false",),
+    },
+    (1, "S10"): {
+        "asset_count": ("3",),
+        "clutter_minimum_gap_m": ("0.140",),
+        "clutter_offsets_xy": ("0.24", "0.18", "0.24", "-0.18", "-0.24", "-0.18"),
+        "movable_asset": ("false",),
+    },
+    (2, "D03"): {
+        "persistent_movable_asset": ("true",),
+        "asset_id": ("prl/plastic_plate",),
+        "asset_scale": ("0.75",),
+    },
+    (2, "S10"): {
+        "asset_count": ("2",),
+        "clutter_minimum_gap_m": ("0.140",),
+        "clutter_offsets_xy": ("0.38", "0.20", "0.40", "-0.08"),
+        "support_surface": ("table",),
+        "movable_asset": ("false",),
+    },
+    (3, "D02"): {"offset_xy": ("0.12", "-0.09"), "yaw_rad": ("-0.24",)},
+    (5, "D03"): {
+        "persistent_movable_asset": ("true",),
+        "asset_id": ("ycb/YcbFoamBrick",),
+        "asset_scale": ("0.85",),
+        "asset_contact_margin_m": ("0.006",),
+    },
+    (6, "D03"): {
+        "support_surface": ("akita_black_bowl_1",),
+        "asset_offset_xyz": ("0.00835045", "0.00205392", "0.0"),
+        "persistent_movable_asset": ("true",),
+        "asset_id": ("ycb/YcbFoamBrick",),
+        "asset_scale": ("0.60",),
+        "asset_contact_margin_m": ("0.0",),
+    },
+    (8, "D05"): {
+        "barrier_path_fraction": ("0.50",),
+        "lateral_offset_m": ("0.0",),
+        "barrier_height_m": ("-0.035",),
+    },
+    (8, "S05"): {
+        "barrier_scale": ("0.65",),
+        "barrier_geometry_factors": ("1.25", "1.0", "1.25"),
+        "barrier_path_fraction": ("0.45",),
+        "barrier_lateral_offset_m": ("0.0",),
+        "ground_barrier_to_support": ("true",),
+        "support_surface": ("main_table",),
+    },
+    (8, "S08"): {
+        "geometry_factors": ("1.32", "1.20", "0.72"),
+        "scale_compiled_geometry": ("true",),
+    },
+    (8, "S10"): {
+        "clutter_minimum_gap_m": ("0.140",),
+        "clutter_offsets_xy": ("0.26", "-0.20", "0.22", "0.22", "-0.21", "0.10"),
+        "movable_asset": ("false",),
+    },
+    (2, "S09"): {"initial_closed_region_endpoint": ("true",)},
+}
+
+GOAL_REVIEW_ROUND7_FIELDS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    (5, "D03"): {"references": ("none",)},
+    (6, "D03"): {"references": ("none",)},
+}
+
 GLOBAL_CASES = {
     "S05",
     "S06",
@@ -612,6 +699,10 @@ def case_updates(
 
     params.update(GOAL_REVIEW_ROUND3_PARAMS.get((task_id, case_id), {}))
     fields.update(GOAL_REVIEW_ROUND3_FIELDS.get((task_id, case_id), {}))
+    if case_id == "D03" and task_id in {2, 5, 6}:
+        params.pop("persistent_existing_obstacle", None)
+    params.update(GOAL_REVIEW_ROUND7_PARAMS.get((task_id, case_id), {}))
+    fields.update(GOAL_REVIEW_ROUND7_FIELDS.get((task_id, case_id), {}))
 
     return params, fields
 

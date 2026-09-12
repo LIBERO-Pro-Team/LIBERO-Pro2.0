@@ -6,6 +6,7 @@ import types
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
@@ -548,6 +549,142 @@ class RuntimeBehaviorTests(unittest.TestCase):
         RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(env)
 
         np.testing.assert_allclose(qpos, [-0.08])
+
+    def test_s09_can_close_explicit_regions_at_the_closed_endpoint(self):
+        region = "wooden_cabinet_1_middle_region"
+        joint = "wooden_cabinet_1_middle_level"
+        qpos = np.array([-0.08], dtype=float)
+        qvel = np.array([0.4], dtype=float)
+        data = types.SimpleNamespace(qpos=qpos, qvel=qvel)
+        data.set_joint_qpos = lambda name, value: qpos.__setitem__(0, value)
+        model = types.SimpleNamespace(get_joint_qvel_addr=lambda name: 0)
+        site = types.SimpleNamespace(
+            parent_name="wooden_cabinet_1",
+            joints=[joint],
+            object_properties={
+                "articulation": {"default_close_ranges": [0.0, 0.005]}
+            },
+        )
+        env = types.SimpleNamespace(
+            object_sites_dict={region: site},
+            sim=types.SimpleNamespace(model=model, data=data, forward=lambda: None),
+        )
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("wine_bottle_1", "wooden_cabinet_1"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+            params={
+                "initial_closed_regions": [region],
+                "initial_closed_region_endpoint": True,
+            },
+        )
+
+        RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(env)
+
+        np.testing.assert_allclose(qpos, [0.0])
+        np.testing.assert_allclose(qvel, [0.0])
+
+    def test_s05_grounded_opt_in_rejects_an_occupied_path_position(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S05",
+            schedule="static",
+            operator="asset_or_appearance",
+            variant="path_barrier",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("physical_obstacle",),
+            assets=(
+                RUNTIME.AssetSpec(
+                    "generated/barrier_panel", Path("unused.xml"), staged=False
+                ),
+            ),
+            params={
+                "barrier_path_fraction": 0.45,
+                "barrier_lateral_offset_m": 0.0,
+                "ground_barrier_to_support": True,
+                "support_surface": "main_table",
+            },
+        )
+        poses = {
+            "target": np.array([0.0, 0.0, 1.0], dtype=float),
+            "receiver": np.array([1.0, 0.0, 1.0], dtype=float),
+        }
+
+        with mock.patch.object(RUNTIME, "_entity_exists", return_value=True), mock.patch.object(
+            RUNTIME, "_static_asset_reference_name", return_value="target"
+        ), mock.patch.object(
+            RUNTIME,
+            "_entity_pose",
+            side_effect=lambda env, name: (poses[name].copy(), np.array([1.0, 0.0, 0.0, 0.0])),
+        ), mock.patch.object(
+            RUNTIME,
+            "_functional_anchor",
+            return_value=(poses["receiver"].copy(), "receiver"),
+        ), mock.patch.object(
+            RUNTIME,
+            "_grounded_entity_position",
+            return_value=(np.array([0.45, 0.0, 0.9]), "table_collision"),
+        ), mock.patch.object(
+            RUNTIME, "_candidate_is_clear", return_value=False
+        ), mock.patch.object(
+            RUNTIME, "_set_entity_pose"
+        ) as set_pose:
+            with self.assertRaisesRegex(
+                RUNTIME.PerturbationValidationError,
+                "grounded barrier position is occupied",
+            ):
+                RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(
+                    types.SimpleNamespace()
+                )
+
+        set_pose.assert_not_called()
+
+    def test_s05_without_grounding_opt_in_keeps_the_original_y_fallback(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S05",
+            schedule="static",
+            operator="asset_or_appearance",
+            variant="path_barrier",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("physical_obstacle",),
+            assets=(
+                RUNTIME.AssetSpec(
+                    "generated/barrier_panel", Path("unused.xml"), staged=False
+                ),
+            ),
+            params={"barrier_path_fraction": 0.45, "barrier_lateral_offset_m": 0.0},
+        )
+        poses = {
+            "target": np.array([0.0, 0.0, 1.0], dtype=float),
+            "receiver": np.array([1.0, 0.0, 1.0], dtype=float),
+        }
+
+        with mock.patch.object(RUNTIME, "_entity_exists", return_value=True), mock.patch.object(
+            RUNTIME, "_static_asset_reference_name", return_value="target"
+        ), mock.patch.object(
+            RUNTIME,
+            "_entity_pose",
+            side_effect=lambda env, name: (poses[name].copy(), np.array([1.0, 0.0, 0.0, 0.0])),
+        ), mock.patch.object(
+            RUNTIME,
+            "_functional_anchor",
+            return_value=(poses["receiver"].copy(), "receiver"),
+        ), mock.patch.object(
+            RUNTIME, "_candidate_is_clear", return_value=False
+        ), mock.patch.object(
+            RUNTIME, "_set_entity_pose"
+        ) as set_pose:
+            RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(
+                types.SimpleNamespace()
+            )
+
+        np.testing.assert_allclose(set_pose.call_args.args[2], [0.45, 0.11, 1.0])
 
     def test_static_clutter_and_similar_distractor_use_distinct_anchors(self):
         clutter = self.plan("libero_spatial", "01_static", "S10")

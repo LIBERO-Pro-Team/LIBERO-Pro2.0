@@ -212,6 +212,8 @@
           (:interaction_mode articulation)
           (:geometry_factors 1.0 0.64 1.20)
           (:goal_region_scale 1.0 1.0 1.0)
+          (:scale_compiled_geometry true)
+          (:articulation_joint_range_scale 0.64)
         )
       )
       (S08

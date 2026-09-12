@@ -29,7 +29,7 @@ assert PARSER_SPEC is not None and PARSER_SPEC.loader is not None
 PARSER = importlib.util.module_from_spec(PARSER_SPEC)
 PARSER_SPEC.loader.exec_module(PARSER)
 
-FIXED_S10_TASKS = {3, 4, 5, 6, 7, 8, 9}
+FIXED_S10_TASKS = set(range(10))
 
 
 def entries() -> dict[tuple[int, str], dict[str, object]]:
@@ -130,11 +130,11 @@ def test_only_reviewed_goal_s10_tasks_are_fixed() -> None:
 
 def test_task8_s10_keeps_clutter_clear_of_the_scene_plate() -> None:
     p = params(8, "S10")
-    assert p["clutter_offsets_xy"] == [0.22, -0.18, 0.16, 0.18, -0.20, -0.16]
-    assert p["clutter_minimum_gap_m"] == 0.080
+    assert p["clutter_offsets_xy"] == [0.26, -0.20, 0.22, 0.22, -0.21, 0.10]
+    assert p["clutter_minimum_gap_m"] == 0.140
 
 
-@pytest.mark.parametrize("task,scale", [(4, 0.65), (6, 0.55)])
+@pytest.mark.parametrize("task,scale", [(4, 0.65)])
 def test_reviewed_d03_injects_a_new_plate_without_moving_the_scene_plate(
     task: int, scale: float
 ) -> None:
@@ -145,6 +145,16 @@ def test_reviewed_d03_injects_a_new_plate_without_moving_the_scene_plate(
     assert p["asset_id"] == "prl/plastic_plate"
     assert p["asset_scale"] == scale
     assert p["asset_contact_margin_m"] == 0.004
+
+
+def test_task6_d03_supersedes_the_plate_with_a_smaller_red_brick() -> None:
+    fields = active_fields(6, "D03")
+    p = fields["params"]
+    assert fields["references"] == "none"
+    assert p["persistent_movable_asset"] is True
+    assert p["asset_id"] == "ycb/ycbfoambrick"
+    assert p["asset_scale"] == 0.60
+    assert p["asset_contact_margin_m"] == 0.0
 
 
 def test_task6_d05_places_the_obstacle_between_the_cheese_and_bowl() -> None:
@@ -164,10 +174,11 @@ def test_task6_s11_places_the_similar_object_nearer_the_target() -> None:
     assert p["clutter_minimum_gap_m"] == 0.080
 
 
-def test_task8_d05_lowers_the_obstacle_without_horizontal_repositioning() -> None:
+def test_task8_d05_moves_the_obstacle_between_the_bowl_and_plate() -> None:
     p = params(8, "D05")
-    assert p["barrier_height_m"] == 0.0
-    assert p["lateral_offset_m"] == 0.11
+    assert p["barrier_height_m"] == -0.035
+    assert p["barrier_path_fraction"] == 0.50
+    assert p["lateral_offset_m"] == 0.0
     assert p["asset_scale"] == 1.10
 
 

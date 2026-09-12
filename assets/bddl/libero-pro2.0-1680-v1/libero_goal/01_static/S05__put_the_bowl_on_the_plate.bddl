@@ -193,8 +193,11 @@
         (:params
           (:interaction_mode placement)
           (:barrier_scale 0.65)
-          (:barrier_path_fraction 0.35)
+          (:barrier_geometry_factors 1.25 1.0 1.25)
+          (:barrier_path_fraction 0.45)
           (:barrier_lateral_offset_m 0.0)
+          (:ground_barrier_to_support true)
+          (:support_surface main_table)
           (:visual_only_asset false)
         )
       )

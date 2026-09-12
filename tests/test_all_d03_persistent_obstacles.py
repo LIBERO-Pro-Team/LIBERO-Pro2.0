@@ -30,6 +30,13 @@ INJECTED_OBSTACLE_TASKS = {
     ("libero_10", 7),
     ("libero_10", 8),
     ("libero_10", 9),
+    ("libero_goal", 1),
+    ("libero_goal", 2),
+    ("libero_goal", 3),
+    ("libero_goal", 4),
+    ("libero_goal", 5),
+    ("libero_goal", 6),
+    *(("libero_object", task_id) for task_id in range(10)),
     *(("libero_spatial", task_id) for task_id in range(10)),
 }
 TABLE_SUPPORTED_MICROWAVE_TASK = ("libero_10", 9)
@@ -121,13 +128,13 @@ def _canonical_hash(path: Path) -> str:
     ).hexdigest()
 
 
-def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
+def test_all_published_d03_tasks_use_persistent_obstacles() -> None:
     entries = _manifest_d03_entries()
 
-    assert len(entries) == 40
+    assert len(entries) == 37
     assert Counter(str(item["suite"]) for item in entries) == {
         "libero_10": 10,
-        "libero_goal": 10,
+        "libero_goal": 7,
         "libero_object": 10,
         "libero_spatial": 10,
     }
@@ -157,7 +164,7 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
         elif key == TABLE_SUPPORTED_MICROWAVE_TASK:
             assert plan.params["asset_offset_xyz"] == [-0.04, -0.05, 0.0]
         elif key == CREAM_CHEESE_IN_BOWL_TASK:
-            assert plan.params["asset_offset_xyz"] == [-0.03, 0.14, 0.0]
+            assert plan.params["asset_offset_xyz"] == [0.00835045, 0.00205392, 0.0]
 
         tree = PARSER.scan_tokens(filename=str(path))
         objects = _declared_objects(tree)
