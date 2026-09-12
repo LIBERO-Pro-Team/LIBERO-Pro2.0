@@ -4,17 +4,18 @@
 
 完整交付件发布在 GitHub release `v1.0.0-conda-r2`，文件名为
 `libero-pro-conda-bundle-1.0.0.tar.gz`。`r2` 只表示同一 `1.0.0` 产品版本的发布修订，
-不改变 bundle、Python 包或服务版本。下载 tar.gz 和同名 `.sha256` 后先校验摘要，再解压安装。
+不改变 bundle、Python 包或服务版本。2026-09-12 已更新为当前源码快照，包含 1688 项任务
+（40 BASE、863 静态、785 动态）和四 suite 最新修复。下载 tar.gz 和同名 `.sha256` 后先校验摘要，再解压安装。
 
 ## 固定基线
 
-本包的 Python 依赖来自已验收的 Docker `v1.0.0` 运行环境，详见 `requirements-lock.txt`：Python `3.8.10`、Torch `1.11.0+cpu`、MuJoCo `3.2.3`、robosuite `1.4.0`、FastAPI `0.103.2`、Uvicorn `0.23.2` 等均为精确版本。源码提交固定为：
+本包的 Python 依赖来自已验收的 Docker `v1.0.0` 运行环境，详见 `requirements-lock.txt`：Python `3.8.10`、Torch `1.11.0+cpu`、MuJoCo `3.2.3`、robosuite `1.4.0`、FastAPI `0.103.2`、Uvicorn `0.23.2` 等均为精确版本。服务及模拟器代码来自本次发布快照：
 
-- 服务：`82c829c290bb011f828b80e117a5c7a0262337e1`
-- 模拟器：`c02ee2c8255db1c36664fad978197c47e495f178`
+- 服务：包内 `SOURCE_BASELINE.json` 的 `service_commit`。
+- 模拟器：同一仓库提交的 `simulator-source/` 子目录，详见 `simulator_commit`、`simulator_subdirectory`；上游来源为 `c02ee2c8255db1c36664fad978197c47e495f178`，包含后续运行时及资产修复。
 - Docker 参考镜像摘要（仅用于对照，不是 Conda 运行时镜像）：`sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933`
 
-`SOURCE_BASELINE.json`、`VERSION.json` 和两个 SHA-256 清单用于核对，不要替换 `service-source/` 或 `simulator-source/` 中的文件。
+`SOURCE_BASELINE.json`、`VERSION.json` 和两个 SHA-256 清单用于核对；请成套使用包内 `service-source/`、`simulator-source/` 和任务清单。此包包含完整源码与环境资产，安装 Python/Conda 依赖仍需访问配置的软件源。
 
 ## 主机条件
 
@@ -30,6 +31,7 @@
 ```bash
 conda --version
 conda create -p /data/user/envs/libero-pro2 python=3.8.10
+sha256sum -c SHA256SUMS
 bash install.sh /data/user/envs/libero-pro2
 ```
 
@@ -44,6 +46,9 @@ bash configure.sh /data/user/envs/libero-pro2
 bash start.sh
 bash status.sh
 bash healthcheck.sh
+set -a
+source client.env
+set +a
 /data/user/envs/libero-pro2/bin/python smoke_test.py
 ```
 
