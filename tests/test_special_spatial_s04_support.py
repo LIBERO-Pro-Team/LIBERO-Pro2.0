@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -112,16 +113,55 @@ def test_grounded_spatial_s04_files_opt_in_to_declared_support_grounding() -> No
         for name, text in paths.items()
         if "(:ground_support_from_declared_surface true)" in text
     }
-    assert opted_in == {
-        "S04__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_from_table_center_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_in_the_top_drawer_of_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_next_to_the_ramekin_and_place_it_on_the_plate.bddl",
+    expected = {
         "S04__pick_up_the_black_bowl_on_the_cookie_box_and_place_it_on_the_plate.bddl",
         "S04__pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_on_the_stove_and_place_it_on_the_plate.bddl",
-        "S04__pick_up_the_black_bowl_on_the_wooden_cabinet_and_place_it_on_the_plate.bddl",
+    }
+    assert set(paths) == opted_in == expected
+
+
+def test_spatial_s04_semantic_exclusions_are_scoped_and_published() -> None:
+    from scripts import apply_goal_review_finalization as finalizer
+
+    removed = {0, 1, 2, 4, 6, 7, 8, 9}
+    for suite in finalizer.SUITES:
+        for task_id in range(10):
+            expected = (suite == "libero_spatial" and task_id in removed) or (
+                suite == "libero_10" and task_id == 8
+            )
+            assert finalizer.is_excluded(suite, task_id, "S04") is expected
+            assert not finalizer.is_excluded(suite, task_id, "BASE")
+
+    manifest = json.loads((ROOT / "assets" / "task_manifest.json").read_text(encoding="utf-8"))
+    retained = {
+        int(item["base_task_id"])
+        for item in manifest["tasks"]
+        if item["suite"] == "libero_spatial" and item["case_id"] == "S04"
+    }
+    assert retained == {3, 5}
+    assert manifest["task_count"] == len(manifest["tasks"]) == finalizer.PUBLISHED_TASK_COUNT
+
+
+def test_generator_does_not_restore_removed_spatial_s04_cases(tmp_path, monkeypatch) -> None:
+    from scripts import build_full_perturbation_dataset as generator
+
+    monkeypatch.setattr(generator, "SUITES", ("libero_spatial",))
+    monkeypatch.setattr(generator, "CASES", ("S04",))
+    output = tmp_path / "spatial_s04_only"
+    folder = output / "libero_spatial" / "01_static"
+    folder.mkdir(parents=True)
+    for task_name in generator.SUITE_TASKS["libero_spatial"]:
+        (folder / f"S04__{task_name}.bddl").write_text("stale fixture\n", encoding="utf-8")
+
+    manifest_path = tmp_path / "manifest.json"
+    result = generator.build(output, manifest_path)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert result["task_count"] == 2
+    assert {item["base_task_id"] for item in manifest["tasks"]} == {3, 5}
+    assert {path.name for path in folder.glob("*.bddl")} == {
+        f"S04__{generator.SUITE_TASKS['libero_spatial'][task_id]}.bddl"
+        for task_id in (3, 5)
     }
 
 

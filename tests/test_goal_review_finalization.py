@@ -282,14 +282,17 @@ def test_final_manifest_exclusions_are_exactly_d19_and_reviewed_not_applicable_c
         if FINALIZER.is_excluded(suite, task_id, case_id)
     }
 
-    assert len(excluded) == 59
+    spatial_semantic_exclusions = {
+        ("libero_spatial", task_id, "S04") for task_id in (0, 1, 2, 4, 6, 7, 8, 9)
+    }
+    assert len(excluded) == 40 + len(FINALIZER.GOAL_NOT_APPLICABLE) + 1 + len(spatial_semantic_exclusions)
     assert sum(case_id == "D19" for _, _, case_id in excluded) == 40
     assert ("libero_10", 8, "S04") in excluded
     assert excluded - {
         (suite, task_id, "D19")
         for suite in FINALIZER.SUITES
         for task_id in range(10)
-    } == FINALIZER.GOAL_NOT_APPLICABLE | {("libero_10", 8, "S04")}
+    } == FINALIZER.GOAL_NOT_APPLICABLE | {("libero_10", 8, "S04")} | spatial_semantic_exclusions
 
 
 def test_goal_task0_s11_keeps_the_original_scene_structure() -> None:

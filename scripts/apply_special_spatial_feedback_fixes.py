@@ -219,7 +219,7 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 0, "S06"): {
         "params": _params(
-            asset_scale=("0.45",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
+            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
         ),
     },
     ("libero_spatial", 2, "S06"): {
@@ -239,16 +239,20 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 8, "S06"): {
         "params": _params(
-            asset_scale=("0.45",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
+            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
         ),
     },
     ("libero_spatial", 0, "S10"): {
         "params": _params(
             asset_count=("3",),
-            clutter_minimum_gap_m=("0.065",),
-            clutter_offsets_xy=("0.11", "-0.10", "-0.11", "-0.10", "0.0", "0.13"),
+            clutter_minimum_gap_m=("0.10",),
+            clutter_offsets_xy=("0.00", "0.12", "-0.15", "-0.12", "0.00", "-0.12"),
             support_surface=("main_table",),
-            visual_only_asset=("true",),
+            visual_only_asset=("false",),
+            movable_asset=("true",),
+            physical_collision=("true",),
+            clear_of_task_entities=("true",),
+            asset_contact_margin_m=("0.006",),
         ),
     },
     ("libero_spatial", 7, "S10"): {
@@ -273,7 +277,7 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
         ),
     },
     ("libero_spatial", 1, "S11"): {
-        "params": _params(asset_scale=("0.36",)),
+        "params": _params(asset_scale=("0.45",), clutter_offsets_xy=("0.10", "-0.18")),
     },
     ("libero_spatial", 3, "S11"): {
         "params": _params(asset_scale=("0.36",)),

@@ -29,13 +29,15 @@ ASSETS = ROOT / "assets"
 DATASET = ASSETS / "bddl" / "libero-pro2.0-1680-v1"
 MANIFEST = ASSETS / "task_manifest.json"
 PUBLISHED_VERSION = "libero-pro2.0-1706-v1"
-PUBLISHED_TASK_COUNT = 1696
+PUBLISHED_TASK_COUNT = 1688
 SUITES = ("libero_spatial", "libero_object", "libero_goal", "libero_10")
 PUBLISHED_CASES = (
     "BASE",
     *(f"S{index:02d}" for index in range(1, 23)),
     *(f"D{index:02d}" for index in range(1, 22)),
 )
+
+SPATIAL_S04_REMOVED_TASKS = {0, 1, 2, 4, 6, 7, 8, 9}
 
 GOAL_NOT_APPLICABLE = {
     ("libero_goal", 0, "D02"),
@@ -269,6 +271,8 @@ D03_SUPPORT_SURFACES: dict[tuple[str, int], str] = {
 }
 
 D03_ASSET_OFFSETS: dict[tuple[str, int], tuple[str, str, str]] = {
+    # Align the red brick mesh center, whose local origin is off-center.
+    **{("libero_spatial", task_id): ("0.00835045", "0.00205392", "0.0") for task_id in range(10)},
     ("libero_10", 9): ("0.0", "-0.08", "-0.12"),
     ("libero_goal", 0): ("0.07", "0.12", "-0.16"),
     ("libero_goal", 2): ("-0.055", "0.0", "0.0"),
@@ -304,7 +308,15 @@ def d03_persistent_updates(
     if anchor is not None:
         params["receiver_anchor"] = (anchor,)
     fields = {"variant": ("persistent_triggered_receiver_occupation",)}
-    if key == ("libero_10", 8):
+    if key[0] == "libero_spatial":
+        fields["references"] = ("none",)
+        params.update(
+            persistent_movable_asset=("true",),
+            asset_id=("ycb/YcbFoamBrick",),
+            asset_scale=("0.85",),
+            asset_contact_margin_m=("0.0",),
+        )
+    elif key == ("libero_10", 8):
         fields["references"] = ("none",)
         params.update(
             persistent_movable_asset=("true",),
@@ -322,6 +334,11 @@ def is_excluded(suite: str, task_id: int, case_id: str) -> bool:
         key[2] == "D19"
         or key in GOAL_NOT_APPLICABLE
         or key == ("libero_10", 8, "S04")
+        or (
+            key[0] == "libero_spatial"
+            and key[1] in SPATIAL_S04_REMOVED_TASKS
+            and key[2] == "S04"
+        )
     )
 
 
@@ -748,7 +765,7 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
     ):
         return {"trigger_anchor", "trigger_distance_m"}
     if case_id == "D03":
-        return {
+        fields = {
             "allow_compact_asset",
             "allow_goal_overlap",
             "articulation_obstacle_offset_xy",
@@ -765,6 +782,9 @@ def _remove_params_for(suite: str, task_id: int, case_id: str) -> set[str]:
             "support_surface",
             "visual_only_asset",
         }
+        if suite == "libero_spatial":
+            fields.add("asset_contact_margin_m")
+        return fields
     if case_id == "S06" and suite == "libero_goal" and task_id in {0, 7}:
         return {
             "asset_id",
