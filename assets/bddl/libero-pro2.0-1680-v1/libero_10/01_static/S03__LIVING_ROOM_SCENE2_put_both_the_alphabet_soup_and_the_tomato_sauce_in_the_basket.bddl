@@ -179,14 +179,8 @@
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/plastic_plate)
-          (:asset_scale 0.55)
-          (:receiver_lid_obstacle true)
-          (:movable_asset false)
-          (:physical_collision true)
-          (:visual_only_asset false)
-          (:receiver_lid_offset_xy 0.028 -0.018)
-          (:receiver_lid_clearance_m 0.001)
+          (:asset_geometry_factors 0.70 0.70 1.4)
+          (:height_delta_m 0.03675)
         )
       )
       (S04

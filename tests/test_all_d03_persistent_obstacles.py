@@ -23,8 +23,13 @@ ASSET_ROOT = (
     / "perturbation_assets"
 )
 INJECTED_OBSTACLE_TASKS = {
+    ("libero_10", 0),
     ("libero_10", 4),
+    ("libero_10", 5),
+    ("libero_10", 6),
+    ("libero_10", 7),
     ("libero_10", 8),
+    ("libero_10", 9),
     *(("libero_spatial", task_id) for task_id in range(10)),
 }
 TABLE_SUPPORTED_MICROWAVE_TASK = ("libero_10", 9)
@@ -150,7 +155,7 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
             assert plan.params["support_surface"] == "main_table"
             assert plan.params["asset_offset_xyz"] == [0.14, 0.05, -0.22]
         elif key == TABLE_SUPPORTED_MICROWAVE_TASK:
-            assert plan.params["asset_offset_xyz"] == [0.0, -0.08, -0.12]
+            assert plan.params["asset_offset_xyz"] == [-0.04, -0.05, 0.0]
         elif key == CREAM_CHEESE_IN_BOWL_TASK:
             assert plan.params["asset_offset_xyz"] == [-0.03, 0.14, 0.0]
 
@@ -162,7 +167,13 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
             assert "persistent_existing_obstacle" not in plan.params
             assert plan.references == ()
             assert len(plan.assets) == 1
-            if key == ("libero_10", 4):
+            if key == ("libero_10", 0):
+                assert plan.assets[0].asset_id == "ycb/YcbFoamBrick"
+                assert plan.assets[0].scale == 1.0
+            elif key == ("libero_10", 5):
+                assert plan.assets[0].asset_id == "ycb/YcbChipsCan"
+                assert plan.assets[0].scale == 0.70
+            elif key == ("libero_10", 4):
                 assert plan.params["receiver_selection"] == "active_goal_path"
                 assert plan.targets == ("plate_1", "plate_2")
                 assert plan.params["support_surface"] == "living_room_table"
@@ -175,7 +186,7 @@ def test_all_four_suites_publish_ten_persistent_d03_tasks() -> None:
                 assert plan.assets[0].asset_id == "ycb/YcbFoamBrick"
                 assert plan.assets[0].scale == 0.85
                 assert "akita_black_bowl_2" not in plan.references
-            else:
+            elif key == ("libero_10", 8):
                 assert plan.assets[0].asset_id == "prl/can"
                 assert plan.assets[0].scale == 1.0
         else:
