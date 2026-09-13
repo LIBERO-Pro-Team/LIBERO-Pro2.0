@@ -180,8 +180,9 @@
         (:variant receiver_or_support_height)
         (:params
           (:interaction_mode placement)
-          (:asset_geometry_factors 0.70 0.70 1.6)
-          (:height_delta_m 0.020)
+          (:asset_geometry_factors 1.0 1.0 3.0)
+          (:height_delta_m 0.090)
+          (:asset_id generated/support_riser_wide_top)
         )
       )
       (S04

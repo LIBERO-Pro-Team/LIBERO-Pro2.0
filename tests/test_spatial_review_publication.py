@@ -115,11 +115,11 @@ def test_spatial_review_parameters_match_validated_values() -> None:
     )
     assert _param(blocks[("S03", 0)], "height_delta_m") == ("0.005",)
     assert _param(blocks[("S03", 8)], "asset_geometry_factors") == (
-        "0.70",
-        "0.70",
-        "1.6",
+        "1.0",
+        "1.0",
+        "3.0",
     )
-    assert _param(blocks[("S03", 8)], "height_delta_m") == ("0.020",)
+    assert _param(blocks[("S03", 8)], "height_delta_m") == ("0.090",)
     assert _param(blocks[("S03", 2)], "asset_id") == (
         "generated/support_riser_wide_top",
     )
@@ -182,8 +182,8 @@ def test_spatial_review_parameters_match_validated_values() -> None:
     assert _param(blocks[("S11", 0)], "clutter_offsets_xy") == ("-0.14", "-0.12")
     assert _param(blocks[("S11", 1)], "clutter_offsets_xy") == ("0.10", "-0.18")
     assert _param(blocks[("S11", 7)], "clutter_offsets_xy") == (
-        "0.20",
-        "0.30",
+        "0.0",
+        "0.19",
     )
     assert _param(blocks[("S11", 7)], "support_surface") == ("main_table",)
     assert _param(blocks[("S11", 8)], "clutter_offsets_xy") == (
@@ -195,12 +195,12 @@ def test_spatial_review_parameters_match_validated_values() -> None:
         assert _param(blocks[("S11", task_id)], "asset_id") == (
             "github/object_sim_bowl",
         )
-        expected_scale = "0.45" if task_id in {1, 8} else "0.70"
+        expected_scale = {1: "0.737", 8: "0.45"}.get(task_id, "0.70")
         assert _param(blocks[("S11", task_id)], "asset_scale") == (expected_scale,)
 
-    assert _param(blocks[("S11", 4)], "asset_id") == ("prl/plastic_bowl",)
-    assert _param(blocks[("S11", 4)], "asset_scale") == ("0.60",)
-    assert _param(blocks[("S11", 4)], "clutter_offsets_xy") == ("0.12", "0.10")
+    assert _param(blocks[("S11", 4)], "asset_id") == ("github/object_sim_bowl",)
+    assert _param(blocks[("S11", 4)], "asset_scale") == ("0.6696",)
+    assert _param(blocks[("S11", 4)], "clutter_offsets_xy") == ("0.10", "0.13")
     assert _param(blocks[("S11", 4)], "support_surface") == ("main_table",)
 
     assert _param(blocks[("S11", 9)], "asset_id") == ("prl/plastic_bowl",)
@@ -335,7 +335,7 @@ def test_only_reviewed_spatial_s03_tasks_select_the_wide_top_support() -> None:
         if plan.params.get("asset_id") == "generated/support_riser_wide_top":
             explicit_wide_top.add(key)
 
-    targets = {("libero_spatial", 0), ("libero_spatial", 2)}
+    targets = {("libero_spatial", 0), ("libero_spatial", 2), ("libero_spatial", 8)}
     assert RUNTIME.CASE_ASSETS["S03"] == ("generated/support_riser",)
     assert explicit_wide_top == targets
     assert all(

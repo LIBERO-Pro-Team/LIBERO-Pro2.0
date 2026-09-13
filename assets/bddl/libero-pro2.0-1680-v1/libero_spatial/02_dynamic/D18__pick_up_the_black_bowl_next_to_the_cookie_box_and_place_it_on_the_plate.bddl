@@ -512,6 +512,7 @@
           (:interaction_mode placement)
           (:offset_xy -0.08 0.06)
           (:minimum_clearance_m 0.12)
+          (:reset_drop_velocity true)
         )
       )
       (D19

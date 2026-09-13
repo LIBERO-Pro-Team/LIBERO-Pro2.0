@@ -444,6 +444,41 @@ def _validate_single_support_swap(
         )
 
 
+def _validate_spatial_recovery_options(
+    config: dict[str, Any], case_id: str, fields: dict[str, Any], params: dict[str, Any]
+) -> None:
+    for flag, expected_case, source_task, targets in (
+        (
+            "preserve_settled_task_poses", "D03",
+            "pick_up_the_black_bowl_on_the_ramekin_and_place_it_on_the_plate",
+            ("plate_1",),
+        ),
+        (
+            "reset_drop_velocity", "D18",
+            "pick_up_the_black_bowl_next_to_the_cookie_box_and_place_it_on_the_plate",
+            ("akita_black_bowl_1",),
+        ),
+    ):
+        if not _param_bool(params, flag, False):
+            continue
+        if (
+            config.get("source_suite") != "libero_spatial"
+            or config.get("source_task") != source_task
+            or case_id != expected_case
+            or _name_tuple(fields.get("targets")) != targets
+            or params.get("interaction_mode") != "placement"
+        ):
+            raise PerturbationConfigurationError(
+                f"{flag} is restricted to its reviewed Spatial task and object roles"
+            )
+        if flag == "preserve_settled_task_poses" and not _param_bool(
+            params, "persistent_movable_asset", False
+        ):
+            raise PerturbationConfigurationError(
+                "preserve_settled_task_poses is restricted to injected persistent D03"
+            )
+
+
 def build_execution_plan(
     config: dict[str, Any], asset_root: str | Path
 ) -> ExecutionPlan:
@@ -503,6 +538,7 @@ def build_execution_plan(
     params = fields.get("params", {})
     if not isinstance(params, dict):
         params = {}
+    _validate_spatial_recovery_options(config, case_id, fields, params)
     if _param_bool(params, "swap_single_support_group", False):
         _validate_single_support_swap(
             config, case_id, _name_tuple(fields.get("targets")), params
@@ -2763,8 +2799,14 @@ class NonPhysicalPerturbationRuntime:
         persistent_obstacle = self._persistent_d03_obstacle_name()
         if self._staged_persistent_obstacle is not None:
             self._restore_staged_persistent_obstacle_physics(env)
+        preserve_settled = self.plan.case_id == "D03" and _param_bool(
+            self.plan.params, "preserve_settled_task_poses", False
+        )
         if self._dynamic_applied or persistent_obstacle is not None:
             for name, (position, quaternion) in self._saved_poses.items():
+                # Task5 keeps the settled bowl/support relation; only restage the brick.
+                if preserve_settled and name != persistent_obstacle:
+                    continue
                 if _entity_exists(env, name):
                     _set_entity_pose(env, name, position, quaternion)
         self.reset()
@@ -2772,6 +2814,8 @@ class NonPhysicalPerturbationRuntime:
         persistent_obstacle = self._persistent_d03_obstacle_name()
         if persistent_obstacle is not None:
             self._stage_persistent_obstacle(env, persistent_obstacle)
+        if preserve_settled:
+            self._log_once("settled_task_poses_preserved", 0)
         if self.plan.case_id == "D20":
             try:
                 self._initial_eef_position = np.asarray(
@@ -5062,6 +5106,11 @@ class NonPhysicalPerturbationRuntime:
                 initial_position, current_quaternion = self._saved_poses[target]
                 after[2] = initial_position[2]
                 _set_entity_pose(env, target, after, current_quaternion)
+            if case_id == "D18" and _param_bool(
+                self.plan.params, "reset_drop_velocity", False
+            ):
+                joint = _zero_entity_free_joint_velocity(env, target)
+                self._log_once("drop_velocity_reset", step, target=target, joint=joint)
             if yaw is not None:
                 _, current_quaternion = _entity_pose(env, target)
                 _set_entity_pose(

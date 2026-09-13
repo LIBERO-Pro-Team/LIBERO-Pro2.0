@@ -39,6 +39,95 @@ PUBLISHED_CASES = (
 
 SPATIAL_S04_REMOVED_TASKS = {0, 1, 2, 4, 6, 7, 8, 9}
 
+SPATIAL_REVIEW_0913_PARAMS: dict[tuple[int, str], dict[str, tuple[str, ...]]] = {
+    (0, "S01"): {
+        "offset_xy": ("0.0", "-0.075"),
+        "grounded_pose": ("true",),
+        "support_surface": ("main_table",),
+    },
+    (0, "S06"): {
+        "asset_id": ("github/object_sim_bowl",),
+        "asset_scale": ("0.6696",),
+        "asset_quat": ("1.0", "0.0", "0.0", "0.0"),
+        "sampler_compatible": ("true",),
+        "grounded_replacement": ("true",),
+        "support_surface": ("main_table",),
+        "grounded_height_offset_m": ("0.040",),
+    },
+    (4, "S01"): {"offset_xy": ("-0.020", "-0.010"), "yaw_rad": ("0.28",)},
+    (4, "S05"): {
+        "barrier_geometry_factors": ("1.0", "1.0", "3.1"),
+        "barrier_path_fraction": ("0.74",),
+        "ground_barrier_to_support": ("true",),
+        "support_surface": ("main_table",),
+    },
+    (4, "S11"): {
+        "asset_id": ("github/object_sim_bowl",),
+        "asset_scale": ("0.6696",),
+        "asset_count": ("1",),
+        "clutter_offsets_xy": ("0.10", "0.13"),
+        "clutter_minimum_gap_m": ("0.13",),
+        "support_surface": ("main_table",),
+    },
+    (7, "S11"): {
+        "asset_id": ("github/object_sim_bowl",),
+        "asset_scale": ("0.70",),
+        "asset_count": ("1",),
+        "clutter_offsets_xy": ("0.0", "0.19"),
+        "clutter_minimum_gap_m": ("0.13",),
+        "support_surface": ("main_table",),
+    },
+    (8, "S03"): {
+        "asset_id": ("generated/support_riser_wide_top",),
+        "asset_geometry_factors": ("1.0", "1.0", "3.0"),
+        "height_delta_m": ("0.090",),
+    },
+    (8, "S06"): {
+        "asset_id": ("github/object_sim_bowl",),
+        "asset_scale": ("0.6696",),
+        "asset_quat": ("1.0", "0.0", "0.0", "0.0"),
+        "sampler_compatible": ("true",),
+        "grounded_replacement": ("true",),
+        "support_surface": ("main_table",),
+        "grounded_height_offset_m": ("0.080",),
+    },
+    (8, "S10"): {
+        "clutter_offsets_xy": ("0.20", "-0.18"),
+        "clutter_minimum_gap_m": ("0.14",),
+        "support_surface": ("main_table",),
+    },
+}
+
+SPATIAL_REVIEW_0913_REMAINING_PARAMS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    (1, "S11"): {
+        "asset_scale": ("0.737",),
+        "clutter_minimum_gap_m": ("0.13",),
+    },
+    (4, "D05"): {
+        "asset_scale": ("2.15",),
+        "barrier_height_m": ("-0.20",),
+        "lateral_offset_m": ("0.0",),
+        "support_surface": ("main_table",),
+    },
+    (8, "S05"): {
+        "barrier_scale": ("0.65",),
+        "barrier_geometry_factors": ("1.0", "1.0", "2.4"),
+        "barrier_path_fraction": ("0.50",),
+        "barrier_lateral_offset_m": ("-0.12",),
+        "ground_barrier_to_support": ("true",),
+        "support_surface": ("main_table",),
+    },
+}
+
+SPATIAL_REVIEW_0913_RUNTIME_PARAMS: dict[
+    tuple[int, str], dict[str, tuple[str, ...]]
+] = {
+    (5, "D03"): {"preserve_settled_task_poses": ("true",)},
+    (6, "D18"): {"reset_drop_velocity": ("true",)},
+}
+
 GOAL_NOT_APPLICABLE = {
     ("libero_goal", 0, "D02"),
     ("libero_goal", 0, "D18"),
@@ -634,6 +723,11 @@ def case_updates(
             asset_geometry_factors=("1.0", "1.0", "2.0"),
             height_delta_m=("0.10",),
         )
+
+    if suite == "libero_spatial":
+        params.update(SPATIAL_REVIEW_0913_PARAMS.get((task_id, case_id), {}))
+        params.update(SPATIAL_REVIEW_0913_REMAINING_PARAMS.get((task_id, case_id), {}))
+        params.update(SPATIAL_REVIEW_0913_RUNTIME_PARAMS.get((task_id, case_id), {}))
 
     if suite != "libero_goal":
         return params, fields

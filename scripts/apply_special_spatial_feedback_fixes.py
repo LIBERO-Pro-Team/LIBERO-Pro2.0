@@ -127,7 +127,7 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 0, "S01"): {
         "params": _params(
-            offset_xy=("0.10", "-0.06"),
+            offset_xy=("0.0", "-0.075"),
             grounded_pose=("true",),
             support_surface=("main_table",),
         ),
@@ -143,7 +143,11 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
         "params": _params(height_delta_m=("0.055",)),
     },
     ("libero_spatial", 8, "S03"): {
-        "params": _params(height_delta_m=("0.055",)),
+        "params": _params(
+            height_delta_m=("0.090",),
+            asset_id=("generated/support_riser_wide_top",),
+            asset_geometry_factors=("1.0", "1.0", "3.0"),
+        ),
     },
     ("libero_spatial", 1, "S04"): {
         "params": _params(
@@ -211,15 +215,19 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 8, "S05"): {
         "params": _params(
-            barrier_scale=("0.35",),
+            barrier_scale=("0.65",),
             barrier_path_fraction=("0.50",),
-            barrier_lateral_offset_m=("0.100",),
+            barrier_lateral_offset_m=("-0.12",),
+            barrier_geometry_factors=("1.0", "1.0", "2.4"),
+            ground_barrier_to_support=("true",),
+            support_surface=("main_table",),
             visual_only_asset=("false",),
         ),
     },
     ("libero_spatial", 0, "S06"): {
         "params": _params(
-            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
+            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",),
+            grounded_height_offset_m=("0.040",),
         ),
     },
     ("libero_spatial", 2, "S06"): {
@@ -239,7 +247,8 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 8, "S06"): {
         "params": _params(
-            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",)
+            asset_scale=("0.6696",), sampler_compatible=("true",), grounded_replacement=("true",), support_surface=("main_table",),
+            grounded_height_offset_m=("0.080",),
         ),
     },
     ("libero_spatial", 0, "S10"): {
@@ -277,16 +286,23 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
         ),
     },
     ("libero_spatial", 1, "S11"): {
-        "params": _params(asset_scale=("0.45",), clutter_offsets_xy=("0.10", "-0.18")),
+        "params": _params(
+            asset_scale=("0.737",),
+            clutter_offsets_xy=("0.10", "-0.18"),
+            clutter_minimum_gap_m=("0.13",),
+        ),
     },
     ("libero_spatial", 3, "S11"): {
         "params": _params(asset_scale=("0.36",)),
     },
     ("libero_spatial", 4, "S11"): {
         "params": _params(
-            asset_scale=("0.36",),
-            support_surface=("wooden_cabinet_1",),
-            visual_only_asset=("true",),
+            asset_id=("github/object_sim_bowl",),
+            asset_scale=("0.6696",),
+            clutter_offsets_xy=("0.10", "0.13"),
+            clutter_minimum_gap_m=("0.13",),
+            support_surface=("main_table",),
+            visual_only_asset=("false",),
         ),
     },
     ("libero_spatial", 5, "S11"): {
@@ -294,9 +310,11 @@ FIXES: dict[tuple[str, int, str], dict[str, Any]] = {
     },
     ("libero_spatial", 7, "S11"): {
         "params": _params(
-            asset_scale=("0.36",),
-            support_surface=("flat_stove_1",),
-            visual_only_asset=("true",),
+            asset_scale=("0.70",),
+            clutter_offsets_xy=("0.0", "0.19"),
+            clutter_minimum_gap_m=("0.13",),
+            support_surface=("main_table",),
+            visual_only_asset=("false",),
         ),
     },
     ("libero_spatial", 8, "S11"): {

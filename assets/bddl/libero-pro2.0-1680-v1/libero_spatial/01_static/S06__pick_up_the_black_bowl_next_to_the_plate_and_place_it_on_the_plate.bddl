@@ -213,6 +213,7 @@
           (:sampler_compatible true)
           (:grounded_replacement true)
           (:support_surface main_table)
+          (:grounded_height_offset_m 0.080)
         )
       )
       (S07

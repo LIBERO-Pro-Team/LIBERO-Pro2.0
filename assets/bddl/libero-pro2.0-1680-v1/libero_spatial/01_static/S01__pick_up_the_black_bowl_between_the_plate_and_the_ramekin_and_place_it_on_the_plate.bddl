@@ -164,7 +164,7 @@
         (:variant xy_yaw)
         (:params
           (:interaction_mode placement)
-          (:offset_xy 0.10 -0.06)
+          (:offset_xy 0.0 -0.075)
           (:grounded_pose true)
           (:support_surface main_table)
         )

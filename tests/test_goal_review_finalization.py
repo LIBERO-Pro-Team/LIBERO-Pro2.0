@@ -61,10 +61,21 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
             "barrier_path_fraction": ("0.40",),
             "barrier_lateral_offset_m": ("0.0",),
         },
+        ("libero_spatial", 4): {
+            "barrier_scale": ("0.65",),
+            "barrier_path_fraction": ("0.74",),
+            "barrier_lateral_offset_m": ("0.0",),
+            "barrier_geometry_factors": ("1.0", "1.0", "3.1"),
+            "ground_barrier_to_support": ("true",),
+            "support_surface": ("main_table",),
+        },
         ("libero_spatial", 8): {
-            "barrier_scale": ("0.35",),
+            "barrier_scale": ("0.65",),
             "barrier_path_fraction": ("0.50",),
-            "barrier_lateral_offset_m": ("0.100",),
+            "barrier_lateral_offset_m": ("-0.12",),
+            "barrier_geometry_factors": ("1.0", "1.0", "2.4"),
+            "ground_barrier_to_support": ("true",),
+            "support_surface": ("main_table",),
         },
         ("libero_goal", 3): {
             "barrier_scale": ("0.60",),

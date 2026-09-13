@@ -249,6 +249,9 @@
           (:physical_collision true)
           (:clear_of_task_entities true)
           (:asset_contact_margin_m 0.006)
+          (:clutter_offsets_xy 0.20 -0.18)
+          (:clutter_minimum_gap_m 0.14)
+          (:support_surface main_table)
         )
       )
       (S11
