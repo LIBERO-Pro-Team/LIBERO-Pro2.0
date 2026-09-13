@@ -1,5 +1,23 @@
 # 分组式多 seed 评测
 
+## Train/test 划分
+
+`assets/benchmark_split_v1.json` 按 `(suite, base_task_id)` 定义版本化 train/test 边界。
+一个基础任务下的 `BASE`、`S01-S21`、`D01-D19` 和 `D21` 全部跟随该任务，禁止跨 split。
+正式评估使用 `--split test`，训练侧 rollout 使用 `--split train`；后续仍可叠加
+`--suite`、`--group` 和 `--case` 精确选择套件与扰动。
+
+```bash
+python scripts/run_grouped_eval.py plan \
+  --split test \
+  --suite libero_goal \
+  --group all \
+  --output-dir results/test-plan
+```
+
+生成的 `plan.json` 会记录 split 名称、版本、SHA-256、suite/task 分配和具体扰动 episode，
+用于审计不同模型是否使用同一评测边界。
+
 ## 目标与边界
 
 分组评测在现有模型无关 `RunScheduler` 上增加任务选择与计划展开能力，不修改服务协议、模型 adapter

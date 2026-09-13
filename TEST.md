@@ -25,6 +25,7 @@ python -m pytest -q \
 重点覆盖：
 
 - base/static/dynamic/all 与 suite/case 交集筛选。
+- 版本化 train/test 划分按 `suite + base_task_id` 隔离，并保留任务下全部扰动。
 - 只使用任务目录实际发布的组合。
 - seed/init-state 配对、广播和显式矩阵展开。
 - 非法或重复参数在提交前失败。

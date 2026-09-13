@@ -17,6 +17,9 @@ from libero_remote.benchmark import (
     save_benchmark_plan,
     submit_benchmark_plan,
 )
+from libero_remote.benchmark_split import BenchmarkSplit
+
+DEFAULT_SPLIT_FILE = Path(__file__).resolve().parents[1] / "assets" / "benchmark_split_v1.json"
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
@@ -47,6 +50,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
 
 
 def _add_selection_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--split", choices=("all", "train", "test"), default="all")
+    parser.add_argument("--split-file", type=Path, default=DEFAULT_SPLIT_FILE)
     parser.add_argument("--group", choices=VALID_GROUPS, default="base")
     parser.add_argument("--suite", dest="suites", action="append")
     parser.add_argument("--case", dest="cases", action="append")
@@ -112,6 +117,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
 def _build_plan(catalog: Dict[str, Any], args: argparse.Namespace) -> BenchmarkPlan:
     seeds = resolve_seeds(args.seeds, args.seed, args.num_seeds)
+    if args.split != "all":
+        catalog = BenchmarkSplit.load(args.split_file).filter_catalog(catalog, args.split)
     return build_benchmark_plan(
         catalog,
         group=args.group,

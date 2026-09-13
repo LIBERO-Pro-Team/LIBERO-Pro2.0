@@ -712,6 +712,16 @@ JSONL、CSV 和按 suite/variant/group/seed 汇总的 JSON。该层不识别或�
 runner 可调用 `run_grouped_benchmark()` 一次执行计划中的剩余 rollout。完整用法见
 `docs/grouped-benchmark.md`。
 
+正式 train/test 边界由 `assets/benchmark_split_v1.json` 版本化定义，任务身份必须同时使用
+`suite + base_task_id`。同一任务的 BASE、静态和动态扰动全部属于同一个 split，不能跨边界。
+`run_grouped_eval.py` 可先按 split 隔离任务，再用 suite、group 和 case 筛选其中的具体评测项：
+
+```bash
+python scripts/run_grouped_eval.py plan --split test --suite libero_goal --group all
+```
+
+不传 `--split` 时保持原有的全任务行为；正式模型评估应显式使用 `--split test`。
+
 ### 21.1 本机 xVLA 参考 runner
 
 计算分工保持不变：xVLA 权重和 CUDA 推理在本机 WSL 中运行，LIBERO、MuJoCo、BDDL 和两路相机渲染在服务器运行。每个 step 只通过 SSH 隧道传输 observation 和 7 维 action。

@@ -20,6 +20,8 @@ def test_cli_supports_group_suite_case_and_matrix_selection() -> None:
             "plan",
             "--group",
             "dynamic",
+            "--split",
+            "test",
             "--suite",
             "libero_goal",
             "--case",
@@ -37,6 +39,7 @@ def test_cli_supports_group_suite_case_and_matrix_selection() -> None:
     )
 
     assert args.group == "dynamic"
+    assert args.split == "test"
     assert args.suites == ["libero_goal"]
     assert args.cases == ["D07"]
     assert args.seeds == [42, 43]

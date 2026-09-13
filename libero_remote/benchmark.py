@@ -147,6 +147,11 @@ def build_benchmark_plan(
         "max_steps": max_steps,
         "observation_schema_version": observation_schema_version,
     }
+    benchmark_split = catalog.get("benchmark_split")
+    if benchmark_split is not None:
+        if not isinstance(benchmark_split, Mapping):
+            raise ValueError("Task catalog benchmark_split metadata must be an object")
+        selection["benchmark_split"] = dict(benchmark_split)
     identity = {
         "schema_version": PLAN_SCHEMA_VERSION,
         "task_manifest_version": catalog.get("task_manifest_version"),

@@ -14,6 +14,7 @@ from libero_remote.benchmark import (
     run_grouped_benchmark,
     summarize_benchmark_episodes,
 )
+from libero_remote.benchmark_split import BenchmarkSplit
 from libero_remote.runner import AgentContext
 from libero_remote.server.app import create_app
 from libero_remote.server.settings import Settings
@@ -107,6 +108,66 @@ def test_case_filter_uses_published_catalog_instead_of_cartesian_product() -> No
     assert [(item["suite"], item["variant"]) for item in plan.episodes] == [
         ("libero_goal", "D01")
     ]
+
+
+def test_suite_task_split_keeps_all_cases_and_is_recorded(tmp_path: Path) -> None:
+    split_path = tmp_path / "split.json"
+    split_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "libero-pro-benchmark-split-v1",
+                "split_version": "test-split-v1",
+                "splits": {
+                    "train": {"libero_goal": [9]},
+                    "test": {"libero_spatial": [4]},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    filtered = BenchmarkSplit.load(split_path).filter_catalog(_catalog(), "test")
+    plan = build_benchmark_plan(
+        filtered,
+        group="all",
+        seeds=[42],
+        init_state_ids=[0],
+    )
+
+    assert {(item["suite"], item["task_id"]) for item in plan.episodes} == {
+        ("libero_spatial", 4)
+    }
+    assert {item["variant"] for item in plan.episodes} == {"base", "S01", "S02", "D01"}
+    assert plan.selection["benchmark_split"]["name"] == "test"
+    assert plan.selection["benchmark_split"]["suite_tasks"] == {
+        "libero_spatial": [4]
+    }
+
+
+def test_published_split_is_complete_disjoint_and_suite_aware() -> None:
+    root = Path(__file__).resolve().parents[1]
+    manifest = json.loads((root / "assets" / "task_manifest.json").read_text())
+    catalog = {
+        "tasks": [
+            {
+                "suite": item["suite"],
+                "task_id": item["base_task_id"],
+                "case_id": item["case_id"],
+                "case_kind": item["case_kind"],
+            }
+            for item in manifest["tasks"]
+        ]
+    }
+    split = BenchmarkSplit.load(root / "assets" / "benchmark_split_v1.json")
+    train_catalog = split.filter_catalog(catalog, "train")
+    test_catalog = split.filter_catalog(catalog, "test")
+    available = {(item["suite"], item["task_id"]) for item in catalog["tasks"]}
+    train = {(item["suite"], item["task_id"]) for item in train_catalog["tasks"]}
+    test = {(item["suite"], item["task_id"]) for item in test_catalog["tasks"]}
+
+    assert len(train) == 32
+    assert len(test) == 8
+    assert train.isdisjoint(test)
+    assert train.union(test) == available
 
 
 @pytest.mark.parametrize(
