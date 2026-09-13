@@ -13,12 +13,12 @@ sys.modules[SPEC.name] = GENERATOR
 SPEC.loader.exec_module(GENERATOR)
 
 
-def test_full_manifest_covers_the_published_1701_task_set() -> None:
+def test_full_manifest_covers_the_published_1688_task_set() -> None:
     payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
     entries = payload["tasks"]
 
     assert payload["manifest_version"] == "libero-pro2.0-1706-v1"
-    assert payload["task_count"] == len(entries) == 1701
+    assert payload["task_count"] == len(entries) == 1688
     assert len({(entry["suite"], entry["base_task_id"]) for entry in entries}) == 40
     assert {entry["case_id"] for entry in entries} == {
         "BASE",

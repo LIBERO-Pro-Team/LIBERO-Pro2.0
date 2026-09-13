@@ -23,6 +23,15 @@ assert SPEC is not None and SPEC.loader is not None
 PARSER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(PARSER)
 
+# Published review overrides through 2026-09-13; all other tasks keep defaults.
+S07_REVIEW_OVERRIDES = {
+    ("libero_goal", 2, "S07"): ([1.0, 0.64, 1.2], [1.0, 0.64, 1.2]),
+    ("libero_goal", 3, "S07"): ([0.64, 1.0, 1.2], [1.2, 1.0, 0.64]),
+    ("libero_goal", 4, "S07"): ([1.0, 0.64, 1.2], [1.0, 0.64, 1.2]),
+    ("libero_goal", 9, "S07"): ([1.0, 0.9, 1.1], [1.0, 1.6, 1.2]),
+    ("libero_object", 8, "S07"): ([1.0, 0.64, 1.2], [0.3, 0.22, 1.0]),
+}
+
 
 def _params_by_key() -> dict[tuple[str, int, str], dict[str, object]]:
     payload = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -51,7 +60,7 @@ def _params_by_key() -> dict[tuple[str, int, str], dict[str, object]]:
 
 def test_remaining_runtime_defaults_are_explicit_in_all_case_bddls() -> None:
     params = _params_by_key()
-    assert len(params) == 199
+    assert len(params) == 198
     assert all(
         {
             "grasp_distance_m",
@@ -104,12 +113,9 @@ def test_feedback_tasks_have_only_the_intended_task_level_overrides() -> None:
         "articulation_grasp_distance_m"
     ] == 0.16
 
-    assert all(
-        values["geometry_factors"] == [1.0, 0.64, 1.20]
-        and values["goal_region_scale"] == [1.0, 1.0, 1.0]
-        for key, values in params.items()
-        if key[2] == "S07"
-    )
+    for key, (geometry, region) in S07_REVIEW_OVERRIDES.items():
+        assert params[key]["geometry_factors"] == geometry
+        assert params[key]["goal_region_scale"] == region
 
     assert params[("libero_spatial", 9, "S14")]["scene_color_mix"] == 0.32
     assert params[("libero_spatial", 9, "S14")]["light_factor"] == 0.78
@@ -120,15 +126,19 @@ def test_unreported_tasks_keep_the_previous_runtime_default_values() -> None:
     for key, values in params.items():
         case_id = key[2]
         if case_id == "D17":
-            assert values["grasp_distance_m"] == 0.12
-            assert values["grasp_initial_tolerance_m"] == 0.035
-            assert values["contact_fallback_distance_m"] == 0.055
-            assert values["wrapper_fallback_distance_m"] == 0.12
+            task2 = key == ("libero_goal", 2, "D17")
+            assert values["grasp_distance_m"] == (0.16 if task2 else 0.12)
+            assert values["grasp_initial_tolerance_m"] == (0.05 if task2 else 0.035)
+            assert values["contact_fallback_distance_m"] == (0.08 if task2 else 0.055)
+            assert values["wrapper_fallback_distance_m"] == (0.16 if task2 else 0.12)
             expected_articulation = 0.16 if key == ("libero_goal", 7, "D17") else 0.14
             assert values["articulation_grasp_distance_m"] == expected_articulation
         elif case_id == "S07":
-            assert values["geometry_factors"] == [1.0, 0.64, 1.20]
-            assert values["goal_region_scale"] == [1.0, 1.0, 1.0]
+            geometry, region = S07_REVIEW_OVERRIDES.get(
+                key, ([1.0, 0.64, 1.20], [1.0, 1.0, 1.0])
+            )
+            assert values["geometry_factors"] == geometry
+            assert values["goal_region_scale"] == region
         elif case_id == "S13":
             assert values["color_rgb"] == [0.18, 0.72, 0.38]
         elif case_id == "S14":

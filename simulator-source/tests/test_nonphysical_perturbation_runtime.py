@@ -64,8 +64,8 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
 
         self.assertEqual(plan.case_id, "D15")
-        self.assertEqual(plan.params["chunk_size"], 12)
-        self.assertEqual(plan.params["stale_chunk_steps"], 8)
+        self.assertEqual(plan.params["chunk_size"], 24)
+        self.assertEqual(plan.params["stale_chunk_steps"], 24)
 
     def test_repo_d17_declares_bounded_recovery_window_parameters(self):
         path = next(
@@ -146,13 +146,14 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         d04_plan = RUNTIME.build_execution_plan(
             PARSER.parse_bddl_perturbation_config(d04), ASSET_ROOT
         )
-        self.assertEqual(d01_plan.params["trigger_distance_m"], 0.17)
-        self.assertTrue(d03_plan.params["persistent_existing_obstacle"])
+        self.assertEqual(d01_plan.params["trigger_distance_m"], 0.20)
+        self.assertTrue(d03_plan.params["persistent_movable_asset"])
         self.assertEqual(d03_plan.params["receiver_trigger_distance_m"], 0.24)
         self.assertEqual(
             d03_plan.variant, "persistent_triggered_receiver_occupation"
         )
-        self.assertEqual(d03_plan.assets, ())
+        self.assertEqual(len(d03_plan.assets), 1)
+        self.assertEqual(d03_plan.assets[0].asset_id, "prl/plastic_plate")
         self.assertEqual(d04_plan.params["event_duration_steps"], 50)
         self.assertEqual(d04_plan.assets[0].scale, 1.25)
         self.assertEqual(
@@ -216,7 +217,7 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1701)
+        self.assertEqual(len(files), 1688)
         self.assertNotIn(
             "S04__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl",
             {path.name for path in files},

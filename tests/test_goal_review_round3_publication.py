@@ -77,8 +77,10 @@ def test_round3_scope_matches_the_52_reviewed_goal_combinations() -> None:
         (7, "D03"),
         (7, "D05"),
         (7, "S05"),
+        (3, "S05"),
+        (9, "D03"),
     }
-    assert FINALIZER.GOAL_REVIEW_ROUND3_DELETIONS < (
+    assert FINALIZER.GOAL_REVIEW_ROUND3_DELETIONS - {(3, "S05"), (9, "D03")} < (
         FINALIZER.GOAL_REVIEW_ROUND3_FEEDBACK_KEYS
     )
     assert {
@@ -89,17 +91,37 @@ def test_round3_scope_matches_the_52_reviewed_goal_combinations() -> None:
 
 def test_round3_publication_contains_only_the_requested_goal_changes() -> None:
     manifest, entries = _published_entries()
-    assert manifest["task_count"] == len(entries) == 1701
+    assert manifest["task_count"] == len(entries) == 1688
+
+    # Later reviews superseded these round-3 assertions without restoring old BDDLs.
+    superseded = {
+        (3, "D02", "offset_xy"): [0.12, -0.09],
+        (3, "S07", "goal_region_scale"): [1.2, 1.0, 0.64],
+        (3, "S07", "articulation_joint_range_scale"): None,
+        (3, "S09", "receiver_geometry_factors"): [1.0, 1.0, 1.0],
+        (3, "S09", "articulation_joint_range_scale"): None,
+        (4, "D05", "asset_scale"): 0.65,
+        (4, "S09", "receiver_geometry_factors"): [0.9, 0.9, 1.0],
+        (6, "D03", "asset_offset_xyz"): [0.00835045, 0.00205392, 0.0],
+        (6, "D03", "references"): "none",
+        (6, "D05", "barrier_path_fraction"): 0.60,
+        (6, "D05", "lateral_offset_m"): -0.025,
+        (9, "S02", "offset_xy"): [0.10, 0.0],
+        (9, "S07", "goal_region_scale"): [1.0, 1.6, 1.2],
+    }
 
     for task_id, case_id in FINALIZER.GOAL_REVIEW_ROUND3_DELETIONS:
         assert ("libero_goal", task_id, case_id) not in entries
 
     for (task_id, case_id), expected in FINALIZER.GOAL_REVIEW_ROUND3_PARAMS.items():
+        if (task_id, case_id) in FINALIZER.GOAL_REVIEW_ROUND3_DELETIONS:
+            continue
         item = entries[("libero_goal", task_id, case_id)]
         fields = _active_fields(ROOT / "assets" / str(item["bddl_path"]), case_id)
         params = fields["params"]
         for name, values in expected.items():
-            assert params[name] == _typed(values), (task_id, case_id, name, params)
+            current = superseded.get((task_id, case_id, name), _typed(values))
+            assert params.get(name) == current, (task_id, case_id, name, params)
 
     assert FINALIZER.GOAL_REVIEW_ROUND3_PARAMS[(2, "S02")]["offset_xy"] == (
         "-0.12",
@@ -114,10 +136,13 @@ def test_round3_publication_contains_only_the_requested_goal_changes() -> None:
     ] == ("0.60", "0.60", "2.0")
 
     for (task_id, case_id), expected in FINALIZER.GOAL_REVIEW_ROUND3_FIELDS.items():
+        if (task_id, case_id) in FINALIZER.GOAL_REVIEW_ROUND3_DELETIONS:
+            continue
         item = entries[("libero_goal", task_id, case_id)]
         fields = _active_fields(ROOT / "assets" / str(item["bddl_path"]), case_id)
         for name, values in expected.items():
-            assert fields[name] == _typed(values), (task_id, case_id, name, fields)
+            current = superseded.get((task_id, case_id, name), _typed(values))
+            assert fields[name] == current, (task_id, case_id, name, fields)
 
 
 def test_round3_runtime_opt_ins_are_task_local() -> None:
@@ -144,15 +169,19 @@ def test_round3_runtime_opt_ins_are_task_local() -> None:
 
     assert trigger_anchors == {
         ("libero_goal", 0, case_id)
-        for case_id in ("D04", "D08", "D09", "D10", "D11", "D12", "D16")
-    }
+        for case_id in ("D01", "D04", "D06", "D07", "D08", "D09", "D10", "D11", "D12")
+    } | {("libero_goal", 5, "D05")}
     assert articulation_scales == {
-        ("libero_goal", 3, "S07"),
-        ("libero_goal", 3, "S09"),
+        ("libero_goal", 0, "S07"),
+        ("libero_goal", 0, "S08"),
+        ("libero_goal", 0, "S09"),
     }
     assert goal_dynamic_barrier_fractions == {
         ("libero_goal", 1, "D05"),
+        ("libero_goal", 4, "D05"),
+        ("libero_goal", 5, "D05"),
         ("libero_goal", 6, "D05"),
+        ("libero_goal", 8, "D05"),
     }
     assert goal_s12_offsets == {("libero_goal", 0, "S12")}
 
@@ -171,7 +200,8 @@ def test_round3_reuses_existing_grounded_s04_and_persistent_d03_fixes() -> None:
         ROOT / "assets" / str(task1_d03["bddl_path"]), "D03"
     )
     assert fields["variant"] == "persistent_triggered_receiver_occupation"
-    assert fields["params"]["persistent_existing_obstacle"] is True
+    assert fields["params"]["persistent_movable_asset"] is True
+    assert fields["params"]["asset_id"] == "prl/plastic_plate"
 
 
 def test_round3_deleted_bddl_files_are_absent() -> None:

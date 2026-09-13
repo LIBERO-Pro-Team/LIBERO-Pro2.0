@@ -12,7 +12,14 @@ $files = Get-ChildItem -LiteralPath $rootPath -Recurse -File | Where-Object {
     $_.FullName -ne $outputPath
 } | Sort-Object FullName
 $lines = foreach ($file in $files) {
-    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $file.FullName).Hash.ToLowerInvariant()
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [IO.File]::OpenRead($file.FullName)
+    try {
+        $hash = [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $stream.Dispose()
+        $algorithm.Dispose()
+    }
     $relative = $file.FullName.Substring($rootPath.Length + 1).Replace('\', '/')
     "$hash  $relative"
 }

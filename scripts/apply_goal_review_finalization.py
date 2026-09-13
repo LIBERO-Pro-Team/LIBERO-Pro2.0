@@ -315,13 +315,13 @@ GOAL_REVIEW_ROUND7_PARAMS: dict[
         "asset_count": ("3",),
         "clutter_minimum_gap_m": ("0.140",),
         "clutter_offsets_xy": ("0.24", "0.18", "0.24", "-0.18", "-0.24", "-0.18"),
-        "movable_asset": ("false",),
+        "movable_asset": ("true",),
     },
     (1, "S10"): {
         "asset_count": ("3",),
         "clutter_minimum_gap_m": ("0.140",),
         "clutter_offsets_xy": ("0.24", "0.18", "0.24", "-0.18", "-0.24", "-0.18"),
-        "movable_asset": ("false",),
+        "movable_asset": ("true",),
     },
     (2, "D03"): {
         "persistent_movable_asset": ("true",),
@@ -333,7 +333,7 @@ GOAL_REVIEW_ROUND7_PARAMS: dict[
         "clutter_minimum_gap_m": ("0.140",),
         "clutter_offsets_xy": ("0.38", "0.20", "0.40", "-0.08"),
         "support_surface": ("table",),
-        "movable_asset": ("false",),
+        "movable_asset": ("true",),
     },
     (3, "D02"): {"offset_xy": ("0.12", "-0.09"), "yaw_rad": ("-0.24",)},
     (5, "D03"): {
@@ -370,7 +370,7 @@ GOAL_REVIEW_ROUND7_PARAMS: dict[
     (8, "S10"): {
         "clutter_minimum_gap_m": ("0.140",),
         "clutter_offsets_xy": ("0.26", "-0.20", "0.22", "0.22", "-0.21", "0.10"),
-        "movable_asset": ("false",),
+        "movable_asset": ("true",),
     },
     (2, "S09"): {"initial_closed_region_endpoint": ("true",)},
 }
@@ -542,7 +542,11 @@ def case_updates(
             visual_only_asset=("false",),
         )
         if case_id == "S10":
-            params["asset_contact_margin_m"] = ("0.006",)
+            if suite == "libero_goal":
+                params["zero_initial_asset_velocity"] = ("true",)
+                params["asset_collision_box_half_size"] = ("0.03861756", "0.045803085", "0.02738214")
+                params["asset_collision_box_offset_xyz"] = ("-0.00983288", "-0.002414605", "0.00839394")
+            params["asset_contact_margin_m"] = ("0.001" if suite == "libero_goal" else "0.006",)
 
     if (suite, task_id, case_id) == ("libero_10", 8, "D06"):
         fields["disturbance_targets"] = ("none",)

@@ -229,11 +229,11 @@ def test_spatial_review_parameters_match_validated_values() -> None:
         assert "height_delta_m" not in generated
 
     s18 = blocks[("S18", 0)]
-    assert _param(s18, "eef_offset_xyz") == ("0.080", "-0.060", "0.050")
+    assert _param(s18, "eef_offset_xyz") == ("0.120", "-0.090", "0.075")
     assert _param(s18, "joint_zero_offset_rad") == (
-        "0.080",
-        "-0.060",
-        "0.050",
+        "0.120",
+        "-0.090",
+        "0.075",
     )
 
     d01 = blocks[("D01", 3)]

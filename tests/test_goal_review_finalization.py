@@ -170,13 +170,14 @@ def test_global_review_parameters_apply_to_every_supported_suite_task() -> None:
                 "visual_only_asset": ("false",),
                 "physical_collision": ("true",),
             }.items() <= FINALIZER.case_updates(suite, task_id, "D05")[0].items()
+            repeated = "24" if (suite, task_id) == ("libero_goal", 0) else "8"
             assert {
-                "repeat_count": ("8",),
-                "event_duration_steps": ("8",),
+                "repeat_count": (repeated,),
+                "event_duration_steps": (repeated,),
             }.items() <= FINALIZER.case_updates(suite, task_id, "D14")[0].items()
             assert {
-                "chunk_size": ("12",),
-                "stale_chunk_steps": ("8",),
+                "chunk_size": ("24" if (suite, task_id) == ("libero_goal", 0) else "12",),
+                "stale_chunk_steps": (repeated,),
             }.items() <= FINALIZER.case_updates(suite, task_id, "D15")[0].items()
 
 
@@ -188,15 +189,15 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
             "receiver_geometry_factors": [0.8, 0.8, 0.8],
         },
         "S18": {
-            "eef_offset_xyz": [0.05, -0.04, 0.03],
-            "joint_zero_offset_rad": [0.05, -0.04, 0.03],
+            "eef_offset_xyz": [0.075, -0.06, 0.045],
+            "joint_zero_offset_rad": [0.075, -0.06, 0.045],
             "grasp_center_offset_xyz": [0.0, 0.0, 0.0],
         },
         "S20": {"delay_steps": 7},
         "D12": {"delay_steps": 10},
         "D13": {"arm_delay_steps": 8, "gripper_delay_steps": 8},
-        "D14": {"repeat_count": 8, "event_duration_steps": 8},
-        "D15": {"chunk_size": 12, "stale_chunk_steps": 8},
+        "D14": {"repeat_count": 24, "event_duration_steps": 24},
+        "D15": {"chunk_size": 24, "stale_chunk_steps": 24, "event_duration_steps": 24},
         "D05": {"visual_only_asset": False, "physical_collision": True},
     }
     counts = {case_id: 0 for case_id in expected}
@@ -206,8 +207,8 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
             "receiver_geometry_factors": [0.95, 0.95, 0.95],
         },
         ("libero_10", 9): {
-            "target_geometry_factors": [1.1, 1.1, 1.1],
-            "receiver_geometry_factors": [1.0, 1.0, 1.0],
+            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "receiver_geometry_factors": [1.2, 1.2, 1.2],
         },
         ("libero_goal", 1): {
             "target_geometry_factors": [1.2, 1.2, 1.2],
@@ -222,7 +223,7 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
             "receiver_geometry_factors": [0.8, 0.8, 1.0],
         },
         ("libero_goal", 4): {
-            "target_geometry_factors": [1.2, 1.2, 1.2],
+            "target_geometry_factors": [1.08, 1.08, 1.08],
             "receiver_geometry_factors": [0.8, 0.8, 1.0],
         },
         ("libero_goal", 7): {
@@ -241,6 +242,15 @@ def test_published_all_task_parameters_cover_all_four_suites() -> None:
             continue
         params = _active_params(ROOT / "assets" / item["bddl_path"], case_id)
         expected_params = s09_overrides.get((item["suite"], item["base_task_id"]), expected[case_id]) if case_id == "S09" else expected[case_id]
+        if item["suite"] == "libero_goal" and case_id == "S09":
+            receiver_overrides = {3: [1.0, 1.0, 1.0], 4: [0.9, 0.9, 1.0]}
+            if item["base_task_id"] in receiver_overrides:
+                expected_params = dict(expected_params, receiver_geometry_factors=receiver_overrides[item["base_task_id"]])
+        if (item["suite"], item["base_task_id"], case_id) == ("libero_spatial", 0, "S18"):
+            expected_params = dict(expected_params, eef_offset_xyz=[0.12, -0.09, 0.075],
+                                   joint_zero_offset_rad=[0.12, -0.09, 0.075])
+        if (item["suite"], item["base_task_id"], case_id) == ("libero_object", 7, "D13"):
+            expected_params = {"arm_delay_steps": 16, "gripper_delay_steps": 0}
         assert expected_params.items() <= params.items(), (
             item["suite"],
             item["base_task_id"],

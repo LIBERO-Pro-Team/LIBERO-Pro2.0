@@ -539,6 +539,22 @@ def build_execution_plan(
     if not isinstance(params, dict):
         params = {}
     _validate_spatial_recovery_options(config, case_id, fields, params)
+    if "asset_collision_box_half_size" in params and (
+        config.get("source_suite") != "libero_goal"
+        or case_id != "S10"
+        or not _param_bool(params, "movable_asset", False)
+    ):
+        raise PerturbationConfigurationError(
+            "asset_collision_box_half_size requires a movable Goal S10 asset"
+        )
+    if _param_bool(params, "zero_initial_asset_velocity", False) and (
+        config.get("source_suite") != "libero_goal"
+        or case_id != "S10"
+        or not _param_bool(params, "movable_asset", False)
+    ):
+        raise PerturbationConfigurationError(
+            "zero_initial_asset_velocity requires a movable Goal S10 asset"
+        )
     if _param_bool(params, "swap_single_support_group", False):
         _validate_single_support_swap(
             config, case_id, _name_tuple(fields.get("targets")), params
@@ -865,6 +881,19 @@ def inject_plan_assets(
             _scale_mujoco_object_axes(obj, tuple(float(value) for value in factors))
         else:
             _scale_mujoco_object(obj, asset.scale)
+        if plan.case_id == "S10" and "asset_collision_box_half_size" in plan.params:
+            half_size = _required_param_vector(plan.params, "asset_collision_box_half_size", 3)
+            offset = _required_param_vector(plan.params, "asset_collision_box_offset_xyz", 3)
+            if np.any(half_size <= 0.0) or np.any(half_size > 0.15):
+                raise PerturbationConfigurationError("S10 collision box half-size must be in (0, 0.15]")
+            for xml_root in _mujoco_xml_roots(obj):
+                for geom in xml_root.iter("geom"):
+                    if geom.get("group", "0") != "0":
+                        continue
+                    geom.set("type", "box")
+                    geom.attrib.pop("mesh", None)
+                    geom.set("size", " ".join(str(float(v)) for v in half_size))
+                    geom.set("pos", " ".join(str(float(v)) for v in offset))
         if movable_injected_asset and "asset_contact_margin_m" in plan.params:
             _set_movable_asset_contact_margin(
                 obj,
@@ -2781,6 +2810,13 @@ class NonPhysicalPerturbationRuntime:
         """Start perturbation timing after environment-only settling steps."""
         if not self.plan.case_id.startswith("D"):
             self._clear_temporal_state()
+            if self.plan.case_id == "S10" and _param_bool(
+                self.plan.params, "zero_initial_asset_velocity", False
+            ):
+                # Settling may leave residual speed; do not pin objects during play.
+                for name in env.perturbation_asset_injection.injected_names:
+                    _zero_entity_free_joint_velocity(env, name)
+                env.sim.forward()
             if self.plan.case_id == "S09":
                 closed_joints = _close_initial_articulation_regions(env, self.plan)
                 if closed_joints:
@@ -4253,6 +4289,10 @@ class NonPhysicalPerturbationRuntime:
                             f"{case_id} clutter asset {asset_name!r} has no collision-clear support position"
                         )
                     candidate, support_geom = selected_candidate
+                    if case_id == "S10" and _param_bool(
+                        self.plan.params, "zero_initial_asset_velocity", False
+                    ):
+                        _zero_entity_free_joint_velocity(env, asset_name)
                     placed_assets.append(asset_name)
                     self._log_once(
                         "static_asset_placed"

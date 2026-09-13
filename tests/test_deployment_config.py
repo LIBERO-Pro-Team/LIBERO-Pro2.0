@@ -8,7 +8,10 @@ import sys
 import zipfile
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 ROOT = Path(__file__).parents[1]
 

@@ -76,6 +76,18 @@ function Get-RelativePath {
     return $fullPath.Substring($rootPath.Length).Replace('\', '/')
 }
 
+function Get-Sha256 {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $algorithm = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [IO.File]::OpenRead($Path)
+    try {
+        return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $stream.Dispose()
+        $algorithm.Dispose()
+    }
+}
+
 function Write-HashManifest {
     param(
         [Parameter(Mandatory = $true)][string]$BundleRoot,
@@ -93,7 +105,7 @@ function Write-HashManifest {
     }
     $records = foreach ($file in $files) {
         $relative = Get-RelativePath -Root $BundleRoot -Path $file.FullName
-        $digest = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $digest = Get-Sha256 -Path $file.FullName
         [PSCustomObject]@{ Relative = $relative; Line = "$digest  $relative" }
     }
     $content = (($records | Sort-Object Relative | ForEach-Object { $_.Line }) -join "`n")
@@ -259,9 +271,7 @@ try {
     Invoke-Native -Command "tar.exe" -Arguments @(
         "-czf", $archivePath, "-C", $OutputRoot, $bundleName
     )
-    $archiveDigest = (
-        Get-FileHash -LiteralPath $archivePath -Algorithm SHA256
-    ).Hash.ToLowerInvariant()
+    $archiveDigest = Get-Sha256 -Path $archivePath
     Write-Utf8Lf -Path $archiveManifestPath -Content (
         "$archiveDigest  $([System.IO.Path]::GetFileName($archivePath))"
     )

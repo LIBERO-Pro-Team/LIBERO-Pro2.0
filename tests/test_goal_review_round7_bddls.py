@@ -50,9 +50,10 @@ def params(task: int, case: str) -> dict[str, object]:
 
 
 @pytest.mark.parametrize("task", [0, 1, 2])
-def test_reported_s10_clutter_is_fixed_but_physically_solid(task: int) -> None:
+def test_reported_s10_clutter_is_movable_and_physically_solid(task: int) -> None:
     p = params(task, "S10")
-    assert p["movable_asset"] is False
+    assert p["movable_asset"] is True
+    assert p["zero_initial_asset_velocity"] is True
     assert p["physical_collision"] is True
     assert p["visual_only_asset"] is False
 
@@ -173,7 +174,7 @@ def test_task8_s08_scales_compiled_collision_geometry() -> None:
 
 def test_task8_s10_has_extra_plate_clearance() -> None:
     p = params(8, "S10")
-    assert p["movable_asset"] is False
+    assert p["movable_asset"] is True
     assert p["clutter_minimum_gap_m"] == 0.14
     assert p["clutter_offsets_xy"] == [0.26, -0.20, 0.22, 0.22, -0.21, 0.10]
 

@@ -26,6 +26,7 @@ video = [
   "imageio-ffmpeg==0.5.1",
 ]
 dev = [
+  "tomli==2.0.1; python_version < '3.11'",
   "mypy==1.8.0",
   "pytest==8.3.5",
   "pytest-asyncio==0.23.8",

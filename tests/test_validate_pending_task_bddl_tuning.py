@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import numpy as np
@@ -16,12 +17,18 @@ VALIDATOR = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VALIDATOR)
 
 
-def test_validation_specs_are_exactly_the_bddl_only_tuning_tasks() -> None:
-    specs = VALIDATOR.load_validation_specs()
-    d19_specs = VALIDATOR.load_validation_specs(case_ids={"D19"})
+def test_validation_specs_select_only_recorded_bddl_tuning_tasks(tmp_path: Path) -> None:
+    report = tmp_path / "change_report.json"
+    changes = [
+        {"suite": "libero_goal", "task_id": 0, "case_id": "S15", "bddl": "a.bddl", "fields": {}},
+        {"suite": "libero_goal", "task_id": 1, "case_id": "D19", "bddl": "b.bddl", "fields": {}},
+    ]
+    report.write_text(json.dumps({"changes": changes}), encoding="utf-8")
+    specs = VALIDATOR.load_validation_specs(report_path=report)
+    d19_specs = VALIDATOR.load_validation_specs(case_ids={"D19"}, report_path=report)
 
-    assert len(specs) == 218
-    assert len(d19_specs) == 17
+    assert len(specs) == 2
+    assert len(d19_specs) == 1
     assert {spec.case_id for spec in d19_specs} == {"D19"}
     assert ("libero_10", 0, "D19") not in {
         (spec.suite, spec.task_id, spec.case_id) for spec in specs

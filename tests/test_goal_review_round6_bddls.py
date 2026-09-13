@@ -29,7 +29,6 @@ assert PARSER_SPEC is not None and PARSER_SPEC.loader is not None
 PARSER = importlib.util.module_from_spec(PARSER_SPEC)
 PARSER_SPEC.loader.exec_module(PARSER)
 
-FIXED_S10_TASKS = set(range(10))
 
 
 def entries() -> dict[tuple[int, str], dict[str, object]]:
@@ -120,10 +119,11 @@ def test_initial_closed_regions_is_scoped_to_task2_s09() -> None:
     assert configured == {(2, "S09")}
 
 
-def test_only_reviewed_goal_s10_tasks_are_fixed() -> None:
+def test_goal_s10_clutter_is_movable_and_starts_at_rest() -> None:
     for task in range(10):
         p = params(task, "S10")
-        assert p["movable_asset"] is (task not in FIXED_S10_TASKS)
+        assert p["movable_asset"] is True
+        assert p["zero_initial_asset_velocity"] is True
         assert p["physical_collision"] is True
         assert p["visual_only_asset"] is False
 

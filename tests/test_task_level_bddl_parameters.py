@@ -115,7 +115,7 @@ def test_grounded_s04_tasks_keep_declared_supports_available_for_grounding() -> 
         if "(:ground_support_from_declared_surface true)" not in text:
             missing.append(path.relative_to(dataset).as_posix())
 
-    assert len(grounded) == 27
+    assert len(grounded) == 20
     assert missing == []
 
 
@@ -657,7 +657,7 @@ def test_goal_d03_tasks_use_persistent_receiver_obstacles() -> None:
 
     assert len(task2.assets) == 1
     assert task2.assets[0].asset_id == "prl/plastic_plate"
-    assert task2.assets[0].scale == 0.60
+    assert task2.assets[0].scale == 0.75
     assert task2.references == ()
     assert task2.params["persistent_movable_asset"] is True
     assert len(task1.assets) == 1

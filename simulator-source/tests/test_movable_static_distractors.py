@@ -1,6 +1,10 @@
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+import pytest
 
 
 SIMULATOR_ROOT = Path(__file__).resolve().parents[1]
@@ -113,3 +117,69 @@ def test_task_level_contact_margin_only_changes_collision_geoms() -> None:
 
     assert root.find("geom[@name='collision']").get("margin") == "0.006"
     assert root.find("geom[@name='visual']").get("margin") is None
+
+
+@pytest.mark.parametrize("enabled", [False, True])
+def test_initial_asset_velocity_reset_preserves_scene_and_later_motion(enabled):
+    plan = _plan("S10", movable=True)
+    plan.params["zero_initial_asset_velocity"] = enabled
+    engine = runtime.NonPhysicalPerturbationRuntime(plan)
+    qvel = np.arange(12, dtype=float) + 1.0
+    qpos = np.arange(14, dtype=float)
+    before = qvel.copy()
+    model = SimpleNamespace(
+        joint_name2id=lambda name: 0, jnt_type=[0], jnt_dofadr=[6]
+    )
+    data = SimpleNamespace(qvel=qvel, qpos=qpos)
+    env = SimpleNamespace(
+        perturbation_asset_injection=SimpleNamespace(injected_names=("clutter",)),
+        objects_dict={"clutter": SimpleNamespace(joints=["clutter_joint"])},
+        sim=SimpleNamespace(model=model, data=data, forward=lambda: None),
+    )
+    engine.begin_rollout(env)
+    np.testing.assert_array_equal(qvel[:6], before[:6])
+    np.testing.assert_array_equal(qvel[6:], np.zeros(6) if enabled else before[6:])
+    np.testing.assert_array_equal(qpos, np.arange(14, dtype=float))
+    qvel[6:] = 0.5
+    engine.transform_action(np.zeros(7), 1)
+    np.testing.assert_array_equal(qvel[6:], np.full(6, 0.5))
+
+
+def test_s10_box_collision_keeps_visual_mesh_mass_and_free_joint():
+    root = ET.fromstring(
+        '<body><joint type="free"/><geom group="0" type="mesh" mesh="collision" '
+        'mass="0.028" friction="0.8 0.005 0.0001"/>'
+        '<geom group="1" type="mesh" mesh="visual" contype="0" conaffinity="0"/></body>'
+    )
+    obj = SimpleNamespace(joints=["free"], get_obj=lambda: root)
+    plan = _plan("S10", movable=True)
+    plan.params.update(asset_collision_box_half_size=[0.03861756, 0.045803085, 0.02738214],
+                       asset_collision_box_offset_xyz=[-0.00983288, -0.002414605, 0.00839394])
+    visual = ET.tostring(root.find("geom[@group='1']"))
+    runtime.inject_plan_assets({}, plan, lambda *args, **kwargs: obj)
+    collision = root.find("geom[@group='0']")
+    assert collision.get("type") == "box"
+    assert collision.get("mesh") is None
+    assert collision.get("mass") == "0.028"
+    assert collision.get("friction") == "0.8 0.005 0.0001"
+    assert ET.tostring(root.find("geom[@group='1']")) == visual
+    assert root.find("joint").get("type") == "free"
+
+
+@pytest.mark.parametrize("suite,case,movable", [
+    ("libero_object", "S10", True), ("libero_goal", "S11", True),
+    ("libero_goal", "S10", False),
+])
+@pytest.mark.parametrize("field,value", [
+    ("zero_initial_asset_velocity", True),
+    ("asset_collision_box_half_size", [0.03, 0.04, 0.02]),
+])
+def test_goal_s10_options_reject_other_suites_cases_and_fixed_assets(suite, case, movable, field, value):
+    params = {"movable_asset": movable, field: value}
+    config = dict(case_id=case, active_cases=[case], source_suite=suite,
+                  perturbations=[[case, dict(operator="asset_or_appearance"),
+                                  dict(variant="clutter"), dict(params=params)]])
+    config["perturbations"].extend([other] for other in runtime.LEGACY_CASE_IDS if other != case)
+    assets = SIMULATOR_ROOT / "libero/libero/assets/perturbation_assets"
+    with pytest.raises(runtime.PerturbationConfigurationError, match="movable Goal S10"):
+        runtime.build_execution_plan(config, assets)
