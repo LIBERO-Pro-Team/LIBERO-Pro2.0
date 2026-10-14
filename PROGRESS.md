@@ -9,3 +9,9 @@
 - Validation: 4 existing client/CLI tests passed; installed CLI help, Markdown links, source hashes, numerical values, and desktop/mobile previews checked.
 - For future leaderboard updates, use the source tables and retain reported precision instead of copying website rankings or recomputing rounded deltas.
 - Implementation commit: `de12db7d892d2334e8a488146ee7c0a505d78c3c`.
+
+## 2026-10-14 — Project news section
+
+- Replaced the complete Key Findings section, including its figure and caption, with News entries about the available training dataset and paper leaderboards.
+- Verified the change is confined to that README section and Markdown whitespace checks pass.
+- Implementation commit: `f01bcdad9977ca6086423fde016fc1d765e2f860`.
