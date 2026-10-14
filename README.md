@@ -40,7 +40,7 @@ Static shifts are configured at reset. Runtime interventions are triggered at ta
 
 ### Task Partition
 
-The paper samples two evaluation tasks from each LIBERO suite with seed **142**. Their complement forms the training pool; all variants of a base task stay in the same partition.
+The paper samples two evaluation tasks from each LIBERO suite with seed **142**. Task IDs are **zero-based** within each suite. Their complement forms the training pool; all variants of a base task stay in the same partition.
 
 | Suite | Held-out evaluation task IDs | Training tasks |
 |---|---|---:|
@@ -51,6 +51,12 @@ The paper samples two evaluation tasks from each LIBERO suite with seed **142**.
 | **Total** | **8 evaluation tasks** | **32** |
 
 After validation, the paper contains **1,313 training instances** and **335 evaluation instances**. Detailed perturbation definitions and visual examples are available in the [project documentation](https://racingemperor.github.io/LIBERO-Pro2.0/docs.html).
+
+### Repository and Paper Versions
+
+The overview and leaderboards describe the paper benchmark. The current `main` branch still contains an earlier **1,680-instance manifest**: 40 BASE instances and 1,640 shifted instances, with **21 static** and **20 runtime** perturbation types. Its catalogue is not the paper's 42-type release.
+
+The [`model-agnostic-multiuser` branch](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/model-agnostic-multiuser) contains **1,688 instances**, including 40 BASE and 1,648 shifted instances across all 42 types. Its task partition also differs from the paper's reported 1,313/335 split. See [versioned catalogue counts and case-ID mapping](docs/paper-results.md#evaluation-service-versions) before choosing a server version; the evaluation commands below use the connected server's catalogue.
 
 ## 🏆 Leaderboard
 
@@ -117,7 +123,7 @@ Visit the [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.
 Install the lightweight client in your model environment (Python **3.8–3.12**):
 
 ```bash
-git clone git@github.com:Zxy-MLlab/LIBERO-Pro2.0.git
+git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
 cd LIBERO-Pro2.0
 python -m pip install -e .
 ```
@@ -182,6 +188,8 @@ python scripts/run_grouped_eval.py \
   --control-mode relative \
   --output-dir results/static-plan
 ```
+
+This three-seed command is a planning example, not the full paper evaluation protocol. For scored runs, also match the model's official action horizon and suite-specific episode limit.
 
 Use `--group dynamic` for runtime interventions. Available combinations come from the server's `/v1/tasks` catalog. The `plan` command previews episodes; `submit` queues them for an external model runner. See [grouped evaluation](docs/grouped-benchmark.md) for execution, resume, and result export.
 

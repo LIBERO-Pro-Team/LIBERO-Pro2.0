@@ -3,8 +3,9 @@
     "source": "figures/promain.pdf",
     "source_sha256": "d74ff575fd703aeedf2c436fe047e672e4aa3c066fa8a2e327c615e8ae8d7835",
     "image": "static/images/overview.png",
-    "image_sha256": "5ea1fd0c165375b7db423a81bf5047e2b0dc051653df435728530eb473e9c229",
-    "conversion": "pdftoppm -singlefile -scale-to 2200 -png"
+    "image_sha256": "0333f8b55f2e85bf2c2dcc7f43e68c89f720981f90931298eea04a0cfbf90aec",
+    "conversion": "pdftoppm -singlefile -scale-to 2200 -png",
+    "postprocessing": "Shift the lower logo line 35 pixels left and restore its previous background; preserve all labels, numbers, and image dimensions."
   },
   {
     "source": "figures/example.png",
