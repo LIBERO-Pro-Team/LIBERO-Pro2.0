@@ -162,6 +162,7 @@
           (:interaction_mode placement)
           (:asset_id prl/notebook)
           (:asset_scale 0.7)
+          (:grounded_replacement true)
         )
       )
       (S07

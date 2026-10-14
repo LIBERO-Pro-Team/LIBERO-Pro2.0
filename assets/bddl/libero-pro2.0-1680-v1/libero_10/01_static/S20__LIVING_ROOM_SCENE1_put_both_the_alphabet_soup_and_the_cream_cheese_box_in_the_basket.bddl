@@ -288,6 +288,7 @@
         (:variant fixed_rate_delay_or_action_window)
         (:params
           (:interaction_mode placement)
+          (:delay_steps 7)
         )
       )
       (S21

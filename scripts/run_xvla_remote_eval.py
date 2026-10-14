@@ -8,6 +8,7 @@ from typing import Any, Dict
 from urllib.request import urlopen
 
 from libero_remote import RemoteLiberoEnv
+from libero_remote.environment.task_manifest import resolve_catalog_max_steps
 from libero_remote.runner.report import build_run_manifest
 from libero_remote.runner.video import ObservationVideoWriter, episode_video_path
 from libero_remote.runner.xvla import (
@@ -30,10 +31,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--suite", default="libero_goal")
     parser.add_argument("--task-id", type=int, default=0)
+    parser.add_argument("--variant", default="base")
     parser.add_argument("--init-state-id", type=int, default=0)
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max-steps", type=int, default=300)
+    parser.add_argument("--max-steps", type=int)
     parser.add_argument("--timeout", type=float, default=120.0)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--record-video", action="store_true")
@@ -47,7 +49,7 @@ def main() -> None:
     args = parse_args()
     if args.episodes < 1:
         raise SystemExit("--episodes must be at least 1")
-    if args.max_steps < 1:
+    if args.max_steps is not None and args.max_steps < 1:
         raise SystemExit("--max-steps must be at least 1")
     if args.video_fps <= 0:
         raise SystemExit("--video-fps must be positive")
@@ -73,6 +75,12 @@ def main() -> None:
             "remote LIBERO service does not advertise absolute control; "
             "deploy the matching server code before running xVLA"
         )
+    try:
+        max_steps = args.max_steps or resolve_catalog_max_steps(
+            catalog, args.suite, args.task_id, args.variant
+        )
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     output = args.output or default_output_path()
     video_dir = args.video_dir or output.parent / f"{output.stem}_videos"
@@ -86,10 +94,11 @@ def main() -> None:
         evaluation={
             "suite": args.suite,
             "task_id": args.task_id,
+            "variant": args.variant,
             "initial_init_state_id": args.init_state_id,
             "episodes": args.episodes,
             "initial_seed": args.seed,
-            "max_steps": args.max_steps,
+            "max_steps": max_steps,
             "control_mode": "absolute",
             "device": args.device,
             "record_video": args.record_video,
@@ -111,7 +120,8 @@ def main() -> None:
             task_id=args.task_id,
             init_state_id=args.init_state_id + episode_index,
             seed=args.seed + episode_index,
-            max_steps=args.max_steps,
+            max_steps=max_steps,
+            variant=args.variant,
         )
         try:
             if args.record_video:

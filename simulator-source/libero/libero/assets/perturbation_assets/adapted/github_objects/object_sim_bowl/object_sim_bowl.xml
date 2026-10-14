@@ -1,0 +1,41 @@
+<mujoco model="object_sim_bowl">
+  <compiler angle="radian" />
+  <asset>
+    <material name="object_sim_bowl_mat" rgba="0.74 0.74 0.74 1.0" specular="0.5" shininess="0.5" />
+    <mesh name="object_sim_bowl_visual_mesh" file="bowl.stl" />
+    <mesh name="object_sim_bowl_contact0" file="contact0.stl" />
+    <mesh name="object_sim_bowl_contact1" file="contact1.stl" />
+    <mesh name="object_sim_bowl_contact2" file="contact2.stl" />
+    <mesh name="object_sim_bowl_contact3" file="contact3.stl" />
+    <mesh name="object_sim_bowl_contact4" file="contact4.stl" />
+    <mesh name="object_sim_bowl_contact5" file="contact5.stl" />
+    <mesh name="object_sim_bowl_contact6" file="contact6.stl" />
+    <mesh name="object_sim_bowl_contact7" file="contact7.stl" />
+    <mesh name="object_sim_bowl_contact8" file="contact8.stl" />
+    <mesh name="object_sim_bowl_contact9" file="contact9.stl" />
+    <mesh name="object_sim_bowl_contact10" file="contact10.stl" />
+    <mesh name="object_sim_bowl_contact11" file="contact11.stl" />
+  </asset>
+  <worldbody>
+    <body>
+      <body name="object" pos="0 0 0">
+        <geom name="object_sim_bowl_visual" type="mesh" mesh="object_sim_bowl_visual_mesh" material="object_sim_bowl_mat" density="0" contype="0" conaffinity="0" group="1" />
+        <geom name="object_sim_bowl_collision0" type="mesh" mesh="object_sim_bowl_contact0" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision1" type="mesh" mesh="object_sim_bowl_contact1" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision2" type="mesh" mesh="object_sim_bowl_contact2" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision3" type="mesh" mesh="object_sim_bowl_contact3" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision4" type="mesh" mesh="object_sim_bowl_contact4" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision5" type="mesh" mesh="object_sim_bowl_contact5" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision6" type="mesh" mesh="object_sim_bowl_contact6" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision7" type="mesh" mesh="object_sim_bowl_contact7" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision8" type="mesh" mesh="object_sim_bowl_contact8" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision9" type="mesh" mesh="object_sim_bowl_contact9" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision10" type="mesh" mesh="object_sim_bowl_contact10" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+        <geom name="object_sim_bowl_collision11" type="mesh" mesh="object_sim_bowl_contact11" mass="0.0125" friction="0.6 0.005 0.0001" solref="0.004 1" solimp="0.95 0.99 0.001" contype="1" conaffinity="1" rgba="0 0 0 0" group="0" />
+      </body>
+      <site name="bottom_site" pos="0 0 -0.039482" size="0.005" rgba="0 0 0 0" />
+      <site name="top_site" pos="0 0 0.038543" size="0.005" rgba="0 0 0 0" />
+      <site name="horizontal_radius_site" pos="0.078066 0 0" size="0.005" rgba="0 0 0 0" />
+    </body>
+  </worldbody>
+</mujoco>

@@ -19,7 +19,7 @@ EVERYDAY_OBJECTS = (
     "prl/herring_tin",
     "prl/lunchbox",
     "prl/notebook",
-    "prl/plastic_bowl",
+    "github/object_sim_bowl",
     "prl/plastic_glass",
     "prl/plastic_plate",
     "prl/pocky_box",
@@ -48,6 +48,7 @@ EVERYDAY_OBJECTS = (
 )
 
 SEMANTIC_PAIRS = (
+    "libero/yellow_moka_pot",
     "prl/cracker_box",
     "ycb/YcbCrackerBox",
     "prl/gelatin_box",
@@ -119,8 +120,8 @@ COVERAGE = (
     coverage(
         "S06",
         "external_asset",
-        asset_ids=EVERYDAY_OBJECTS,
-        note="Use category-compatible PRL and YCB instances after graspability screening.",
+        asset_ids=("libero/yellow_moka_pot",) + EVERYDAY_OBJECTS,
+        note="Use category-compatible LIBERO, PRL, and YCB instances after graspability screening.",
     ),
     coverage(
         "S07",
@@ -149,8 +150,11 @@ COVERAGE = (
     coverage(
         "S11",
         "external_asset",
-        asset_ids=SEMANTIC_PAIRS,
-        note="Use same-category and highly similar candidates for grounding distractors.",
+        asset_ids=("libero/yellow_cabinet",) + SEMANTIC_PAIRS,
+        note=(
+            "Use same-category and highly similar LIBERO, PRL, and YCB candidates "
+            "for grounding distractors."
+        ),
     ),
     coverage(
         "S12",
@@ -201,7 +205,7 @@ COVERAGE = (
     coverage(
         "D06",
         "external_asset",
-        asset_ids=EVERYDAY_OBJECTS,
+        asset_ids=("libero/red_coffee_mug",) + EVERYDAY_OBJECTS,
         note="Move non-task objects from the common clutter pool without teleport overlap.",
     ),
     coverage("D07", "runtime_configuration", note="Schedule camera shake, drift, or a permanent pose jump."),
@@ -279,9 +283,8 @@ def main() -> None:
         "perturbation_coverage": list(COVERAGE),
     }
     destination = root / "asset_catalog.json"
-    destination.write_text(
-        json.dumps(catalog, indent=2) + "\n", encoding="utf-8"
-    )
+    with destination.open("w", encoding="utf-8", newline="\n") as stream:
+        stream.write(json.dumps(catalog, indent=2) + "\n")
     print(
         f"Cataloged {len(assets)} ready assets and {len(COVERAGE)} perturbations in {destination}"
     )

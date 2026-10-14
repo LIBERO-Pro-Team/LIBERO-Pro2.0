@@ -1,7 +1,9 @@
 # LIBERO-Pro perturbation assets
 
-This directory contains the asset bundle selected for the 21 static and 21
-dynamic non-physical perturbation directions. The bundle is deliberately
+This directory contains the asset bundle selected for the 22 static and 21
+dynamic non-physical perturbation directions. S22 reuses LIBERO's existing
+`assets/textures/table_light_wood.png` support-surface texture; D20 uses no
+additional mesh asset. The bundle is deliberately
 smaller than the upstream repositories: it includes the reusable manipulation
 objects and fixture parts needed by the benchmark, plus generated structures
 for clearance, occlusion, and approach-path tests.
@@ -14,13 +16,15 @@ for clearance, occlusion, and approach-path tests.
   (LGPL-2.1-only in the selected repository): visual meshes, simplified
   collision meshes, textures, and inertial metadata.
 - 3 RoboCasa handle geometries (CC BY 4.0 assets): bar, boxed, and knob handle.
+- 1 `object_sim` bowl geometry (Apache-2.0): one visual mesh and twelve
+  contact meshes wrapped for LIBERO placement and collision handling.
 - 5 locally generated parameterized MJCF structures (MIT): barrier panel,
   occlusion screen, opening frame, slotted receiver, and support riser.
 
 All 42 adapted/generated MJCF files use LIBERO's expected nested
 `body name="object"` layout and include `bottom_site`, `top_site`, and
 `horizontal_radius_site`. See `asset_catalog.json` for dimensions, paths,
-asset sets, and the S01-S21/D01-D19/D21 coverage mapping.
+asset sets, and the S01-S22/D01-D21 coverage mapping.
 
 ## Provenance and licenses
 

@@ -511,6 +511,10 @@
         (:constraints recovery_remains_possible)
         (:params
           (:interaction_mode placement)
+          (:offset_xy 0.04 -0.12)
+          (:minimum_clearance_m 0.08)
+          (:support_surface wooden_cabinet_1)
+          (:grounded_pose true)
         )
       )
       (D19

@@ -280,6 +280,9 @@
         (:variant foreground_background_contrast_or_scene_domain)
         (:params
           (:interaction_mode placement)
+          (:scene_color_mix 0.48)
+          (:scene_luminance_factors 0.72 0.86 1.18)
+          (:light_factor 0.64)
         )
       )
       (S15

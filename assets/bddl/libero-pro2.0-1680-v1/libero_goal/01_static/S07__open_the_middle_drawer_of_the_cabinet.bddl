@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -210,6 +210,10 @@
         (:variant functional_part_geometry)
         (:params
           (:interaction_mode articulation)
+          (:geometry_factors 1.0 0.64 1.20)
+          (:goal_region_scale 1.0 1.0 1.0)
+          (:scale_compiled_geometry true)
+          (:articulation_joint_range_scale 0.64)
         )
       )
       (S08

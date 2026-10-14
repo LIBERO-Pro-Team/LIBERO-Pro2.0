@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -176,11 +176,16 @@
       )
       (S04
         (:operator pose_transform)
-        (:targets akita_black_bowl_1 akita_black_bowl_1)
+        (:targets wine_bottle_1 cream_cheese_1)
         (:variant planar_object_position_swap)
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode articulation)
+          (:swap_xy 0.0 0.0)
+          (:grounded_swap true)
+          (:swap_cluster_radius_m 0.18)
+          (:support_surface table)
+          (:ground_support_from_declared_surface true)
         )
       )
       (S05

@@ -10,6 +10,113 @@ from libero.libero.envs import *
 from libero.libero.envs.nonphysical_perturbations import describe_execution_plan
 
 
+def _task_movable_asset_names(env):
+    plan = getattr(env, "perturbation_plan", None)
+    params = getattr(plan, "params", {}) if plan is not None else {}
+    if (
+        getattr(plan, "case_id", None) == "D03"
+        and bool(params.get("persistent_movable_asset", False))
+    ):
+        return (env.perturbation_runtime._persistent_d03_obstacle_name(),)
+    if (
+        getattr(plan, "case_id", None) in {"S10", "S11"}
+        and bool(params.get("movable_asset", False))
+    ):
+        injection = getattr(env, "perturbation_asset_injection", None)
+        return tuple(getattr(injection, "injected_names", ()) or ())
+    return ()
+
+
+def _merge_state_axis(incoming, current, inserted_ranges):
+    merged = current.copy()
+    incoming_offset = 0
+    current_offset = 0
+    for address, width in inserted_ranges:
+        if address < current_offset:
+            raise ValueError("Injected joint state ranges overlap")
+        span = address - current_offset
+        merged[current_offset:address] = incoming[
+            incoming_offset : incoming_offset + span
+        ]
+        incoming_offset += span
+        current_offset = address + width
+    remaining = current.size - current_offset
+    if incoming.size - incoming_offset != remaining:
+        raise ValueError("Injected joint state does not match the BASE state")
+    merged[current_offset:] = incoming[incoming_offset:]
+    return merged
+
+
+def _task_compatible_init_state(env, mujoco_state):
+    """Merge task-local injected free joints into a BASE init state."""
+
+    asset_names = _task_movable_asset_names(env)
+    if not asset_names:
+        return mujoco_state
+
+    incoming = np.asarray(mujoco_state, dtype=np.float64).reshape(-1)
+    current = np.asarray(env.sim.get_state().flatten(), dtype=np.float64)
+    if incoming.size == current.size:
+        return mujoco_state
+
+    free_joints = []
+    for asset_name in asset_names:
+        scene_object = getattr(env, "objects_dict", {}).get(asset_name)
+        for joint in list(getattr(scene_object, "joints", []) or []):
+            try:
+                joint_id = int(env.sim.model.joint_name2id(joint))
+            except Exception:
+                continue
+            if int(env.sim.model.jnt_type[joint_id]) == 0:
+                free_joints.append(joint_id)
+    free_joints = sorted(set(free_joints))
+    if len(free_joints) != len(asset_names):
+        raise ValueError(
+            "Each movable injected asset must compile with exactly one free joint"
+        )
+
+    new_nq = int(env.sim.model.nq)
+    new_nv = int(env.sim.model.nv)
+    old_nq = new_nq - 7 * len(free_joints)
+    old_nv = new_nv - 6 * len(free_joints)
+    old_tail = 1 + old_nq + old_nv
+    new_tail = 1 + new_nq + new_nv
+    if (
+        old_nq < 0
+        or old_nv < 0
+        or incoming.size - old_tail != current.size - new_tail
+    ):
+        raise ValueError(
+            "Movable injected asset init state must differ only by its free joints"
+        )
+
+    merged = current.copy()
+    merged[0] = incoming[0]
+    old_qpos = incoming[1 : 1 + old_nq]
+    current_qpos = current[1 : 1 + new_nq]
+    merged[1 : 1 + new_nq] = _merge_state_axis(
+        old_qpos,
+        current_qpos,
+        sorted(
+            (int(env.sim.model.jnt_qposadr[joint_id]), 7)
+            for joint_id in free_joints
+        ),
+    )
+    old_qvel = incoming[1 + old_nq : old_tail]
+    qvel_start = 1 + new_nq
+    current_qvel = current[qvel_start:new_tail]
+    merged[qvel_start:new_tail] = _merge_state_axis(
+        old_qvel,
+        current_qvel,
+        sorted(
+            (int(env.sim.model.jnt_dofadr[joint_id]), 6)
+            for joint_id in free_joints
+        ),
+    )
+    merged[new_tail:] = incoming[old_tail:]
+    return merged
+
+
 class ControlEnv:
     def __init__(
         self,
@@ -170,7 +277,7 @@ class ControlEnv:
 
     def regenerate_obs_from_state(self, mujoco_state):
         self.env.perturbation_runtime.prepare_reset(self.env)
-        self.set_state(mujoco_state)
+        self.set_state(_task_compatible_init_state(self.env, mujoco_state))
         self.env.sim.forward()
         self.env._perturbation_step = 0
         self.env.perturbation_runtime.reset()

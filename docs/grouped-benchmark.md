@@ -64,6 +64,10 @@ python scripts/run_grouped_eval.py \
   --output-dir results/goal_dynamic
 ```
 
+未传 `--max-steps` 时，每个 episode 使用 `/v1/tasks` 中该任务的 `max_steps`，因此一个
+跨 suite 计划可以同时包含 220、280、300 和 520 步的任务。显式传入该参数会统一覆盖
+计划内全部 episode，并在 `plan.json` 中标记来源为 `override`。
+
 也可用连续 seed 简写：
 
 ```bash

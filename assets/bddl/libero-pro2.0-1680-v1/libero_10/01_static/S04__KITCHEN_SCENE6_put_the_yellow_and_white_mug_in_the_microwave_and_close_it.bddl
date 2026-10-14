@@ -130,13 +130,18 @@
           (:interaction_mode placement)
         )
       )
-      (S04
+(S04
         (:operator pose_transform)
         (:targets white_yellow_mug_1 porcelain_mug_1)
         (:variant planar_object_position_swap)
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:swap_xy 0.0 0.0)
+          (:grounded_swap true)
+          (:support_surface table)
+          (:strict_swap_xy true)
+          (:ground_support_from_declared_surface true)
         )
       )
       (S05

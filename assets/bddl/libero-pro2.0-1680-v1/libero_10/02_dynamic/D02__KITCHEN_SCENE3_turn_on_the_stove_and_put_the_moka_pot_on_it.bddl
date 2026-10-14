@@ -290,6 +290,7 @@
         (:params
           (:interaction_mode placement)
           (:offset_xy -0.06 0.045)
+          (:receiver_trigger_distance_m 0.24)
         )
       )
       (D03

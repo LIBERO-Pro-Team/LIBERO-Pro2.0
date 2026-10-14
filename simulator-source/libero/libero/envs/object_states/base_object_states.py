@@ -156,6 +156,98 @@ class SiteObjectState(BaseObjectState):
         )
         return {"pos": object_pos, "quat": object_quat}
 
+    def check_placed_inside(self, other):
+        """Require containment, drawer support, stability, and release."""
+        if not self.check_contain(other):
+            return False
+
+        params = getattr(getattr(self.env, "perturbation_plan", None), "params", {})
+        support_names = params.get("goal_support_objects", ())
+        if isinstance(support_names, str):
+            support_names = (support_names,)
+        if not support_names:
+            return False
+
+        model = self.env.sim.model
+        data = self.env.sim.data
+        object_body_id = int(self.env.obj_body_id[other.object_name])
+        object_geom_ids = {
+            int(geom_id)
+            for geom_id, body_id in enumerate(model.geom_bodyid)
+            if int(body_id) == object_body_id
+        }
+        support_root_ids = {
+            int(self.env.obj_body_id[name])
+            for name in support_names
+            if name in self.env.obj_body_id
+        }
+        support_body_ids = set(support_root_ids)
+        for body_id in range(int(model.nbody)):
+            parent_id = body_id
+            while parent_id != 0:
+                parent_id = int(model.body_parentid[parent_id])
+                if parent_id in support_root_ids:
+                    support_body_ids.add(body_id)
+                    break
+        if not support_body_ids:
+            return False
+
+        min_normal_z = float(params.get("goal_support_normal_z_min", 0.70))
+        contact_z_tolerance = float(
+            params.get("goal_support_contact_z_tolerance_m", 0.010)
+        )
+        object_position = data.body_xpos[object_body_id]
+        supported = False
+        for contact_index in range(int(data.ncon)):
+            contact = data.contact[contact_index]
+            geom1 = int(contact.geom1)
+            geom2 = int(contact.geom2)
+            body1 = int(model.geom_bodyid[geom1])
+            body2 = int(model.geom_bodyid[geom2])
+            if not (
+                (geom1 in object_geom_ids and body2 in support_body_ids)
+                or (geom2 in object_geom_ids and body1 in support_body_ids)
+            ):
+                continue
+            normal = np.asarray(contact.frame[:3], dtype=float)
+            if geom1 in object_geom_ids:
+                normal = -normal
+            if (
+                normal[2] >= min_normal_z
+                and contact.pos[2] <= object_position[2] + contact_z_tolerance
+            ):
+                supported = True
+                break
+        if not supported:
+            return False
+
+        max_linear = float(params.get("goal_max_linear_speed_m_s", 0.05))
+        max_angular = float(params.get("goal_max_angular_speed_rad_s", 0.20))
+        object_model = self.env.get_object(other.object_name)
+        object_joint = object_model.joints[-1]
+        qvel_addr = model.get_joint_qvel_addr(object_joint)
+        object_velocity = np.asarray(data.qvel[qvel_addr[0] : qvel_addr[1]], dtype=float)
+        if np.linalg.norm(object_velocity[:3]) > max_linear:
+            return False
+        if np.linalg.norm(object_velocity[3:]) > max_angular:
+            return False
+
+        robot_body_ids = {
+            body_id
+            for body_id in range(int(model.nbody))
+            if str(model.body_id2name(body_id)).startswith(("robot0", "gripper0"))
+        }
+        for contact_index in range(int(data.ncon)):
+            contact = data.contact[contact_index]
+            geom1 = int(contact.geom1)
+            geom2 = int(contact.geom2)
+            if (
+                (geom1 in object_geom_ids and int(model.geom_bodyid[geom2]) in robot_body_ids)
+                or (geom2 in object_geom_ids and int(model.geom_bodyid[geom1]) in robot_body_ids)
+            ):
+                return False
+        return True
+
     def check_contain(self, other):
         this_object = self.env.object_sites_dict[self.object_name]
         this_object_position = self.env.sim.data.get_site_xpos(self.object_name)

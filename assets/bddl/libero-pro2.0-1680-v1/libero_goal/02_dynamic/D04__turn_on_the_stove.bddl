@@ -369,6 +369,10 @@
         (:variant enter_hold_exit_occlusion)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 50)
+          (:occlusion_fraction 0.72)
+          (:occlusion_offset_xyz 0.0 0.0 0.02)
+          (:asset_scale 1.15)
         )
       )
       (D05

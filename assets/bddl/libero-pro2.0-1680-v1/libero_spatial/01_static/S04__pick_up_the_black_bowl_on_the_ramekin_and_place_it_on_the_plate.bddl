@@ -182,13 +182,24 @@
           (:interaction_mode placement)
         )
       )
-      (S04
+(S04
         (:operator pose_transform)
         (:targets akita_black_bowl_1 akita_black_bowl_2)
         (:variant planar_object_position_swap)
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:grounded_swap true)
+          (:support_surface glazed_rim_porcelain_ramekin_1 cookies_1)
+          (:swap_cluster_radius_m 0.18)
+          (:strict_swap_xy true)
+          (:ground_support_from_declared_surface true)
+          (:preserve_swapped_support_heights true)
+          (:swap_support_groups true)
+          (:support_objects glazed_rim_porcelain_ramekin_1 cookies_1)
+          (:support_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
+          (:group_settle_steps 300)
         )
       )
       (S05

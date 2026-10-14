@@ -238,15 +238,24 @@
           (:interaction_mode articulation)
         )
       )
-      (S11
+(S11
         (:operator asset_or_appearance)
         (:targets akita_black_bowl_1)
         (:references akita_black_bowl_1)
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode articulation)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.45)
+          (:asset_id github/object_sim_bowl)
+          (:asset_scale 0.70)
+          (:asset_count 1)
+          (:clutter_minimum_gap_m 0.14)
+          (:clutter_offsets_xy 0.18 0.12)
+          (:support_surface table)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:asset_contact_margin_m 0.020)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
         )
       )
       (S12

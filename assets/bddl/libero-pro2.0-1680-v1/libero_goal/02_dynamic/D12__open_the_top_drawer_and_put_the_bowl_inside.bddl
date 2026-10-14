@@ -444,6 +444,8 @@
         (:variant transient_latency_spike)
         (:params
           (:interaction_mode placement)
+          (:delay_steps 10)
+          (:event_duration_steps 36)
         )
       )
       (D13

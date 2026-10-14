@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -398,6 +398,11 @@
         (:variant shake_drift_or_persistent_offset)
         (:params
           (:interaction_mode articulation)
+          (:trigger_anchor wooden_cabinet_1_middle_region)
+          (:trigger_distance_m 0.20)
+          (:camera_offset_xyz 0.100 -0.100 0.070)
+          (:camera_rotation_rpy 0.015 -0.010 0.025)
+          (:event_duration_steps 24)
         )
       )
       (D08

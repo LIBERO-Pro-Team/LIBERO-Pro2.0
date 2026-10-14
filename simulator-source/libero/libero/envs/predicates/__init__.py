@@ -5,6 +5,7 @@ VALIDATE_PREDICATE_FN_DICT = {
     "true": TruePredicateFn(),
     "false": FalsePredicateFn(),
     "in": In(),
+    "insupported": InSupported(),
     # "incontact": InContactPredicateFn(),
     "on": On(),
     "up": Up(),

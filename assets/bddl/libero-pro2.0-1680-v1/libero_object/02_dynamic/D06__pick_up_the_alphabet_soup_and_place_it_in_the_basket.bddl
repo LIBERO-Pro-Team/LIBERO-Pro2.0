@@ -350,10 +350,13 @@
       (D06
         (:operator pose_transform)
         (:targets salad_dressing_1 alphabet_soup_1)
+        (:disturbance_targets cream_cheese_1 milk_1 tomato_sauce_1)
         (:trigger task_phase)
         (:variant distractor_move_or_local_rearrangement)
         (:params
           (:interaction_mode placement)
+          (:minimum_displacement_m 0.10)
+          (:offset_xy 0.12 -0.09)
         )
       )
       (D07

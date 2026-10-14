@@ -61,7 +61,6 @@ episodes = [
         "variant": "base",
         "camera_height": 256,
         "camera_width": 256,
-        "max_steps": 300,
     }
     for task_id in range(10)
 ]
@@ -77,6 +76,10 @@ with RemoteRunClient("http://SERVER:8000", api_key="ACCOUNT_API_KEY") as client:
     episode_records = client.get_episodes(run["run_id"])
 ```
 
+省略 `max_steps` 时，调度器会在 job 入库前读取 manifest 并固化所选任务的 PI0 官方
+suite 上限（Spatial 220、Object 280、Goal 300、LIBERO-10 520）。调用方只有在需要
+有意覆盖评测协议时才应显式传入 `max_steps`。
+
 `AgentAdapter` 是结构化协议：只要对象实现上述三个方法即可，不要求继承平台类。
 用户可以连接任意 VLA、强化学习策略、规划器或自定义控制器。adapter 返回的 action 必须符合
 服务端 `action_schema`，否则本次 attempt 明确失败，不会静默转换成其他控制语义。
@@ -86,7 +89,7 @@ run 中的任务，不会执行其他用户的 episode。
 
 ## 调度行为
 
-- 当前筛选后的 1680 个有效任务组合被保存为 1680 个独立 episode job；调度器必须直接读取版本化 manifest，不得自行重构 suite、task 和扰动 case 的笛卡尔积。
+- 当前筛选后的 1701 个有效任务组合被保存为 1701 个独立 episode job；调度器必须直接读取版本化 manifest，不得自行重构 suite、task 和扰动 case 的笛卡尔积。
 - claim 成功时，调度器原子创建一个新 session 和独立 EnvWorker。
 - 用户间按活跃 claim intent 轮询，用户内部按 episode FIFO。
 - `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` 限制单用户占用。

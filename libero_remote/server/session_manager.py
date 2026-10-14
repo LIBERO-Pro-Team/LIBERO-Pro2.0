@@ -10,7 +10,10 @@ from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 
-from libero_remote.environment.task_manifest import TaskManifest
+from libero_remote.environment.task_manifest import (
+    TaskManifest,
+    default_max_steps_for_suite,
+)
 from libero_remote.protocol.models import (
     PROTOCOL_VERSION,
     CreateSessionRequest,
@@ -69,6 +72,7 @@ class SessionManager:
     async def create(
         self, request: CreateSessionRequest, owner_id: Optional[str] = None
     ) -> Dict[str, Any]:
+        request = self.resolve_session_request(request)
         worker_spec = request.dict()
         if self._task_manifest is not None:
             try:
@@ -183,6 +187,39 @@ class SessionManager:
             status=record.status.value,
         )
         return response
+
+    def resolve_session_request(
+        self, request: CreateSessionRequest
+    ) -> CreateSessionRequest:
+        manifest_max_steps: Optional[int] = None
+        if self._task_manifest is not None:
+            try:
+                entry = self._task_manifest.require(
+                    request.suite, request.task_id, request.variant
+                )
+            except ValueError as error:
+                raise PlatformError(
+                    ErrorCode.INVALID_TASK,
+                    (
+                        "The requested suite, task_id, and variant are not published; "
+                        "query /v1/tasks for valid combinations"
+                    ),
+                    status_code=404,
+                    details={
+                        "suite": request.suite,
+                        "task_id": request.task_id,
+                        "variant": request.variant,
+                    },
+                ) from error
+            manifest_max_steps = int(entry["max_steps"])
+        if request.max_steps is not None:
+            return request
+        effective_max_steps = (
+            manifest_max_steps
+            if manifest_max_steps is not None
+            else default_max_steps_for_suite(request.suite)
+        )
+        return request.copy(update={"max_steps": effective_max_steps})
 
     async def reset(
         self, session_id: str, request: ResetRequest, owner_id: Optional[str] = None

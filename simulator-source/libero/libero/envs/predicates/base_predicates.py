@@ -59,6 +59,16 @@ class In(BinaryAtomic):
         return arg2.check_contact(arg1) and arg2.check_contain(arg1)
 
 
+class InSupported(BinaryAtomic):
+    """Containment that additionally requires released, stable physical support."""
+
+    def __call__(self, arg1, arg2):
+        checker = getattr(arg2, "check_placed_inside", None)
+        if checker is None:
+            return False
+        return checker(arg1)
+
+
 class On(BinaryAtomic):
     def __call__(self, arg1, arg2):
         return arg2.check_ontop(arg1)

@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -288,6 +288,10 @@
         (:variant intrinsics_fov_resolution_crop_or_distortion)
         (:params
           (:interaction_mode articulation)
+          (:fov_scale 1.35)
+          (:image_shift_xy 0.10 -0.10)
+          (:crop_ratio 0.04)
+          (:distortion_strength 0.04)
         )
       )
       (S17

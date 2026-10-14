@@ -4,6 +4,17 @@ The source URLs, pinned commits, copied files, sizes, and SHA-256 hashes are
 recorded in `vendor_manifest.json`. The adapted MJCF files preserve a
 `source_asset` field in `asset_catalog.json`.
 
+## object_sim bowl
+
+- Project: `vikashplus/object_sim`
+- Source: <https://github.com/vikashplus/object_sim/tree/main/bowl>
+- License: Apache-2.0, retained in
+  `adapted/github_objects/object_sim_bowl/LICENSE`
+- Changes: the upstream visual mesh and twelve contact meshes were wrapped in
+  a LIBERO-compatible MJCF object with explicit geom groups, a 0.15 kg total
+  collision mass, and placement boundary sites. The published task scale is
+  `0.70` so the resulting bowl remains close to the original LIBERO bowl size.
+
 ## Personal Robotics Lab assets
 
 - Project: `personalrobotics/prl_assets`

@@ -417,6 +417,7 @@
         (:variant light_shadow_or_exposure_change)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 50)
         )
       )
       (D10

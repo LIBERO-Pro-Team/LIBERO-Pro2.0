@@ -264,6 +264,7 @@
         (:variant initial_joints_eef_orientation_or_gripper_opening)
         (:params
           (:interaction_mode placement)
+          (:joint_offset_rad 0.120 -0.120 0.120 0.0 0.0 0.0 0.0)
         )
       )
       (S18

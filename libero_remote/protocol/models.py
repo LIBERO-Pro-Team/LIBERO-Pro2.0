@@ -63,7 +63,7 @@ class CreateSessionRequest(BaseModel):
     camera_names: List[str] = Field(default_factory=lambda: ["agentview", "robot0_eye_in_hand"])
     camera_height: int = Field(128, ge=16, le=1024)
     camera_width: int = Field(128, ge=16, le=1024)
-    max_steps: int = Field(300, ge=1, le=5000)
+    max_steps: Optional[int] = Field(None, ge=1, le=5000)
     observation_schema_version: Literal["libero_standard_v1"] = OBSERVATION_SCHEMA_VERSION
 
     @validator("suite")
@@ -80,18 +80,18 @@ class CreateSessionRequest(BaseModel):
             return "base"
         normalized = normalized.upper()
         if len(normalized) != 3 or normalized[0] not in {"S", "D"}:
-            raise ValueError("variant must be base, S01-S21, D01-D19, or D21")
+            raise ValueError("variant must be base, S01-S22, or D01-D21")
         try:
             index = int(normalized[1:])
         except ValueError as exc:
-            raise ValueError("variant must be base, S01-S21, D01-D19, or D21") from exc
+            raise ValueError("variant must be base, S01-S22, or D01-D21") from exc
         valid = (
-            normalized[0] == "S" and 1 <= index <= 21
+            normalized[0] == "S" and 1 <= index <= 22
         ) or (
-            normalized[0] == "D" and (1 <= index <= 19 or index == 21)
+            normalized[0] == "D" and 1 <= index <= 21
         )
         if not valid:
-            raise ValueError("variant must be base, S01-S21, D01-D19, or D21")
+            raise ValueError("variant must be base, S01-S22, or D01-D21")
         return normalized
 
     @validator("camera_names")

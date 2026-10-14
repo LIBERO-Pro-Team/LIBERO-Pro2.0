@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -280,6 +280,8 @@
         (:variant fixed_extrinsics_or_cross_camera_calibration)
         (:params
           (:interaction_mode articulation)
+          (:camera_offset_xyz 0.100 -0.100 0.070)
+          (:camera_rotation_rpy 0.0 0.0 0.0)
         )
       )
       (S16

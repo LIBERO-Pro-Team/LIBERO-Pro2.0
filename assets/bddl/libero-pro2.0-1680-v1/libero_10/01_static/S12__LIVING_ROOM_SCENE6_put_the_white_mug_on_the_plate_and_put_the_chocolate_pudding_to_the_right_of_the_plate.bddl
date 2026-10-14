@@ -230,6 +230,8 @@
         (:variant persistent_front_occlusion)
         (:params
           (:interaction_mode placement)
+          (:asset_scale 1.20)
+          (:occlusion_fraction 0.50)
         )
       )
       (S13

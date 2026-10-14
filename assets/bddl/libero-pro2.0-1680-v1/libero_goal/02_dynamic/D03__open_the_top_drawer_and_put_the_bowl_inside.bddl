@@ -122,7 +122,7 @@
   )
 
   (:goal
-    (And (In akita_black_bowl_1 wooden_cabinet_1_top_region))
+    (And (InSupported akita_black_bowl_1 wooden_cabinet_1_top_region))
   )
 
   (:perturbation_config
@@ -357,9 +357,22 @@
         (:targets wooden_cabinet_1)
         (:references cream_cheese_1)
         (:trigger preplace)
-        (:variant occupy_or_release_receiver)
+        (:variant persistent_triggered_receiver_occupation)
         (:params
           (:interaction_mode placement)
+          (:receiver_trigger_distance_m 0.24)
+          (:support_surface wooden_cabinet_1)
+          (:asset_offset_xyz 0.0 0.0 0.0)
+          (:staging_position_xyz 0.0 0.0 -5.0)
+          (:receiver_anchor wooden_cabinet_1_top_region)
+          (:persistent_movable_asset true)
+          (:asset_id github/object_sim_bowl)
+          (:asset_scale 0.55)
+          (:goal_support_objects wooden_cabinet_1)
+          (:goal_support_normal_z_min 0.70)
+          (:goal_support_contact_z_tolerance_m 0.010)
+          (:goal_max_linear_speed_m_s 0.05)
+          (:goal_max_angular_speed_rad_s 0.20)
         )
       )
       (D04

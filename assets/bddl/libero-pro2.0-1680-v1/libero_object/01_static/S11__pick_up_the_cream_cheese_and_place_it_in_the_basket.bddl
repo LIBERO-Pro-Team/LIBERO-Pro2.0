@@ -203,7 +203,7 @@
           (:interaction_mode placement)
         )
       )
-      (S11
+(S11
         (:operator asset_or_appearance)
         (:targets cream_cheese_1)
         (:references alphabet_soup_1)
@@ -212,6 +212,10 @@
           (:interaction_mode placement)
           (:asset_id prl/cracker_box)
           (:asset_scale 0.7)
+          (:visual_only_asset false)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:clear_of_task_entities true)
         )
       )
       (S12

@@ -46,6 +46,7 @@ def test_cli_supports_group_suite_case_and_matrix_selection() -> None:
     assert args.init_state_ids == [0, 1]
     assert args.matrix is True
     assert args.control_mode == "absolute"
+    assert args.max_steps is None
 
 
 def test_seed_range_shorthand_is_deterministic() -> None:

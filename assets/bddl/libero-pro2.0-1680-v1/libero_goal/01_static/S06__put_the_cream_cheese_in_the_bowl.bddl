@@ -200,8 +200,11 @@
         (:variant same_class_or_unseen_instance)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/cracker_box)
-          (:asset_scale 0.7)
+          (:asset_id prl/gelatin_box)
+          (:asset_scale 0.70)
+          (:asset_quat 0.70710678 0.70710678 0.0 0.0)
+          (:grounded_replacement true)
+          (:support_surface table)
         )
       )
       (S07

@@ -117,6 +117,9 @@
     (On plate_1 main_table_plate_region)
     (On cream_cheese_1 main_table_cream_cheese_region)
     (On wooden_cabinet_1 main_table_cabinet_region)
+    (Close wooden_cabinet_1_top_region)
+    (Close wooden_cabinet_1_middle_region)
+    (Close wooden_cabinet_1_bottom_region)
     (On flat_stove_1 main_table_stove_region)
     (On wine_rack_1 main_table_wine_rack_region)
   )
@@ -228,6 +231,11 @@
         (:constraints real_collision_geometry full_containment positive_clearance insertion_depth)
         (:params
           (:interaction_mode placement)
+          (:target_geometry_factors 1.0 1.0 1.0)
+          (:receiver_geometry_factors 0.8 0.8 1.0)
+          (:scale_compiled_geometry true)
+          (:initial_closed_regions wooden_cabinet_1_top_region wooden_cabinet_1_middle_region wooden_cabinet_1_bottom_region)
+          (:initial_closed_region_endpoint true)
         )
       )
       (S10

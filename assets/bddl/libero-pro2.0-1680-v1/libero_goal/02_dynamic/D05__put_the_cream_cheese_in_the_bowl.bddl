@@ -381,6 +381,13 @@
         (:constraints alternate_collision_free_path_exists)
         (:params
           (:interaction_mode placement)
+          (:visual_only_asset false)
+          (:physical_collision true)
+          (:barrier_path_fraction 0.60)
+          (:lateral_offset_m -0.025)
+          (:asset_scale 0.804)
+          (:barrier_height_m -0.035)
+          (:support_surface main_table)
         )
       )
       (D06

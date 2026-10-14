@@ -122,6 +122,10 @@
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:grounded_swap true)
+          (:ground_support_from_declared_surface true)
+          (:swap_cluster_radius_m 0.18)
+          (:support_surface kitchen_table)
         )
       )
       (S05

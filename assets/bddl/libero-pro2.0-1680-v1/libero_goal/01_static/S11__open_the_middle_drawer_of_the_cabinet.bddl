@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -97,7 +97,7 @@
     wooden_cabinet_1 - wooden_cabinet
     flat_stove_1 - flat_stove
     wine_rack_1 - wine_rack
-  )
+)
 
   (:objects
     akita_black_bowl_1 - akita_black_bowl
@@ -118,7 +118,7 @@
     (On wooden_cabinet_1 main_table_cabinet_region)
     (On flat_stove_1 main_table_stove_region)
     (On wine_rack_1 main_table_wine_rack_region)
-  )
+)
 
   (:goal
     (And (Open wooden_cabinet_1_middle_region))
@@ -240,13 +240,23 @@
       )
       (S11
         (:operator asset_or_appearance)
-        (:targets akita_black_bowl_1)
-        (:references akita_black_bowl_1)
+        (:targets wooden_cabinet_1)
+        (:references wooden_cabinet_1)
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode articulation)
-          (:asset_id prl/plastic_bowl)
-          (:asset_scale 0.45)
+          (:asset_id libero/yellow_cabinet)
+          (:asset_scale 1.0)
+          (:asset_count 1)
+          (:asset_quat 1.0 0.0 0.0 0.0)
+          (:clutter_minimum_gap_m 0.080)
+          (:clutter_offsets_xy -0.067791 0.639295)
+          (:support_surface main_table)
+          (:clear_of_task_entities true)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:weld_internal_asset_joints true)
         )
       )
       (S12

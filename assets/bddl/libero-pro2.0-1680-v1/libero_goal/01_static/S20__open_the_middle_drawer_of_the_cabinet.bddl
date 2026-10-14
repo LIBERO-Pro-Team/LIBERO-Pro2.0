@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -320,6 +320,7 @@
         (:variant fixed_rate_delay_or_action_window)
         (:params
           (:interaction_mode articulation)
+          (:delay_steps 7)
         )
       )
       (S21

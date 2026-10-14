@@ -2,6 +2,35 @@
   "format_version": 1,
   "assets": [
     {
+      "id": "libero/yellow_cabinet",
+      "format": "mjcf",
+      "path": "../articulated_objects/yellow_cabinet.xml",
+      "source_asset": "libero/libero/assets/articulated_objects/yellow_cabinet",
+      "license": "MIT",
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/red_coffee_mug",
+      "format": "mjcf",
+      "path": "../turbosquid_objects/red_coffee_mug/red_coffee_mug.xml",
+      "source_asset": "libero/libero/assets/turbosquid_objects/red_coffee_mug",
+      "license": "MIT",
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "libero/yellow_moka_pot",
+      "format": "mjcf",
+      "path": "../turbosquid_objects/yellow_moka_pot/yellow_moka_pot.xml",
+      "source_asset": "libero/libero/assets/turbosquid_objects/yellow_moka_pot",
+      "license": "MIT",
+      "dimensions_m": [
+        0.07919095,
+        0.145216175,
+        0.154196375
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
       "id": "prl/ada_table",
       "format": "mjcf",
       "path": "adapted/prl_objects/ada_table/ada_table.xml",
@@ -115,6 +144,19 @@
         0.172,
         0.172,
         0.076
+      ],
+      "readiness": "ready_mjcf"
+    },
+    {
+      "id": "github/object_sim_bowl",
+      "format": "mjcf",
+      "path": "adapted/github_objects/object_sim_bowl/object_sim_bowl.xml",
+      "source_asset": "https://github.com/vikashplus/object_sim/tree/main/bowl",
+      "license": "Apache-2.0",
+      "dimensions_m": [
+        0.14892301,
+        0.14895717,
+        0.07659914
       ],
       "readiness": "ready_mjcf"
     },

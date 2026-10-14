@@ -194,13 +194,19 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets porcelain_mug_1)
         (:references red_coffee_mug_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:support_surface table)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11

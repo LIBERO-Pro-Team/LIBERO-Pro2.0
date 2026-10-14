@@ -237,13 +237,22 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets akita_black_bowl_1)
         (:references akita_black_bowl_2)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:visual_only_asset false)
+          (:asset_count 3)
+          (:clutter_minimum_gap_m 0.10)
+          (:clutter_offsets_xy 0.00 0.12 -0.15 -0.12 0.00 -0.12)
+          (:support_surface main_table)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:clear_of_task_entities true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11

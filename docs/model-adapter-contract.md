@@ -108,7 +108,6 @@ episodes = [{
     "control_mode": "relative",
     "camera_height": 256,
     "camera_width": 256,
-    "max_steps": 300,
 }]
 
 with RemoteRunClient(
@@ -123,6 +122,9 @@ with RemoteRunClient(
         adapter=MyModelAdapter("/models/my-checkpoint"),
     )
 ```
+
+`max_steps` 默认由服务器 manifest 按 suite 解析为 PI0 官方上限；提交记录保存解析后的
+有效整数。需要偏离官方协议时可以在 episode 中显式覆盖。
 
 ## 并发与隔离
 

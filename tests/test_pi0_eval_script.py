@@ -36,7 +36,7 @@ def test_pi0_clean_evaluation_defaults(monkeypatch) -> None:
     assert args.task_id == 8
     assert args.init_state_id == 0
     assert args.seed == 142
-    assert args.max_steps == 500
+    assert args.max_steps is None
     assert args.variant == "base"
 
 

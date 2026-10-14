@@ -1,0 +1,14 @@
+<mujoco model="support_riser_wide_top">
+  <compiler angle="radian"/>
+  <worldbody>
+    <body>
+      <body name="object">
+        <geom name="support_column" type="box" group="0" pos="0 0 0.0225" size="0.035 0.035 0.0225" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+        <geom name="support_deck" type="box" group="0" pos="0 0 0.0475" size="0.075 0.075 0.0025" density="300" friction="0.8 0.005 0.0001" rgba="0.32 0.42 0.52 1"/>
+      </body>
+      <site name="bottom_site" pos="0 0 0" size="0.005" rgba="0 0 0 0"/>
+      <site name="top_site" pos="0 0 0.05" size="0.005" rgba="0 0 0 0"/>
+      <site name="horizontal_radius_site" pos="0.10606601717798213 0 0" size="0.005" rgba="0 0 0 0"/>
+    </body>
+  </worldbody>
+</mujoco>

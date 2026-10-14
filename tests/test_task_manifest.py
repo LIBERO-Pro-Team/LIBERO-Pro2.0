@@ -19,14 +19,21 @@ def test_published_bddl_tree_excludes_legacy_perturbation_categories() -> None:
     assert not any(name.startswith(legacy_prefixes) for name in directory_names)
 
 
-def test_published_manifest_contains_all_40_tasks_and_41_perturbations() -> None:
+def test_published_manifest_contains_the_published_1688_task_set() -> None:
     manifest = TaskManifest.load(str(MANIFEST_PATH))
 
-    assert manifest.version == "libero-pro2.0-1680-v1"
-    assert len(manifest.entries) == 1680
+    assert manifest.version == "libero-pro2.0-1706-v1"
+    assert len(manifest.entries) == 1688
     assert sum(entry["case_id"] == "BASE" for entry in manifest.entries) == 40
-    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 840
-    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 800
+    assert sum(str(entry["case_id"]).startswith("S") for entry in manifest.entries) == 863
+    assert sum(str(entry["case_id"]).startswith("D") for entry in manifest.entries) == 785
+    assert not any(entry["case_id"] == "D19" for entry in manifest.entries)
+    assert not any(
+        entry["suite"] == "libero_10"
+        and entry["base_task_id"] == 8
+        and entry["case_id"] == "S04"
+        for entry in manifest.entries
+    )
     assert {
         (entry["suite"], entry["base_task_id"])
         for entry in manifest.entries
@@ -36,6 +43,43 @@ def test_published_manifest_contains_all_40_tasks_and_41_perturbations() -> None
         for suite in ("libero_spatial", "libero_object", "libero_goal", "libero_10")
         for task_id in range(10)
     }
+
+
+def test_published_manifest_uses_official_pi0_suite_step_limits() -> None:
+    manifest = TaskManifest.load(str(MANIFEST_PATH))
+    expected = {
+        "libero_spatial": 220,
+        "libero_object": 280,
+        "libero_goal": 300,
+        "libero_10": 520,
+    }
+
+    assert {
+        suite: {int(entry["max_steps"]) for entry in manifest.entries if entry["suite"] == suite}
+        for suite in expected
+    } == {suite: {max_steps} for suite, max_steps in expected.items()}
+    assert {
+        suite: sum(entry["suite"] == suite for entry in manifest.entries) for suite in expected
+    } == {
+        "libero_spatial": 422,
+        "libero_object": 430,
+        "libero_goal": 408,
+        "libero_10": 428,
+    }
+
+
+def test_task_catalog_publishes_each_tasks_default_step_limit() -> None:
+    manifest = TaskManifest.load(str(MANIFEST_PATH))
+
+    catalog = manifest.catalog()
+
+    assert len(catalog["tasks"]) == 1688
+    assert all("max_steps" in task for task in catalog["tasks"])
+    assert {
+        task["max_steps"]
+        for task in catalog["tasks"]
+        if task["suite"] == "libero_10"
+    } == {520}
 
 
 def test_manifest_rejects_a_tampered_bddl(tmp_path: Path) -> None:

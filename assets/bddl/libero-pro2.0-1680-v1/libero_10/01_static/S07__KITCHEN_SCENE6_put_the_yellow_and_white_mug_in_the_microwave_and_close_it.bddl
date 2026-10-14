@@ -166,6 +166,9 @@
         (:variant functional_part_geometry)
         (:params
           (:interaction_mode placement)
+          (:geometry_factors 1.0 0.64 1.20)
+          (:goal_region_scale 1.0 1.0 1.0)
+          (:scale_compiled_geometry true)
         )
       )
       (S08

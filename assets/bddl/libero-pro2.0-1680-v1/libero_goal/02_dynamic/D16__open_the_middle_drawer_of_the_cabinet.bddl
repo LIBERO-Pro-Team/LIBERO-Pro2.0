@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -482,6 +482,9 @@
         (:constraints no_physical_contact)
         (:params
           (:interaction_mode articulation)
+          (:event_duration_steps 6)
+          (:takeover_action 0.18 -0.08)
+          (:takeover_duration_steps 12)
         )
       )
       (D17

@@ -234,10 +234,11 @@
       )
       (S13
         (:operator asset_or_appearance)
-        (:targets porcelain_mug_1 plate_1)
+        (:targets porcelain_mug_1 plate_1 chocolate_pudding_1)
         (:variant color_texture_reflection_or_surface_state)
         (:params
           (:interaction_mode placement)
+          (:color_rgb 0.18 0.72 0.38)
         )
       )
       (S14

@@ -6,6 +6,7 @@ import types
 import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
@@ -63,8 +64,138 @@ class SchemaExecutionPlanTests(unittest.TestCase):
         plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
 
         self.assertEqual(plan.case_id, "D15")
-        self.assertEqual(plan.params["chunk_size"], 4)
-        self.assertEqual(plan.params["stale_chunk_steps"], 4)
+        self.assertEqual(plan.params["chunk_size"], 24)
+        self.assertEqual(plan.params["stale_chunk_steps"], 24)
+
+    def test_repo_d17_declares_bounded_recovery_window_parameters(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-1680-v1"
+                / "libero_goal"
+                / "02_dynamic"
+            ).glob("D17__*.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(plan.case_id, "D17")
+        self.assertEqual(plan.params["event_duration_steps"], 40)
+        self.assertEqual(plan.params["recovery_retreat_m"], 0.07)
+        self.assertEqual(plan.params["grasp_distance_m"], 0.12)
+        self.assertEqual(plan.params["grasp_initial_tolerance_m"], 0.035)
+        self.assertEqual(plan.params["contact_fallback_distance_m"], 0.055)
+        self.assertEqual(plan.params["wrapper_fallback_distance_m"], 0.12)
+        self.assertEqual(plan.params["articulation_grasp_distance_m"], 0.14)
+
+    def test_repo_d16_declares_bounded_action_takeover_duration(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-1680-v1"
+                / "libero_goal"
+                / "02_dynamic"
+            ).glob("D16__*.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(plan.case_id, "D16")
+        self.assertEqual(plan.params["event_duration_steps"], 6)
+
+    def test_repo_d06_declares_task_level_disturbance_targets(self):
+        path = next(
+            (
+                ROOT.parent
+                / "assets"
+                / "bddl"
+                / "libero-pro2.0-1680-v1"
+                / "libero_spatial"
+                / "02_dynamic"
+            ).glob("D06__*.bddl")
+        )
+        config = PARSER.parse_bddl_perturbation_config(path)
+        plan = RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+        self.assertEqual(
+            plan.disturbance_targets,
+            ("cookies_1", "glazed_rim_porcelain_ramekin_1"),
+        )
+
+    def test_goal_weak_fields_are_task_local_and_runtime_resolved(self):
+        goal_dynamic = (
+            ROOT.parent / "assets" / "bddl" / "libero-pro2.0-1680-v1"
+            / "libero_goal" / "02_dynamic"
+        )
+        d01 = next(goal_dynamic.glob("D01__open_the_middle_drawer_of_the_cabinet.bddl"))
+        d03 = next(goal_dynamic.glob("D03__put_the_bowl_on_the_stove.bddl"))
+        d04 = next(goal_dynamic.glob("D04__open_the_top_drawer_and_put_the_bowl_inside.bddl"))
+        d08 = next(goal_dynamic.glob("D08__put_the_wine_bottle_on_top_of_the_cabinet.bddl"))
+        d09 = next(goal_dynamic.glob("D09__put_the_wine_bottle_on_top_of_the_cabinet.bddl"))
+
+        d01_plan = RUNTIME.build_execution_plan(
+            PARSER.parse_bddl_perturbation_config(d01), ASSET_ROOT
+        )
+        d03_plan = RUNTIME.build_execution_plan(
+            PARSER.parse_bddl_perturbation_config(d03), ASSET_ROOT
+        )
+        d04_plan = RUNTIME.build_execution_plan(
+            PARSER.parse_bddl_perturbation_config(d04), ASSET_ROOT
+        )
+        self.assertEqual(d01_plan.params["trigger_distance_m"], 0.20)
+        self.assertTrue(d03_plan.params["persistent_movable_asset"])
+        self.assertEqual(d03_plan.params["receiver_trigger_distance_m"], 0.24)
+        self.assertEqual(
+            d03_plan.variant, "persistent_triggered_receiver_occupation"
+        )
+        self.assertEqual(len(d03_plan.assets), 1)
+        self.assertEqual(d03_plan.assets[0].asset_id, "prl/plastic_plate")
+        self.assertEqual(d04_plan.params["event_duration_steps"], 50)
+        self.assertEqual(d04_plan.assets[0].scale, 1.25)
+        self.assertEqual(
+            RUNTIME.build_execution_plan(
+                PARSER.parse_bddl_perturbation_config(d08), ASSET_ROOT
+            ).params["event_duration_steps"],
+            50,
+        )
+        self.assertEqual(
+            RUNTIME.build_execution_plan(
+                PARSER.parse_bddl_perturbation_config(d09), ASSET_ROOT
+            ).params["event_duration_steps"],
+            50,
+        )
+
+    def test_d01_uses_task_level_trigger_distance(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D01",
+            schedule="dynamic",
+            operator="pose_transform",
+            variant="xy_yaw_update",
+            targets=("target",),
+            references=(),
+            mechanisms=("dynamic_pose",),
+            assets=(),
+            trigger="approach_or_pregrasp",
+            params={"trigger_distance_m": 0.17},
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        data = types.SimpleNamespace(
+            body_xpos=np.array([[0.0, 0.0, 0.9]]),
+            body_xquat=np.array([[1.0, 0.0, 0.0, 0.0]]),
+            site_xpos=np.array([[0.16, 0.0, 0.9]]),
+        )
+        env = types.SimpleNamespace(
+            obj_body_id={"target": 0},
+            sim=types.SimpleNamespace(data=data),
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        self.assertTrue(runtime._dynamic_triggered(env, 0))
+        runtime.plan.params["trigger_distance_m"] = 0.12
+        self.assertFalse(runtime._dynamic_triggered(env, 0))
 
     def test_generated_ycb_asset_id_survives_bddl_atom_lowercasing(self):
         path = next(
@@ -86,7 +217,11 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
     def test_all_published_bddls_resolve_to_an_executable_case(self):
         files = sorted(PUBLISHED_BDDL_ROOT.rglob("*.bddl"))
-        self.assertEqual(len(files), 1680)
+        self.assertEqual(len(files), 1688)
+        self.assertNotIn(
+            "S04__KITCHEN_SCENE8_put_both_moka_pots_on_the_stove.bddl",
+            {path.name for path in files},
+        )
 
         seen = set()
         for path in files:
@@ -102,9 +237,9 @@ class SchemaExecutionPlanTests(unittest.TestCase):
 
         self.assertEqual(
             seen,
-            {f"S{i:02d}" for i in range(1, 22)}
-            | {f"D{i:02d}" for i in range(1, 20)}
-            | {"D21"},
+            {f"S{i:02d}" for i in range(1, 23)}
+            | {f"D{i:02d}" for i in range(1, 19)}
+            | {"D20", "D21"},
         )
 
     def test_only_the_selected_case_is_active(self):
@@ -274,10 +409,51 @@ class SceneInjectionTests(unittest.TestCase):
             np.fromstring(site.get("pos"), sep=" "), [0.0, 0.0, 0.135]
         )
 
+    def test_s07_task_parameters_scale_geometry_and_goal_region_independently(self):
+        class Receiver:
+            def __init__(self):
+                self.asset = ET.fromstring(
+                    '<asset><mesh name="mesh" scale="1 1 1" /></asset>'
+                )
+                self.worldbody = ET.fromstring(
+                    '<worldbody><body pos="0 0 0.2">'
+                    '<geom size="0.1 0.2 0.3" pos="0 0 0.1" />'
+                    '<site size="0.08 0.08 0.1" pos="0 0 0.15" />'
+                    "</body></worldbody>"
+                )
+
+        receiver = Receiver()
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S07",
+            schedule="static",
+            operator="geometry_variant",
+            variant="functional_part_geometry",
+            targets=("receiver",),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+            params={
+                "geometry_factors": (1.0, 0.82, 1.05),
+                "goal_region_scale": (1.0, 0.82, 1.05),
+            },
+        )
+
+        RUNTIME.apply_precompile_geometry({"receiver": receiver}, {}, plan)
+
+        np.testing.assert_allclose(
+            np.fromstring(receiver.asset.find("mesh").get("scale"), sep=" "),
+            [1.0, 0.82, 1.05],
+        )
+        np.testing.assert_allclose(
+            np.fromstring(receiver.worldbody.find(".//site").get("size"), sep=" "),
+            [0.08, 0.0656, 0.105],
+        )
+
     @staticmethod
     def _plan(suite: str, case_id: str):
         folder = "01_static" if case_id.startswith("S") else "02_dynamic"
-        path = next((BDDL_ROOT / suite / folder).glob(f"{case_id}__*.bddl"))
+        root = PUBLISHED_BDDL_ROOT if case_id in {"D17", "S07", "S13", "S14"} else BDDL_ROOT
+        path = next((root / suite / folder).glob(f"{case_id}__*.bddl"))
         return RUNTIME.build_execution_plan(
             PARSER.parse_bddl_perturbation_config(path), ASSET_ROOT
         )
@@ -285,9 +461,231 @@ class SceneInjectionTests(unittest.TestCase):
 
 class RuntimeBehaviorTests(unittest.TestCase):
     def plan(self, suite: str, folder: str, case_id: str):
-        path = next((BDDL_ROOT / suite / folder).glob(f"{case_id}__*.bddl"))
+        root = PUBLISHED_BDDL_ROOT if case_id in {"D17", "S07", "S13", "S14"} else BDDL_ROOT
+        path = next((root / suite / folder).glob(f"{case_id}__*.bddl"))
         config = PARSER.parse_bddl_perturbation_config(path)
         return RUNTIME.build_execution_plan(config, ASSET_ROOT)
+
+    def test_s09_closes_only_explicit_initial_articulation_regions(self):
+        regions = (
+            "wooden_cabinet_1_top_region",
+            "wooden_cabinet_1_middle_region",
+            "wooden_cabinet_1_bottom_region",
+        )
+        joints = tuple(region.replace("_region", "_level") for region in regions)
+        qpos = np.array([-0.08, -0.07, -0.01], dtype=float)
+        qvel = np.array([0.4, -0.3, 0.2], dtype=float)
+        joint_indices = {joint: index for index, joint in enumerate(joints)}
+
+        data = types.SimpleNamespace(qpos=qpos, qvel=qvel)
+        data.set_joint_qpos = lambda joint, value: qpos.__setitem__(
+            joint_indices[joint], value
+        )
+        model = types.SimpleNamespace(
+            get_joint_qvel_addr=lambda joint: joint_indices[joint]
+        )
+        sites = {
+            region: types.SimpleNamespace(
+                parent_name="wooden_cabinet_1",
+                joints=[joint],
+                object_properties={
+                    "articulation": {"default_close_ranges": [0.0, 0.005]}
+                },
+            )
+            for region, joint in zip(regions, joints)
+        }
+        env = types.SimpleNamespace(
+            object_sites_dict=sites,
+            sim=types.SimpleNamespace(model=model, data=data, forward=lambda: None),
+        )
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("wine_bottle_1", "wooden_cabinet_1"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+            params={"initial_closed_regions": list(regions)},
+        )
+
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143)
+        runtime.apply_static(env)
+
+        np.testing.assert_allclose(qpos, [0.0025, 0.0025, 0.0025])
+        np.testing.assert_allclose(qvel, 0.0)
+        self.assertEqual(
+            runtime.events[-1]["event"], "initial_articulation_regions_closed"
+        )
+        self.assertEqual(runtime.events[-1]["regions"], list(regions))
+
+        qpos[:] = [-0.09, -0.06, -0.02]
+        qvel[:] = [0.1, 0.2, 0.3]
+        runtime.begin_rollout(env)
+
+        np.testing.assert_allclose(qpos, [0.0025, 0.0025, 0.0025])
+        np.testing.assert_allclose(qvel, 0.0)
+
+    def test_s09_without_initial_closed_regions_preserves_joint_state(self):
+        qpos = np.array([-0.08], dtype=float)
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+        )
+        env = types.SimpleNamespace(
+            object_sites_dict={},
+            sim=types.SimpleNamespace(
+                model=types.SimpleNamespace(),
+                data=types.SimpleNamespace(qpos=qpos),
+            ),
+        )
+
+        RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(env)
+
+        np.testing.assert_allclose(qpos, [-0.08])
+
+    def test_s09_can_close_explicit_regions_at_the_closed_endpoint(self):
+        region = "wooden_cabinet_1_middle_region"
+        joint = "wooden_cabinet_1_middle_level"
+        qpos = np.array([-0.08], dtype=float)
+        qvel = np.array([0.4], dtype=float)
+        data = types.SimpleNamespace(qpos=qpos, qvel=qvel)
+        data.set_joint_qpos = lambda name, value: qpos.__setitem__(0, value)
+        model = types.SimpleNamespace(get_joint_qvel_addr=lambda name: 0)
+        site = types.SimpleNamespace(
+            parent_name="wooden_cabinet_1",
+            joints=[joint],
+            object_properties={
+                "articulation": {"default_close_ranges": [0.0, 0.005]}
+            },
+        )
+        env = types.SimpleNamespace(
+            object_sites_dict={region: site},
+            sim=types.SimpleNamespace(model=model, data=data, forward=lambda: None),
+        )
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S09",
+            schedule="static",
+            operator="geometry_variant",
+            variant="container_opening_clearance_and_pose_coupling",
+            targets=("wine_bottle_1", "wooden_cabinet_1"),
+            references=(),
+            mechanisms=("geometry",),
+            assets=(),
+            params={
+                "initial_closed_regions": [region],
+                "initial_closed_region_endpoint": True,
+            },
+        )
+
+        RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(env)
+
+        np.testing.assert_allclose(qpos, [0.0])
+        np.testing.assert_allclose(qvel, [0.0])
+
+    def test_s05_grounded_opt_in_rejects_an_occupied_path_position(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S05",
+            schedule="static",
+            operator="asset_or_appearance",
+            variant="path_barrier",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("physical_obstacle",),
+            assets=(
+                RUNTIME.AssetSpec(
+                    "generated/barrier_panel", Path("unused.xml"), staged=False
+                ),
+            ),
+            params={
+                "barrier_path_fraction": 0.45,
+                "barrier_lateral_offset_m": 0.0,
+                "ground_barrier_to_support": True,
+                "support_surface": "main_table",
+            },
+        )
+        poses = {
+            "target": np.array([0.0, 0.0, 1.0], dtype=float),
+            "receiver": np.array([1.0, 0.0, 1.0], dtype=float),
+        }
+
+        with mock.patch.object(RUNTIME, "_entity_exists", return_value=True), mock.patch.object(
+            RUNTIME, "_static_asset_reference_name", return_value="target"
+        ), mock.patch.object(
+            RUNTIME,
+            "_entity_pose",
+            side_effect=lambda env, name: (poses[name].copy(), np.array([1.0, 0.0, 0.0, 0.0])),
+        ), mock.patch.object(
+            RUNTIME,
+            "_functional_anchor",
+            return_value=(poses["receiver"].copy(), "receiver"),
+        ), mock.patch.object(
+            RUNTIME,
+            "_grounded_entity_position",
+            return_value=(np.array([0.45, 0.0, 0.9]), "table_collision"),
+        ), mock.patch.object(
+            RUNTIME, "_candidate_is_clear", return_value=False
+        ), mock.patch.object(
+            RUNTIME, "_set_entity_pose"
+        ) as set_pose:
+            with self.assertRaisesRegex(
+                RUNTIME.PerturbationValidationError,
+                "grounded barrier position is occupied",
+            ):
+                RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(
+                    types.SimpleNamespace()
+                )
+
+        set_pose.assert_not_called()
+
+    def test_s05_without_grounding_opt_in_keeps_the_original_y_fallback(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="S05",
+            schedule="static",
+            operator="asset_or_appearance",
+            variant="path_barrier",
+            targets=("target", "receiver"),
+            references=(),
+            mechanisms=("physical_obstacle",),
+            assets=(
+                RUNTIME.AssetSpec(
+                    "generated/barrier_panel", Path("unused.xml"), staged=False
+                ),
+            ),
+            params={"barrier_path_fraction": 0.45, "barrier_lateral_offset_m": 0.0},
+        )
+        poses = {
+            "target": np.array([0.0, 0.0, 1.0], dtype=float),
+            "receiver": np.array([1.0, 0.0, 1.0], dtype=float),
+        }
+
+        with mock.patch.object(RUNTIME, "_entity_exists", return_value=True), mock.patch.object(
+            RUNTIME, "_static_asset_reference_name", return_value="target"
+        ), mock.patch.object(
+            RUNTIME,
+            "_entity_pose",
+            side_effect=lambda env, name: (poses[name].copy(), np.array([1.0, 0.0, 0.0, 0.0])),
+        ), mock.patch.object(
+            RUNTIME,
+            "_functional_anchor",
+            return_value=(poses["receiver"].copy(), "receiver"),
+        ), mock.patch.object(
+            RUNTIME, "_candidate_is_clear", return_value=False
+        ), mock.patch.object(
+            RUNTIME, "_set_entity_pose"
+        ) as set_pose:
+            RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=143).apply_static(
+                types.SimpleNamespace()
+            )
+
+        np.testing.assert_allclose(set_pose.call_args.args[2], [0.45, 0.11, 1.0])
 
     def test_static_clutter_and_similar_distractor_use_distinct_anchors(self):
         clutter = self.plan("libero_spatial", "01_static", "S10")
@@ -301,6 +699,165 @@ class RuntimeBehaviorTests(unittest.TestCase):
             RUNTIME._static_asset_reference_name(distractor),
             "akita_black_bowl_2",
         )
+
+    def test_d06_moves_every_explicit_disturbance_target_by_at_least_ten_cm(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D06",
+            schedule="dynamic",
+            operator="pose_transform",
+            variant="distractor_move_or_local_rearrangement",
+            targets=("goal",),
+            references=(),
+            mechanisms=("dynamic_pose",),
+            assets=(),
+            disturbance_targets=("a", "b"),
+            trigger="task_phase",
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+
+        class Sim:
+            def __init__(self):
+                self.model = types.SimpleNamespace(
+                    body_pos=np.array(
+                        [
+                            [0.00, 0.00, 0.90],
+                            [0.25, 0.25, 0.90],
+                            [-0.25, 0.25, 0.90],
+                        ],
+                        dtype=float,
+                    ),
+                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (3, 1)),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={"a": 0, "b": 1, "goal": 2},
+            objects_dict={
+                "a": types.SimpleNamespace(joints=None),
+                "b": types.SimpleNamespace(joints=None),
+                "goal": types.SimpleNamespace(joints=None),
+            },
+            workspace_offset=np.array([0.0, 0.0, 0.9]),
+            sim=sim,
+        )
+        runtime._dynamic_triggered = lambda _env, _step: True
+        before = {name: sim.data.body_xpos[index].copy() for name, index in {"a": 0, "b": 1}.items()}
+
+        runtime.before_simulation_step(env, step=48)
+
+        self.assertEqual(runtime.events[-1]["targets"], ["a", "b"])
+        for name, index in {"a": 0, "b": 1}.items():
+            displacement = np.linalg.norm(sim.data.body_xpos[index, :2] - before[name][:2])
+            self.assertGreaterEqual(displacement, 0.10)
+
+    def test_d06_explicit_empty_disturbance_list_is_a_noop_event(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D06",
+            schedule="dynamic",
+            operator="pose_transform",
+            variant="distractor_move_or_local_rearrangement",
+            targets=("goal",),
+            references=(),
+            mechanisms=("dynamic_pose",),
+            assets=(),
+            disturbance_targets=(),
+            trigger="task_phase",
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        runtime._dynamic_triggered = lambda _env, _step: True
+        env = types.SimpleNamespace(
+            obj_body_id={"goal": 0},
+            objects_dict={"goal": types.SimpleNamespace(joints=None)},
+            sim=types.SimpleNamespace(
+                model=types.SimpleNamespace(
+                    body_pos=np.array([[0.0, 0.0, 0.9]]),
+                    body_quat=np.array([[1.0, 0.0, 0.0, 0.0]]),
+                ),
+                data=types.SimpleNamespace(
+                    body_xpos=np.array([[0.0, 0.0, 0.9]]),
+                    body_xquat=np.array([[1.0, 0.0, 0.0, 0.0]]),
+                ),
+            ),
+        )
+        env.sim.forward = lambda: None
+
+        runtime.before_simulation_step(env, step=48)
+
+        self.assertEqual(runtime.events[-1]["targets"], [])
+
+    def test_d06_rolls_back_all_targets_when_a_later_move_penetrates(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D06",
+            schedule="dynamic",
+            operator="pose_transform",
+            variant="distractor_move_or_local_rearrangement",
+            targets=("goal",),
+            references=(),
+            mechanisms=("dynamic_pose",),
+            assets=(),
+            disturbance_targets=("a", "b"),
+            trigger="task_phase",
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+
+        class Sim:
+            def __init__(self):
+                self.initial = np.array(
+                    [[0.00, 0.00, 0.90], [0.25, 0.25, 0.90], [-0.25, 0.25, 0.90]],
+                    dtype=float,
+                )
+                self.model = types.SimpleNamespace(
+                    nbody=3,
+                    body_parentid=np.array([-1, -1, -1]),
+                    body_pos=self.initial.copy(),
+                    body_quat=np.tile([1.0, 0.0, 0.0, 0.0], (3, 1)),
+                    geom_bodyid=np.array([1, 2]),
+                    body_id2name=lambda body_id: ("a", "b", "goal")[body_id],
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=self.model.body_pos.copy(),
+                    body_xquat=self.model.body_quat.copy(),
+                    ncon=0,
+                    contact=[],
+                )
+
+            def forward(self):
+                self.data.body_xpos[:] = self.model.body_pos
+                self.data.body_xquat[:] = self.model.body_quat
+                moved_b = not np.allclose(self.model.body_pos[1], self.initial[1])
+                self.data.ncon = int(moved_b)
+                self.data.contact = (
+                    [types.SimpleNamespace(dist=-0.01, geom1=0, geom2=1)]
+                    if moved_b
+                    else []
+                )
+
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={"a": 0, "b": 1, "goal": 2},
+            objects_dict={
+                "a": types.SimpleNamespace(joints=None),
+                "b": types.SimpleNamespace(joints=None),
+                "goal": types.SimpleNamespace(joints=None),
+            },
+            workspace_offset=np.array([0.0, 0.0, 0.9]),
+            sim=sim,
+        )
+        runtime._dynamic_triggered = lambda _env, _step: True
+
+        with self.assertRaises(RUNTIME.PerturbationValidationError):
+            runtime.before_simulation_step(env, step=48)
+
+        np.testing.assert_allclose(sim.data.body_xpos, sim.initial)
+        self.assertFalse(runtime.events)
 
     def test_s19_degrades_rgb_without_mutating_the_simulator_observation(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
@@ -464,6 +1021,82 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertTrue(np.array_equal(after["robot0_eye_in_hand_image"], wrist))
         self.assertEqual(runtime.events[-1]["step"], 201)
 
+    def test_d09_restores_mujoco_lighting_when_the_event_window_ends(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D09",
+            schedule="dynamic",
+            operator="observation_fault",
+            variant="light_shadow_or_exposure_change",
+            targets=("rgb",),
+            references=(),
+            mechanisms=("lighting", "observation"),
+            assets=(),
+            trigger="task_phase",
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        target = np.array([0.0, 0.0, 0.90])
+
+        class Sim:
+            def __init__(self):
+                self.model = types.SimpleNamespace(
+                    light_diffuse=np.array([[0.8, 0.7, 0.6]], dtype=float),
+                    light_ambient=np.array([[0.2, 0.3, 0.4]], dtype=float),
+                )
+                self.data = types.SimpleNamespace(
+                    body_xpos=np.array([target, [0.30, 0.0, 0.90]]),
+                    body_xquat=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)),
+                    site_xpos=np.array([[0.50, 0.50, 1.10]]),
+                )
+
+            def forward(self):
+                pass
+
+        sim = Sim()
+        env = types.SimpleNamespace(
+            obj_body_id={"goal_object": 0, "receiver": 1},
+            object_sites_dict={},
+            parsed_problem={"goal_state": [["on", "goal_object", "receiver"]]},
+            sim=sim,
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        baseline_diffuse = sim.model.light_diffuse.copy()
+        baseline_ambient = sim.model.light_ambient.copy()
+        runtime.prepare_reset(env)
+
+        sim.data.site_xpos[0] = target + np.array([0.0, 0.0, 0.10])
+        runtime.before_simulation_step(env, step=201)
+        np.testing.assert_allclose(sim.model.light_diffuse, baseline_diffuse * 0.48)
+        np.testing.assert_allclose(sim.model.light_ambient, baseline_ambient * 0.48)
+        changed = runtime.events[-1]
+        self.assertEqual(changed["event"], "dynamic_lighting_change")
+        self.assertEqual(changed["requested_value"], {"lighting_factor": 0.48})
+        np.testing.assert_array_equal(
+            changed["baseline_value"]["light_diffuse"], baseline_diffuse
+        )
+        np.testing.assert_array_equal(
+            changed["baseline_value"]["light_ambient"], baseline_ambient
+        )
+        np.testing.assert_allclose(
+            changed["applied_value"]["light_diffuse"], baseline_diffuse * 0.48
+        )
+        np.testing.assert_allclose(
+            changed["applied_value"]["light_ambient"], baseline_ambient * 0.48
+        )
+
+        runtime.before_simulation_step(env, step=225)
+
+        np.testing.assert_array_equal(sim.model.light_diffuse, baseline_diffuse)
+        np.testing.assert_array_equal(sim.model.light_ambient, baseline_ambient)
+        restored = runtime.events[-1]
+        self.assertEqual(restored["event"], "dynamic_lighting_restored")
+        self.assertEqual(restored["step"], 225)
+        np.testing.assert_array_equal(
+            restored["restored_value"]["light_diffuse"], baseline_diffuse
+        )
+        np.testing.assert_array_equal(
+            restored["restored_value"]["light_ambient"], baseline_ambient
+        )
+
     def test_d14_triggers_on_task_target_approach_not_rollout_step(self):
         plan = RUNTIME.ExecutionPlan(
             case_id="D14",
@@ -573,6 +1206,84 @@ class RuntimeBehaviorTests(unittest.TestCase):
         self.assertEqual(runtime.events[-1]["chunk_length"], 4)
         self.assertEqual(runtime.events[-1]["step"], 97)
 
+    def test_d14_and_d15_diagnostics_report_their_effective_action_steps(self):
+        plans = (
+            RUNTIME.ExecutionPlan(
+                case_id="D14",
+                schedule="dynamic",
+                operator="timing_or_action_fault",
+                variant="command_drop_or_repeat",
+                targets=("action",),
+                references=(),
+                mechanisms=("action_timing",),
+                assets=(),
+                params={"event_duration_steps": 99},
+            ),
+            RUNTIME.ExecutionPlan(
+                case_id="D15",
+                schedule="dynamic",
+                operator="timing_or_action_fault",
+                variant="stale_chunk_late_chunk_or_replan_interrupt",
+                targets=("action_chunk", "replan"),
+                references=(),
+                mechanisms=("action_timing",),
+                assets=(),
+                params={
+                    "chunk_size": 4,
+                    "stale_chunk_steps": 4,
+                    "event_duration_steps": 99,
+                },
+            ),
+        )
+
+        durations = [
+            RUNTIME.NonPhysicalPerturbationRuntime(plan).diagnostics()[
+                "event_duration_steps"
+            ]
+            for plan in plans
+        ]
+
+        self.assertEqual(durations, [99, 4])
+
+    def test_d16_uses_the_configured_bounded_takeover_duration(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D16",
+            schedule="dynamic",
+            operator="state_or_language_event",
+            variant="bounded_action_takeover_or_reachable_state_offset",
+            targets=("robot0",),
+            references=(),
+            mechanisms=("action_takeover",),
+            assets=(),
+            trigger="task_phase",
+            params={"event_duration_steps": 2},
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        target = np.array([0.0, 0.0, 0.90])
+        data = types.SimpleNamespace(
+            body_xpos=np.array([target, [0.30, 0.0, 0.90]]),
+            body_xquat=np.tile([1.0, 0.0, 0.0, 0.0], (2, 1)),
+            site_xpos=np.array([target + np.array([0.0, 0.0, 0.10])]),
+        )
+        env = types.SimpleNamespace(
+            obj_body_id={"goal_object": 0, "receiver": 1},
+            object_sites_dict={},
+            parsed_problem={"goal_state": [["on", "goal_object", "receiver"]]},
+            sim=types.SimpleNamespace(data=data),
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        action = np.array([0.3, -0.2, 0.1, 0.0, 0.0, 0.0, 1.0])
+
+        runtime.before_simulation_step(env, step=50)
+        first = runtime.transform_action(action, step=50)
+        second = runtime.transform_action(action, step=51)
+        resumed = runtime.transform_action(action, step=52)
+
+        self.assertEqual(first[0], 0.12)
+        self.assertEqual(second[0], 0.12)
+        np.testing.assert_array_equal(resumed, action)
+        self.assertEqual(runtime.diagnostics()["event_duration_steps"], 2)
+
     def test_d17_grasp_failure_window_starts_when_the_event_actually_triggers(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
             self.plan("libero_spatial", "02_dynamic", "D17"), seed=7
@@ -618,6 +1329,97 @@ class RuntimeBehaviorTests(unittest.TestCase):
         runtime.before_simulation_step(env, step=300)
 
         self.assertFalse(runtime.events)
+
+    def test_d17_releases_after_seven_centimeter_retreat_and_does_not_retrigger(self):
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(
+            self.plan("libero_spatial", "02_dynamic", "D17"), seed=7
+        )
+        target_name = runtime.plan.targets[0]
+        target = np.array([0.4, 0.4, 0.9])
+        trigger_eef = target + np.array([0.0, 0.0, 0.08])
+        data = types.SimpleNamespace(
+            body_xpos=np.array([target]),
+            body_xquat=np.array([[1.0, 0.0, 0.0, 0.0]]),
+            site_xpos=np.array([trigger_eef]),
+        )
+        env = types.SimpleNamespace(
+            obj_body_id={target_name: 0},
+            sim=types.SimpleNamespace(data=data),
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        closing = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+
+        runtime.previous_action = closing.copy()
+        runtime.before_simulation_step(env, step=37)
+        self.assertEqual(runtime.transform_action(closing, step=37)[-1], -1.0)
+
+        data.site_xpos[0] = trigger_eef + np.array([0.069, 0.0, 0.0])
+        runtime.before_simulation_step(env, step=38)
+        self.assertEqual(runtime.transform_action(closing, step=38)[-1], -1.0)
+
+        data.site_xpos[0] = trigger_eef + np.array([0.071, 0.0, 0.0])
+        runtime.before_simulation_step(env, step=39)
+        self.assertEqual(runtime.transform_action(closing, step=39)[-1], 1.0)
+
+        data.site_xpos[0] = trigger_eef
+        runtime.before_simulation_step(env, step=40)
+        self.assertEqual(runtime.transform_action(closing, step=40)[-1], 1.0)
+        self.assertEqual(
+            [event["event"] for event in runtime.events],
+            [
+                "grasp_failure_window_started",
+                "recoverable_grasp_failure",
+                "grasp_failure_window_ended",
+            ],
+        )
+        self.assertEqual(runtime.events[-1]["reason"], "retreated")
+
+    def test_d17_releases_when_the_bounded_window_expires_without_a_retreat(self):
+        plan = RUNTIME.ExecutionPlan(
+            case_id="D17",
+            schedule="dynamic",
+            operator="state_or_language_event",
+            variant="grasp_failure_result",
+            targets=("goal_object", "gripper"),
+            references=(),
+            mechanisms=("state_event",),
+            assets=(),
+            trigger="grasp_attempt",
+            params={
+                "interaction_mode": "placement",
+                "event_duration_steps": 3,
+                "recovery_retreat_m": 0.07,
+                "grasp_distance_m": 0.12,
+                "grasp_initial_tolerance_m": 0.035,
+                "contact_fallback_distance_m": 0.055,
+                "wrapper_fallback_distance_m": 0.12,
+                "articulation_grasp_distance_m": 0.14,
+            },
+        )
+        runtime = RUNTIME.NonPhysicalPerturbationRuntime(plan, seed=7)
+        target = np.array([0.4, 0.4, 0.9])
+        data = types.SimpleNamespace(
+            body_xpos=np.array([target]),
+            body_xquat=np.array([[1.0, 0.0, 0.0, 0.0]]),
+            site_xpos=np.array([target + np.array([0.0, 0.0, 0.08])]),
+        )
+        env = types.SimpleNamespace(
+            obj_body_id={"goal_object": 0},
+            sim=types.SimpleNamespace(data=data),
+            robots=[types.SimpleNamespace(eef_site_id=0)],
+        )
+        closing = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0])
+
+        runtime.previous_action = closing.copy()
+        runtime.before_simulation_step(env, step=37)
+        self.assertEqual(runtime.transform_action(closing, step=39)[-1], -1.0)
+
+        runtime.before_simulation_step(env, step=40)
+
+        self.assertEqual(runtime.transform_action(closing, step=40)[-1], 1.0)
+        self.assertEqual(runtime.events[-1]["event"], "grasp_failure_window_ended")
+        self.assertEqual(runtime.events[-1]["reason"], "duration_elapsed")
+        self.assertEqual(runtime.events[-1]["step"], 40)
 
     def test_d01_combines_xy_translation_with_yaw_rotation(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
@@ -841,6 +1643,12 @@ class RuntimeBehaviorTests(unittest.TestCase):
     def test_d19_requires_transport_progress_and_receiver_approach(self):
         runtime = RUNTIME.NonPhysicalPerturbationRuntime(
             self.plan("libero_goal", "02_dynamic", "D19"), seed=7
+        )
+        runtime.plan.params.update(
+            {
+                "misplace_offset_xy": (0.065, 0.0),
+                "misplace_height_m": 0.035,
+            }
         )
         target, receiver = runtime.plan.targets
 

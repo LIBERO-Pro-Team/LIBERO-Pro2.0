@@ -493,6 +493,13 @@
         (:constraints retry_remains_possible)
         (:params
           (:interaction_mode placement)
+          (:event_duration_steps 48)
+          (:recovery_retreat_m 0.07)
+          (:grasp_distance_m 0.16)
+          (:grasp_initial_tolerance_m 0.05)
+          (:contact_fallback_distance_m 0.08)
+          (:wrapper_fallback_distance_m 0.16)
+          (:articulation_grasp_distance_m 0.14)
         )
       )
       (D18

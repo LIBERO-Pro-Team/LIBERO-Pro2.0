@@ -187,8 +187,16 @@
         (:variant same_class_or_visually_similar_distractor)
         (:params
           (:interaction_mode placement)
-          (:asset_id prl/gelatin_box)
-          (:asset_scale 0.7)
+          (:asset_id libero/yellow_moka_pot)
+          (:asset_scale 1.0)
+          (:asset_count 1)
+          (:clutter_minimum_gap_m 0.055)
+          (:clutter_offsets_xy 0.075 0.055)
+          (:support_surface table)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
         )
       )
       (S12

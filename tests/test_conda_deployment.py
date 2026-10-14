@@ -309,7 +309,7 @@ HTTPServer(
     (conda_bin / "python").write_bytes(b"#!/usr/bin/env bash\nexec /usr/bin/python3 \"$@\"\n")
 
     wsl_root = _wsl_path(tmp_path)
-    (deployment / "server.env").write_text(
+    (deployment / "server.env").write_bytes(
         "\n".join(
             (
                 f"LIBERO_PRO_CONDA_PREFIX={wsl_root}/conda",
@@ -317,20 +317,16 @@ HTTPServer(
                 f"LIBERO_REMOTE_PORT={port}",
                 "",
             )
-        ),
-        encoding="utf-8",
-        newline="\n",
+        ).encode("utf-8"),
     )
-    (deployment / "client.env").write_text(
+    (deployment / "client.env").write_bytes(
         "\n".join(
             (
                 f"LIBERO_REMOTE_URL=http://127.0.0.1:{port}",
                 "LIBERO_REMOTE_API_KEY=test-key",
                 "",
             )
-        ),
-        encoding="utf-8",
-        newline="\n",
+        ).encode("utf-8"),
     )
     harness = f"""
 set -euo pipefail

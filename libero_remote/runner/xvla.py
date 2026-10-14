@@ -239,6 +239,7 @@ def run_remote_episode(
             camera_width=spec.camera_width,
             max_steps=spec.max_steps,
             control_mode=spec.control_mode,
+            variant=spec.variant,
         )
         if recorder is not None:
             recorder.write(observation)

@@ -230,13 +230,25 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets cream_cheese_1)
         (:references wine_bottle_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:asset_count 2)
+          (:clutter_minimum_gap_m 0.14)
+          (:clutter_offsets_xy 0.24 0.18 0.24 -0.18)
+          (:support_surface table)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
+          (:movable_asset true)
+          (:zero_initial_asset_velocity true)
+          (:asset_collision_box_half_size 0.03861756 0.045803085 0.02738214)
+          (:asset_collision_box_offset_xyz -0.00983288 -0.002414605 0.00839394)
+          (:physical_collision true)
+          (:asset_contact_margin_m 0.001)
         )
       )
       (S11

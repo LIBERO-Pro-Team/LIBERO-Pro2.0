@@ -189,6 +189,17 @@
         (:constraints same_support_surface collision_free task_completable)
         (:params
           (:interaction_mode placement)
+          (:swap_xy 0.0 0.0)
+          (:grounded_swap true)
+          (:swap_cluster_radius_m 0.18)
+          (:support_surface cookies_1 wooden_cabinet_1)
+          (:strict_swap_xy true)
+          (:ground_support_from_declared_surface true)
+          (:swap_single_support_group true)
+          (:support_object cookies_1)
+          (:support_ground_surface wooden_cabinet_1)
+          (:second_ground_surface main_table)
+          (:group_minimum_clearance_m 0.018)
         )
       )
       (S05

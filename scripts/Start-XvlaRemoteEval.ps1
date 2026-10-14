@@ -11,10 +11,11 @@ param(
     [int]$RemotePort = 8000,
     [string]$Suite = "libero_goal",
     [int]$TaskId = 0,
+    [string]$Variant = "base",
     [int]$InitStateId = 0,
     [int]$Episodes = 1,
     [int]$Seed = 42,
-    [int]$MaxSteps = 300,
+    [Nullable[int]]$MaxSteps,
     [double]$Timeout = 120,
     [string]$Output = "results\xvla_remote_eval.jsonl",
     [switch]$NoTunnel
@@ -133,20 +134,25 @@ try {
 
     $previousErrorAction = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
+    $runnerArgs = @(
+        "--base-url", $baseUrl,
+        "--lerobot-root", $lerobotWsl,
+        "--model-path", $modelWsl,
+        "--tokenizer-path", $tokenizerWsl,
+        "--suite", $Suite,
+        "--task-id", $TaskId,
+        "--variant", $Variant,
+        "--init-state-id", $InitStateId,
+        "--episodes", $Episodes,
+        "--seed", $Seed,
+        "--timeout", $Timeout,
+        "--output", $outputWsl
+    )
+    if ($PSBoundParameters.ContainsKey("MaxSteps")) {
+        $runnerArgs += @("--max-steps", $MaxSteps)
+    }
     try {
-        & wsl.exe -d $Distro -- env "PYTHONPATH=$pythonPath" $WslPython $runnerWsl `
-            --base-url $baseUrl `
-            --lerobot-root $lerobotWsl `
-            --model-path $modelWsl `
-            --tokenizer-path $tokenizerWsl `
-            --suite $Suite `
-            --task-id $TaskId `
-            --init-state-id $InitStateId `
-            --episodes $Episodes `
-            --seed $Seed `
-            --max-steps $MaxSteps `
-            --timeout $Timeout `
-            --output $outputWsl
+        & wsl.exe -d $Distro -- env "PYTHONPATH=$pythonPath" $WslPython $runnerWsl @runnerArgs
         $runnerExitCode = $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $previousErrorAction

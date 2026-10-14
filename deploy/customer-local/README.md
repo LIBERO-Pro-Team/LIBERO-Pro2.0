@@ -1,6 +1,6 @@
 # LIBERO-PRO 2.0 客户本地部署包 v1.0.0
 
-本包用于 Ubuntu 22.04 x86_64 NVIDIA 主机。服务、LIBERO、MuJoCo、robosuite、1680 个已批准
+本包用于 Ubuntu 22.04 x86_64 NVIDIA 主机。服务、LIBERO、MuJoCo、robosuite、1706 个已批准
 BDDL、init state 和扰动资产均随 Docker 镜像交付；客户安装时不需要访问 GitHub，也不需要安装
 模拟器 Python 依赖。客户模型运行在自己的环境中，只安装轻量 `libero_remote` wheel。
 
@@ -96,8 +96,8 @@ TensorFlow、ONNX、私有推理 API 或传统策略。服务端只验证标准 
 ## 当前任务范围
 
 - 4 个 suite：`libero_goal`、`libero_spatial`、`libero_object`、`libero_10`
-- 40 个官方 base 任务，每个任务包含 1 个 BASE、21 个静态 case 和 20 个动态 case
-- 发布 manifest 合计 1680 个有效 BDDL
+- 40 个官方 base 任务；发布集合包含 40 个 BASE、875 个静态 case 和 792 个动态 case
+- 发布 manifest 合计 1706 个有效 BDDL；D19 已全部删除，Goal 另删除 13 个不适用组合，另删除 `libero_10/task8/S04`
 - `/v1/tasks` 是具体 suite/task/variant 可用组合的唯一来源，客户端不得自行假设笛卡尔积
 - 支持固定 `init_state_id + seed`，并返回任务、初态、首帧和扰动计划指纹
 - 支持 `relative` 与 `absolute` 7D action，具体 shape/range 以 `info["action_schema"]` 为准

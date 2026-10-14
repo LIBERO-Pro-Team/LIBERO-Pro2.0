@@ -215,6 +215,10 @@
           (:interaction_mode placement)
           (:asset_id ycb/YcbTomatoSoupCan)
           (:asset_scale 0.72)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
         )
       )
       (S12

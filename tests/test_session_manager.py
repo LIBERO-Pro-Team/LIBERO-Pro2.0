@@ -1,10 +1,12 @@
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pytest
 
+from libero_remote.environment.task_manifest import TaskManifest
 from libero_remote.protocol.models import (
     CreateSessionRequest,
     ErrorCode,
@@ -13,6 +15,52 @@ from libero_remote.protocol.models import (
 )
 from libero_remote.server.errors import PlatformError
 from libero_remote.server.session_manager import SessionManager
+
+MANIFEST_PATH = Path(__file__).resolve().parents[1] / "assets" / "task_manifest.json"
+
+
+@pytest.mark.asyncio
+async def test_manifest_default_max_steps_is_resolved_before_worker_creation() -> None:
+    manager = SessionManager(
+        backend="fake",
+        max_sessions=1,
+        worker_timeout_seconds=5.0,
+        task_manifest=TaskManifest.load(str(MANIFEST_PATH)),
+    )
+
+    created = await manager.create(
+        CreateSessionRequest(
+            suite="libero_spatial", task_id=0, camera_height=16, camera_width=16
+        )
+    )
+    record = manager._sessions[created["session_id"]]
+    await manager.close_all()
+
+    assert record.spec["max_steps"] == 220
+
+
+@pytest.mark.asyncio
+async def test_explicit_max_steps_overrides_manifest_default() -> None:
+    manager = SessionManager(
+        backend="fake",
+        max_sessions=1,
+        worker_timeout_seconds=5.0,
+        task_manifest=TaskManifest.load(str(MANIFEST_PATH)),
+    )
+
+    created = await manager.create(
+        CreateSessionRequest(
+            suite="libero_10",
+            task_id=0,
+            camera_height=16,
+            camera_width=16,
+            max_steps=123,
+        )
+    )
+    record = manager._sessions[created["session_id"]]
+    await manager.close_all()
+
+    assert record.spec["max_steps"] == 123
 
 
 @pytest.mark.asyncio

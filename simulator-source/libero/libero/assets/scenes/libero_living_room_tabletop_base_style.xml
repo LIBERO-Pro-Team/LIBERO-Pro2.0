@@ -7,6 +7,8 @@
     <!-- ceramic table texture and material-->
     <texture file="../textures/seamless_wood_planks_floor.png" type="cube" name="tex-table"/>
     <material name="table_texture" reflectance="0.0" shininess="0.0" specular="0.2" texrepeat="1 1" texture="tex-table" />
+    <texture file="../textures/table_light_wood.png" type="2d" name="tex-s22-table"/>
+    <material name="s22_table_texture" reflectance="0.0" shininess="0.0" specular="0.15" texrepeat="2 2" texture="tex-s22-table" texuniform="true"/>
     <!-- steel legs -->
     <texture file="../textures/seamless_wood_planks_floor.png" type="cube" name="tex-table-legs"/>
     <material name="table_legs" reflectance="0.8" shininess="0.8" texrepeat="1 1" texture="tex-table-legs" />
@@ -32,6 +34,7 @@
 
   </asset>
   <worldbody>
+    <geom name="s22_material_carrier" pos="0 0 -10" size="0.001" type="sphere" contype="0" conaffinity="0" group="1" material="s22_table_texture"/>
     <!-- Floor -->
     <body name="floor" pos="0 0 0">    
       <geom condim="3" group="1" material="floorplane" name="floor" pos="0 0 0" size="3 3 .125" type="plane"/>
@@ -39,7 +42,7 @@
 
     <body name="living_room_table" pos="0 0 0" quat="1 0.0 0.0 0.0">    
     <body name="living_room_table_col" pos="-0.25 0.25 0" quat="0.707 0.0 0.0 0.707">    
-    <geom solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.3 0.1" type="mesh" mesh="living_room_table_vis" conaffinity="0" contype="0" group="1" material="living_room_table"/>
+    <geom name="workspace_surface_visual" solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.3 0.1" type="mesh" mesh="living_room_table_vis" conaffinity="0" contype="0" group="1" material="living_room_table"/>
     <geom solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.3 0.1" type="box" pos="-0.19761 0.00000 0.42492" quat="0.70711 0.00000 0.70711 0.00000" size="0.01184 0.44432 0.67171" group="0" rgba="0.8 0.8 0.8 0.3"/>
     <geom solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.3 0.1" type="box" pos="0.54936 -0.00000 0.42492" quat="0.50000 0.50000 0.50000 -0.50000" size="0.01184 0.10133 0.41675" group="0" rgba="0.8 0.8 0.8 0.3"/>
     <geom solimp="0.998 0.998 0.001" solref="0.001 1" density="100" friction="0.95 0.3 0.1" type="box" pos="-0.97006 0.00000 0.42492" quat="0.50000 -0.50000 -0.50000 -0.50000" size="0.01184 0.10133 0.41675" group="0" rgba="0.8 0.8 0.8 0.3"/>

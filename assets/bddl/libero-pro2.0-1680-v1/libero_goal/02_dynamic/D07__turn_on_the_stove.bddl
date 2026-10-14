@@ -398,6 +398,9 @@
         (:variant shake_drift_or_persistent_offset)
         (:params
           (:interaction_mode articulation)
+          (:camera_offset_xyz 0.100 -0.100 0.070)
+          (:camera_rotation_rpy 0.015 -0.010 0.025)
+          (:event_duration_steps 24)
         )
       )
       (D08

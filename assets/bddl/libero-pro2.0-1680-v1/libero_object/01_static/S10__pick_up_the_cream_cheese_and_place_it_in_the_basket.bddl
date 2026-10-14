@@ -194,13 +194,22 @@
           (:interaction_mode placement)
         )
       )
-      (S10
+(S10
         (:operator asset_or_appearance)
         (:targets cream_cheese_1)
         (:references alphabet_soup_1)
         (:variant irrelevant_object_clutter)
         (:params
           (:interaction_mode placement)
+          (:asset_count 3)
+          (:clutter_minimum_gap_m 0.055)
+          (:clutter_offsets_xy 0.11 -0.10 -0.11 0.10 0.11 0.16)
+          (:support_surface floor)
+          (:movable_asset true)
+          (:physical_collision true)
+          (:visual_only_asset false)
+          (:clear_of_task_entities true)
+          (:asset_contact_margin_m 0.006)
         )
       )
       (S11

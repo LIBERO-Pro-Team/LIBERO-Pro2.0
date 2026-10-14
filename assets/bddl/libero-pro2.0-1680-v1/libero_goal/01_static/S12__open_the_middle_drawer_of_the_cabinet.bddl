@@ -1,6 +1,6 @@
 (define (problem LIBERO_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Open the middle layer of the drawer)
+  (:language Open the middle drawer of the brown cabinet)
     (:regions
       (plate_region
           (:target main_table)
@@ -256,6 +256,9 @@
         (:variant persistent_front_occlusion)
         (:params
           (:interaction_mode articulation)
+          (:asset_scale 1.45)
+          (:occlusion_fraction 0.58)
+          (:occlusion_offset_xyz -0.05 0.0 0.0)
         )
       )
       (S13
