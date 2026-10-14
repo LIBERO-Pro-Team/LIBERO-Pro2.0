@@ -88,3 +88,10 @@ rebase 发生冲突时：
 - `scripts/run_grouped_eval.py`：模型无关的计划、提交和结果导出入口，不负责加载 adapter 或 checkpoint。
 - `docs/grouped-benchmark.md`：分组评测的用户流程与结果格式。
 - `libero_remote/runner/video.py`：Pi0/xVLA direct rollout 共用的可选 MP4 observation 录像实现。
+
+## 项目首页与论文结果
+
+- `README.md`：项目介绍、论文原图、静态/动态排行榜和用户入口。
+- `docs/remote-evaluation-guide.md`：原首页中的远程评测、部署与维护指南。
+- `docs/paper-results.md`、`docs/results/`：论文表格来源、数值和统计口径；更新排行榜时保留原始舍入值。
+- `static/images/`：从论文原图导出的浏览器展示资源。

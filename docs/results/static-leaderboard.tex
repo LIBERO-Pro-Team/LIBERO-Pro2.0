@@ -1,0 +1,178 @@
+\begin{table*}[t]
+\centering
+\vspace{-10pt}
+\caption{
+Leaderboard of robot-policy robustness under \textbf{static distribution shifts}.
+Category scores report task success rates (\%), averaged over valid
+suite--perturbation entries from LIBERO-Goal, LIBERO-Object,
+LIBERO-Spatial, and LIBERO-10.
+Avg.\ averages all 87 valid static entries, excluding the N/A entry
+for S04 in LIBERO-Spatial.
+Base denotes nominal performance, and
+$\Delta=\mathrm{Avg.}-\mathrm{Base}$ is reported in percentage points.
+Aggregation and subtraction are performed before rounding.
+The OpenVLA-OFT variants follow LIBERO-Plus~\citep{fei2026liberoplus}:
+$_{\mathrm{w}}$ omits wrist-camera observations, $_{\mathrm{m}}$ uses joint
+fine-tuning across the four original LIBERO suites, and $+$ uses mixed
+fine-tuning on LIBERO-Plus data.
+}
+\label{tab:static_leaderboard}
+\renewcommand{\arraystretch}{1.30}
+\setlength{\tabcolsep}{7.5pt}
+\resizebox{0.98\textwidth}{!}{
+\begin{tabular}{cccccccccc}
+\specialrule{1.3pt}{0pt}{0pt}
+\textbf{Model}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Cond.}\\[-1pt]
+{\scriptsize\textit{S01--S05, S07--S09}}
+\end{tabular}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Env.}\\[-1pt]
+{\scriptsize\textit{S06, S10--S14, S22}}
+\end{tabular}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Obs.}\\[-1pt]
+{\scriptsize\textit{S15--S16, S19}}
+\end{tabular}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Exec.}\\[-1pt]
+{\scriptsize\textit{S20}}
+\end{tabular}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Robot}\\[-1pt]
+{\scriptsize\textit{S17--S18}}
+\end{tabular}
+&
+\begin{tabular}[c]{@{}c@{}}
+\textbf{Lang.}\\[-1pt]
+{\scriptsize\textit{S21}}
+\end{tabular}
+& \textbf{Avg.}
+& \textbf{Base}
+& \textcolor{red!80!black}{\boldmath$\Delta$}
+\\
+\specialrule{0.9pt}{0pt}{0pt}
+\rowcolor{gray!15}
+\multicolumn{10}{c}{\textit{Vision-Language-Action Policies}} \\
+\specialrule{0.7pt}{0pt}{0pt}
+OpenVLA \citep{kim2024openvla}
+& 25.2 & 37.6 & 34.4 & 0.0 & 54.0 & 67.5
+& \cellcolor{red!6}33.9
+& \cellcolor{green!14}64.6
+& \textcolor{red!80!black}{$-30.7$}
+\\
+OpenVLA-OFT \citep{kim2025openvlaoft}
+& 44.1 & 82.0 & 46.3 & 0.0 & 66.5 & 94.6
+& \cellcolor{red!15}58.9
+& \cellcolor{green!29}97.1
+& \textcolor{red!80!black}{$-38.2$}
+\\
+OpenVLA-OFT$_{\mathrm{w}}$ \citep{kim2025openvlaoft}
+& 40.1 & 64.9 & 67.6 & 0.4 & 55.4 & 90.0
+& \cellcolor{red!12}53.8
+& \cellcolor{green!25}89.2
+& \textcolor{red!80!black}{$-35.4$}
+\\
+OpenVLA-OFT$_{\mathrm{m}}$ \citep{kim2025openvlaoft}
+& 45.9 & 78.3 & 49.7 & 0.0 & 72.1 & 92.1
+& \cellcolor{red!15}59.3
+& \cellcolor{green!27}92.5
+& \textcolor{red!80!black}{$-33.2$}
+\\
+OpenVLA-OFT+ \citep{fei2026liberoplus}
+& 47.2 & 78.5 & 45.0 & 0.0 & 73.8 & 90.0
+& \cellcolor{red!15}59.2
+& \cellcolor{green!27}92.1
+& \textcolor{red!80!black}{$-32.9$}
+\\
+UniVLA \citep{bu2025univla}
+& 39.8 & 59.5 & 58.1 & 0.0 & 79.6 & 91.7
+& \cellcolor{red!12}52.9
+& \cellcolor{green!27}92.1
+& \textcolor{red!80!black}{$-39.2$}
+\\
+$\pi_{0}$ \citep{black2025pi0}
+& 25.0 & 53.8 & 60.0 & 5.0 & 19.2 & 46.3
+& \cellcolor{red!8}38.6
+& \cellcolor{green!14}63.8
+& \textcolor{red!80!black}{$-25.1$}
+\\
+$\pi_{0}$-FAST \citep{pertsch2025fast}
+& 43.8 & 71.5 & 39.9 & 0.0 & 57.7 & 81.2
+& \cellcolor{red!12}53.2
+& \cellcolor{green!23}80.4
+& \textcolor{red!80!black}{$-27.3$}
+\\
+$\pi_{0.5}$ \citep{intelligence2025pi_}
+& 60.7 & 83.9 & 43.3 & 0.8 & 85.0 & 93.3
+& \cellcolor{red!20}66.7
+& \cellcolor{green!27}93.3
+& \textcolor{red!80!black}{$-26.6$}
+\\
+X-VLA \citep{zheng2025xvla}
+& 42.1 & 81.7 & 49.3 & 71.7 & 61.7 & 90.8
+& \cellcolor{red!16}61.2
+& \cellcolor{green!28}95.0
+& \textcolor{red!80!black}{$-33.8$}
+\\
+GR00T N1.7 \citep{bjorck2025gr00t}
+& 46.6 & 79.2 & 48.5 & 0.0 & 77.9 & 88.8
+& \cellcolor{red!16}60.0
+& \cellcolor{green!25}90.4
+& \textcolor{red!80!black}{$-30.4$}
+\\
+MolmoAct2 \citep{fang2026molmoact2}
+& 63.8 & 85.0 & 65.1 & 0.0 & 85.0 & 94.6
+& \cellcolor{red!24}71.2
+& \cellcolor{green!29}97.2
+& \textcolor{red!80!black}{$-26.0$}
+\\
+\specialrule{0.9pt}{1.2pt}{0pt}
+\rowcolor{gray!15}
+\multicolumn{10}{c}{\textit{World-Action Models}} \\
+\specialrule{0.7pt}{0pt}{0pt}
+Cosmos Policy \citep{kim2026cosmospolicy}
+& 56.9 & 89.3 & 70.8 & 4.2 & 82.5 & 93.3
+& \cellcolor{red!23}70.8
+& \cellcolor{green!29}97.5
+& \textcolor{red!80!black}{$-26.7$}
+\\
+FastWAM \citep{yuan2026fastwam}
+& 43.8 & 84.7 & 5.2 & 2.8 & 87.5 & 90.3
+& \cellcolor{red!13}55.9
+& \cellcolor{green!30}97.8
+& \textcolor{red!80!black}{$-41.8$}
+\\
+LingBot-VA \citep{li2026lingbotva}
+& 52.2 & 86.1 & 35.7 & 86.7 & 98.3 & 97.1
+& \cellcolor{red!22}68.7
+& \cellcolor{green!30}98.5
+& \textcolor{red!80!black}{$-29.7$}
+\\
+\specialrule{0.9pt}{1.2pt}{0pt}
+\rowcolor{gray!15}
+\multicolumn{10}{c}{\textit{Robustness-Oriented Policies}} \\
+\specialrule{0.7pt}{0pt}{0pt}
+Anchor-Align \citep{dalal2026generalizable}
+& 43.2 & 74.3 & 38.6 & 0.8 & 76.5 & 90.8
+& \cellcolor{red!13}55.9
+& \cellcolor{green!26}91.3
+& \textcolor{red!80!black}{$-35.4$}
+\\
+RIPT-VLA \citep{tan2025interactive}
+& 41.0 & 74.3 & 41.8 & 0.0 & 63.8 & 86.7
+& \cellcolor{red!12}54.1
+& \cellcolor{green!23}87.5
+& \textcolor{red!80!black}{$-33.4$}
+\\
+\specialrule{1.3pt}{0pt}{0pt}
+\end{tabular}
+}
+\vspace{-15pt}
+\end{table*}

@@ -1,0 +1,23 @@
+[
+  {
+    "source": "figures/promain.pdf",
+    "source_sha256": "d74ff575fd703aeedf2c436fe047e672e4aa3c066fa8a2e327c615e8ae8d7835",
+    "image": "static/images/overview.png",
+    "image_sha256": "5ea1fd0c165375b7db423a81bf5047e2b0dc051653df435728530eb473e9c229",
+    "conversion": "pdftoppm -singlefile -scale-to 2200 -png"
+  },
+  {
+    "source": "figures/example.png",
+    "source_sha256": "ea65695c3ad4d8abcf888df5a91664fcda5b90974e30ece3af0ea0513bf9950b",
+    "image": "static/images/failure-patterns.png",
+    "image_sha256": "ea65695c3ad4d8abcf888df5a91664fcda5b90974e30ece3af0ea0513bf9950b",
+    "conversion": "byte-preserved"
+  },
+  {
+    "source": "figures/fig_grouped_static_runtime.pdf",
+    "source_sha256": "5d6b5960a01b60ddec222751d0d8a2026e424dc253e962230e0f603e63aaebbc",
+    "image": "static/images/static-runtime-comparison.png",
+    "image_sha256": "3a4bc8f1baa4b7b0b416b08e93c86e06bf844a3aa7e706914c6c302e4a91311a",
+    "conversion": "pdftoppm -singlefile -scale-to 2200 -png"
+  }
+]
