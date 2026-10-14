@@ -23,7 +23,7 @@ This repository provides the evaluation service, Python client, model adapter in
 ## 📰 News
 
 - **[2026-10-14]** The [native HDF5 training dataset](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0) is available on Hugging Face, with trajectory previews and review videos.
-- **[2026-10-14]** Added the paper's static and runtime [leaderboards](#-leaderboard), covering **17 robot policies**.
+- **[2026-10-14]** Added the paper's static and runtime [leaderboards](#-leaderboard), covering **18 robot policies**.
 
 ## 📊 LIBERO-Pro2.0 Benchmark
 
