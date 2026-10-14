@@ -20,15 +20,10 @@ The benchmark introduces **22 static distribution shifts** and **20 runtime inte
 
 This repository provides the evaluation service, Python client, model adapter interfaces, and reproducible run planning. Robot policies run on the user's machine; the service handles task initialization, simulator execution, perturbations, and success checking.
 
-## 🚀 Key Findings
+## 📰 News
 
-- **Nominal success does not predict robustness.** Across 17 evaluated policies, nominal success ranges from 63.8% to 98.5%, while average success falls to 33.9%–71.2% under static shifts and 35.3%–81.8% under runtime shifts.
-- **Static and runtime robustness differ.** Similar perturbations can expose different weaknesses depending on when they occur. High static performance does not fully characterize online adaptation and recovery.
-- **Robustness does not reliably compose.** In the paper's composition studies, selected combined perturbations reduce success to 9.2%–12.9%, despite much higher success on their individual constituents.
-
-![Qualitative failure patterns after changing the target object or its position](static/images/failure-patterns.png)
-
-*Paper examples: behavior that succeeds in the nominal scene can fail after replacing or relocating the target object.*
+- **[2026-10-14]** The [native HDF5 training dataset](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0) is available on Hugging Face, with trajectory previews and review videos.
+- **[2026-10-14]** Added the paper's static and runtime [leaderboards](#-leaderboard), covering **17 robot policies**.
 
 ## 📊 LIBERO-Pro2.0 Benchmark
 
