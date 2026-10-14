@@ -52,11 +52,11 @@ The paper samples two evaluation tasks from each LIBERO suite with seed **142**.
 
 After validation, the paper contains **1,313 training instances** and **335 evaluation instances**. Detailed perturbation definitions and visual examples are available in the [project documentation](https://racingemperor.github.io/LIBERO-Pro2.0/docs.html).
 
-### Repository and Paper Versions
+### Released Code and Task Catalogue
 
-The overview and leaderboards describe the paper benchmark. The current `main` branch still contains an earlier **1,680-instance manifest**: 40 BASE instances and 1,640 shifted instances, with **21 static** and **20 runtime** perturbation types. Its catalogue is not the paper's 42-type release.
+`main` is the maintained branch for the evaluation code, simulator, and task catalogue. It contains **1,688 task instances**: **40 BASE**, **863 static**, and **785 runtime** instances across **22 static** and **20 runtime** perturbation types. All 1,688 BDDL files are listed, with checksums, in [`assets/task_manifest.json`](assets/task_manifest.json) and stored under [`assets/bddl/libero-pro2.0-1680-v1/`](assets/bddl/libero-pro2.0-1680-v1/). The `1680` directory suffix and `1706` manifest version are legacy identifiers, not current counts.
 
-The [`model-agnostic-multiuser` branch](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/model-agnostic-multiuser) contains **1,688 instances**, including 40 BASE and 1,648 shifted instances across all 42 types. Its task partition also differs from the paper's reported 1,313/335 split. See [versioned catalogue counts and case-ID mapping](docs/paper-results.md#evaluation-service-versions) before choosing a server version; the evaluation commands below use the connected server's catalogue.
+The released catalogue has 1,317 training and 331 evaluation shifted instances (BASE excluded); the paper reports 1,313/335. See [catalogue scope and case-ID mapping](docs/paper-results.md#evaluation-service-versions) for this remaining difference. The evaluation commands below use the connected server's catalogue.
 
 ## 🏆 Leaderboard
 
@@ -127,6 +127,8 @@ git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
 cd LIBERO-Pro2.0
 python -m pip install -e .
 ```
+
+Server deployments also need the Git LFS simulator assets: install [Git LFS](https://git-lfs.com/) and run `git lfs pull` in the clone. A client-only installation does not load the simulator.
 
 The model runs locally and connects to an evaluation server. Obtain the server URL and an account API key from the server operator. To host your own service, follow the [Conda deployment guide](deploy/customer-conda/README.md) or the [complete evaluation and deployment guide](docs/remote-evaluation-guide.md).
 

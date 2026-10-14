@@ -64,7 +64,7 @@ def test_server_image_has_no_model_runtime_configuration() -> None:
 def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
     compose = (ROOT / "compose.yaml").read_text(encoding="utf-8")
-    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    readme = (ROOT / "docs" / "remote-evaluation-guide.md").read_text(encoding="utf-8")
     baseline = json.loads(
         (ROOT / "deploy" / "customer-conda" / "SOURCE_BASELINE.json").read_text(
             encoding="utf-8"
@@ -80,7 +80,7 @@ def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     assert simulator_commit in readme
     assert "eafdb809426b13153aa1e4c42d6601844217dfec" not in readme
     assert "libero-pro-conda-bundle-1.0.0.tar.gz" in readme
-    assert "model-agnostic-multiuser` 分支包含完整的" in readme
+    assert "main` 分支包含完整的" in readme
     assert "git lfs pull" in readme
     assert "普通 Git clone 只包含服务代码和打包入口" not in readme
     simulator_source = ROOT / "simulator-source"

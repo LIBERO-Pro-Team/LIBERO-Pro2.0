@@ -5,8 +5,8 @@
   "assignment_scope": "all_cases_for_suite_and_base_task",
   "case_groups": {
     "base": ["BASE"],
-    "static": ["S01-S21"],
-    "dynamic": ["D01-D19", "D21"]
+    "static": ["S01-S22"],
+    "dynamic": ["D01-D18", "D20-D21"]
   },
   "splits": {
     "train": {

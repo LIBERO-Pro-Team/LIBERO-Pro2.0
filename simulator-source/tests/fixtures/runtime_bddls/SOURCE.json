@@ -1,0 +1,82 @@
+{
+  "source_commit": "fb091b860e31bb292122e9809d7a59763ce51018",
+  "purpose": "Frozen unit-test inputs for legacy runtime behavior; current published catalogue is tested separately. Not evaluation tasks.",
+  "files": [
+    {
+      "file": "libero_10/01_static/S04__KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_10/01_static/S04__KITCHEN_SCENE6_put_the_yellow_and_white_mug_in_the_microwave_and_close_it.bddl"
+    },
+    {
+      "file": "libero_10/01_static/S12__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_10/01_static/S12__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl"
+    },
+    {
+      "file": "libero_10/01_static/S19__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_10/01_static/S19__KITCHEN_SCENE3_turn_on_the_stove_and_put_the_moka_pot_on_it.bddl"
+    },
+    {
+      "file": "libero_goal/00_base/BASE__open_the_middle_drawer_of_the_cabinet.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/00_base/BASE__open_the_middle_drawer_of_the_cabinet.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D01__open_the_middle_drawer_of_the_cabinet.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D01__open_the_middle_drawer_of_the_cabinet.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D04__open_the_middle_drawer_of_the_cabinet.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D04__open_the_middle_drawer_of_the_cabinet.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D07__open_the_middle_drawer_of_the_cabinet.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D07__open_the_middle_drawer_of_the_cabinet.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D18__put_the_wine_bottle_on_the_rack.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D18__put_the_wine_bottle_on_the_rack.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D19__put_the_wine_bottle_on_the_rack.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D19__put_the_wine_bottle_on_the_rack.bddl"
+    },
+    {
+      "file": "libero_goal/02_dynamic/D21__open_the_middle_drawer_of_the_cabinet.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/02_dynamic/D21__open_the_middle_drawer_of_the_cabinet.bddl"
+    },
+    {
+      "file": "libero_goal/01_static/S04__put_the_wine_bottle_on_the_rack.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/01_static/S04__put_the_wine_bottle_on_the_rack.bddl"
+    },
+    {
+      "file": "libero_goal/01_static/S06__put_the_wine_bottle_on_the_rack.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_goal/01_static/S06__put_the_wine_bottle_on_the_rack.bddl"
+    },
+    {
+      "file": "libero_object/01_static/S04__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_object/01_static/S04__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl"
+    },
+    {
+      "file": "libero_object/01_static/S08__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_object/01_static/S08__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl"
+    },
+    {
+      "file": "libero_object/01_static/S09__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_object/01_static/S09__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl"
+    },
+    {
+      "file": "libero_object/01_static/S21__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_object/01_static/S21__pick_up_the_alphabet_soup_and_place_it_in_the_basket.bddl"
+    },
+    {
+      "file": "libero_spatial/01_static/S04__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_spatial/01_static/S04__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl"
+    },
+    {
+      "file": "libero_spatial/01_static/S10__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_spatial/01_static/S10__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl"
+    },
+    {
+      "file": "libero_spatial/01_static/S11__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl",
+      "source": "assets/bddl/libero-pro2.0-1680-v1/libero_spatial/01_static/S11__pick_up_the_black_bowl_between_the_plate_and_the_ramekin_and_place_it_on_the_plate.bddl"
+    }
+  ]
+}

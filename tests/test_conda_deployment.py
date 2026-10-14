@@ -546,7 +546,8 @@ def test_conda_docs_cover_regular_user_operation_and_headless_egl() -> None:
         "/data/user/envs/libero-pro2/bin/python smoke_test.py",
     ):
         assert command in readme
-    assert "82c829c290bb011f828b80e117a5c7a0262337e1" in readme
+    assert "SOURCE_BASELINE.json" in readme
+    assert "service_commit" in readme
     assert "c02ee2c8255db1c36664fad978197c47e495f178" in readme
     assert "sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933" in readme
     assert "seed 142" in readme

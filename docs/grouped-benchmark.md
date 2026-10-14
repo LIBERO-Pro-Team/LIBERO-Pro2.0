@@ -3,7 +3,8 @@
 ## Train/test 划分
 
 `assets/benchmark_split_v1.json` 按 `(suite, base_task_id)` 定义版本化 train/test 边界。
-一个基础任务下的 `BASE`、`S01-S21`、`D01-D19` 和 `D21` 全部跟随该任务，禁止跨 split。
+一个基础任务下的 `BASE`、`S01-S22`、`D01-D18`、`D20` 和 `D21` 全部跟随该任务，禁止跨 split。
+当前 main 的训练集含 1349 项、测试集含 339 项（分别含 32/8 项 BASE）。
 正式评估使用 `--split test`，训练侧 rollout 使用 `--split train`；后续仍可叠加
 `--suite`、`--group` 和 `--case` 精确选择套件与扰动。
 

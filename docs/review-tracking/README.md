@@ -3,7 +3,7 @@
 ## 快照信息
 
 - 仓库：`D:\LIBERO-PRO`
-- 分支：`model-agnostic-multiuser`
+- 当前维护分支：`main`；以下保留原实验分支的历史审阅记录。
 - 模板确认时的基线 HEAD：`2c255a89f650d9df437b0d0b94d7c41c56c474ed`
 - 发布 manifest：`assets/task_manifest.json`
 - 发布任务总数：1706

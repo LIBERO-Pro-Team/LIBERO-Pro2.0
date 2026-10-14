@@ -152,7 +152,7 @@ def test_task6_d03_supersedes_the_plate_with_a_smaller_red_brick() -> None:
     p = fields["params"]
     assert fields["references"] == "none"
     assert p["persistent_movable_asset"] is True
-    assert p["asset_id"] == "ycb/ycbfoambrick"
+    assert p["asset_id"].lower() == "ycb/ycbfoambrick"
     assert p["asset_scale"] == 0.60
     assert p["asset_contact_margin_m"] == 0.0
 

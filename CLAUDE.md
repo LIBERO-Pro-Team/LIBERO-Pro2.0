@@ -95,3 +95,10 @@ rebase 发生冲突时：
 - `docs/remote-evaluation-guide.md`：原首页中的远程评测、部署与维护指南。
 - `docs/paper-results.md`、`docs/results/`：论文表格来源、数值和统计口径；更新排行榜时保留原始舍入值。
 - `static/images/`：从论文原图导出的浏览器展示资源。
+
+## 统一发布分支与任务目录
+
+- `main` 是唯一长期维护分支，包含已合并的历史分支；不要在用户文档中链接已删除的分支。
+- `assets/task_manifest.json`：1688项（40 BASE、863静态、785动态），路径中的1680和版本中的1706是历史标识。
+- `assets/benchmark_split_v1.json`：按基础任务划分1349项训练/339项测试（包含BASE）。
+- 内部D20/D21对应论文D19/D20，映射见 `docs/paper-results.md`。

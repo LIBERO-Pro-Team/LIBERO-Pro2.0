@@ -5,6 +5,7 @@ import sys
 import types
 import unittest
 import xml.etree.ElementTree as ET
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
@@ -14,7 +15,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 ENVS_ROOT = ROOT / "libero" / "libero" / "envs"
 ASSET_ROOT = ROOT / "libero" / "libero" / "assets" / "perturbation_assets"
-BDDL_ROOT = Path.home() / "Desktop" / "LIBERO-Pro2.0_4Suite_42扰动_BDDL"
+BDDL_ROOT = Path(__file__).parent / "fixtures" / "runtime_bddls"
 PUBLISHED_BDDL_ROOT = ROOT.parent / "assets" / "bddl" / "libero-pro2.0-1680-v1"
 
 
@@ -286,9 +287,9 @@ class SchemaExecutionPlanTests(unittest.TestCase):
     def test_s04_uses_suite_specific_planar_swap_pairs(self):
         expected_pairs = {
             "libero_10": ("white_yellow_mug_1", "porcelain_mug_1"),
-            "libero_object": ("alphabet_soup_1", "milk_1"),
-            "libero_goal": ("wine_bottle_1", "cream_cheese_1"),
-            "libero_spatial": ("plate_1", "cookies_1"),
+            "libero_object": ("alphabet_soup_1", "salad_dressing_1"),
+            "libero_goal": ("wine_bottle_1", "akita_black_bowl_1"),
+            "libero_spatial": ("akita_black_bowl_1", "akita_black_bowl_2"),
         }
         for suite, expected in expected_pairs.items():
             with self.subTest(suite=suite):
@@ -690,6 +691,8 @@ class RuntimeBehaviorTests(unittest.TestCase):
     def test_static_clutter_and_similar_distractor_use_distinct_anchors(self):
         clutter = self.plan("libero_spatial", "01_static", "S10")
         distractor = self.plan("libero_spatial", "01_static", "S11")
+        # Exercise explicit task references, independent of the released asset layout.
+        clutter = replace(clutter, references=("glazed_rim_porcelain_ramekin_1",))
 
         self.assertEqual(
             RUNTIME._static_asset_reference_name(clutter),

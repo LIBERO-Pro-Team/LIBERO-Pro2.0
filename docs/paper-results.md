@@ -80,32 +80,33 @@ for download scope, schemas, and declared-copy filtering.
 
 ## Evaluation service versions
 
-The paper's catalogue uses S01–S22 and D01–D20. The checked-in service
-catalogues are separate versions; selecting the same eight base tasks does not
-make their available perturbation combinations identical to the paper.
+The maintained `main` branch combines the reviewed simulator and 1,688-task
+catalogue with the suite-aware train/test planner and current project documentation.
+All earlier remote branches have been incorporated into its Git history.
 
 | Catalogue | BASE instances | Shifted instances | Training shifted instances | Evaluation shifted instances |
 |---|---:|---:|---:|---:|
 | Paper | — | 1,648 | 1,313 | 335 |
-| `main` at `6586733` | 40 | 1,640 | 1,312 | 328 |
-| `model-agnostic-multiuser` at `3ac451e` | 40 | 1,648 | 1,317 | 331 |
+| Current `main` | 40 | 1,648 | 1,317 | 331 |
 
-The branch counts come from their respective `assets/task_manifest.json`
-files, using the held-out task IDs listed above. The shifted-instance columns
-exclude BASE. Sources: [main manifest](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/blob/6586733a731710a82979dfc6e952924d455d8a71/assets/task_manifest.json)
-and [experimental manifest](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/blob/3ac451e6e85ee6995bf684b56f6c04f8ef7c8829/assets/task_manifest.json).
+The release counts come from [`assets/task_manifest.json`](../assets/task_manifest.json)
+and [`assets/benchmark_split_v1.json`](../assets/benchmark_split_v1.json). The
+shifted-instance columns exclude BASE; including BASE gives 1,349 training and
+339 evaluation instances. The reviewed task data were preserved from commit
+[`3ac451e`](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/3ac451e6e85ee6995bf684b56f6c04f8ef7c8829),
+while the paper's reported partition has not been changed to match the release.
 
-The earlier `main` catalogue has 21 static types (S01–S21) and 20 runtime types
-(D01–D19 and D21). The experimental branch has 22 static types (S01–S22) and
-20 runtime types (D01–D18, D20, and D21). In the experimental branch, internal
-D20 corresponds to paper D19 (robot joint perturbation), and internal D21
-corresponds to paper D20 (instruction restatement); D01–D18 are unchanged.
-Do not apply this mapping blindly to older catalogues.
+The paper uses S01–S22 and D01–D20. The service uses S01–S22 and D01–D18,
+D20, D21: service D20 maps to paper D19 (robot joint perturbation), and service
+D21 maps to paper D20 (instruction restatement). D01–D18 are unchanged.
+Use service IDs in evaluation commands. These labels preserve compatibility
+with existing BDDL files and saved runs; this mapping does not apply to every
+historical release.
 
-Pin the server revision and inspect its `/v1/tasks` catalogue before submitting
-an evaluation. The examples in the README demonstrate the client and planning
-interfaces; they do not establish equivalence between these releases. The
-[grouped evaluation guide](grouped-benchmark.md) describes task selection and export.
+Pin the server commit and inspect `/v1/tasks` before submitting an evaluation.
+Existing downloadable bundles remain pinned snapshots; merging source branches
+does not rebuild those release assets. The [grouped evaluation guide](grouped-benchmark.md)
+describes task selection, resuming evaluations, and exporting results.
 
 ## Figures
 

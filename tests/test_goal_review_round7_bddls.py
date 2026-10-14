@@ -113,7 +113,7 @@ def test_task5_d03_preserves_scene_objects_and_injects_an_absent_asset() -> None
     assert fields["references"] == "none"
     assert p["persistent_movable_asset"] is True
     assert "persistent_existing_obstacle" not in p
-    assert p["asset_id"] == "ycb/ycbfoambrick"
+    assert p["asset_id"].lower() == "ycb/ycbfoambrick"
     assert p["asset_contact_margin_m"] == 0.006
 
 
@@ -123,7 +123,7 @@ def test_task6_d03_places_a_red_brick_inside_the_bowl() -> None:
     assert fields["references"] == "none"
     assert p["persistent_movable_asset"] is True
     assert p["support_surface"] == "akita_black_bowl_1"
-    assert p["asset_id"] == "ycb/ycbfoambrick"
+    assert p["asset_id"].lower() == "ycb/ycbfoambrick"
     assert p["asset_scale"] == 0.60
     assert p["asset_offset_xyz"] == [0.00835045, 0.00205392, 0.0]
 

@@ -4,8 +4,8 @@
 
 完整交付件发布在 GitHub release `v1.0.0-conda-r2`，文件名为
 `libero-pro-conda-bundle-1.0.0.tar.gz`。`r2` 只表示同一 `1.0.0` 产品版本的发布修订，
-不改变 bundle、Python 包或服务版本。2026-09-12 已更新为当前源码快照，包含 1688 项任务
-（40 BASE、863 静态、785 动态）和四 suite 最新修复。下载 tar.gz 和同名 `.sha256` 后先校验摘要，再解压安装。
+不改变 bundle、Python 包或服务版本。2026-09 发布修订包含 1688 项任务
+（40 BASE、863 静态、785 动态）。它是固定发布快照，不会随 main 自动更新；准确提交以包内 `SOURCE_BASELINE.json` 为准。下载 tar.gz 和同名 `.sha256` 后先校验摘要，再解压安装。
 
 ## 固定基线
 
