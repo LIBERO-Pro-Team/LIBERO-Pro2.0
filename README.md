@@ -73,13 +73,9 @@ The Eval repository includes the full compatible catalogue, while the benchmark 
 
 ## 🏆 Leaderboard
 
-The following tables reproduce the **17-policy results from the accompanying paper**. All success rates are percentages; **Δ = Avg. − Base** is measured in percentage points. Rows are ranked by Avg., and the highest scores in each perturbation column and Avg. are bolded.
-
-Category averages and Δ are computed before rounding in the paper. The displayed Δ is therefore preserved as reported, rather than recalculated from rounded Avg. and Base. The [table sources and machine-readable results](docs/paper-results.md) provide the full provenance and category definitions.
+Paper results for **17 policies**, ranked by average success rate (%); bold marks the best scores. **Δ = Avg. − Base** is in percentage points, computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded). See the [result definitions and source tables](docs/paper-results.md) or [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html).
 
 ### Static Distribution Shifts
-
-Avg. covers **87 valid suite–perturbation entries**, excluding S04 in LIBERO-Spatial.
 
 | Model | Cond. | Env. | Obs. | Exec. | Robot | Lang. | Avg. | Base | Δ (pp) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -123,53 +119,17 @@ Avg. covers **87 valid suite–perturbation entries**, excluding S04 in LIBERO-S
 | OpenVLA | 20.6 | 41.9 | 41.3 | 53.6 | 29.9 | 63.8 | 36.4 | 64.6 | -28.2 |
 | π₀ | 24.9 | 56.9 | 52.7 | 30.8 | 7.2 | 61.3 | 35.3 | 63.8 | -28.4 |
 
-**Columns:** Cond. = Condition; Env. = Environment; Obs. = Observation; Exec. = Execution; Lang. = Language; Base = nominal performance.
-
-**OpenVLA-OFT variants:** `_w` omits wrist-camera observations; `_m` uses joint fine-tuning across the four original LIBERO suites; `+` uses mixed fine-tuning on LIBERO-Plus data.
-
-Visit the [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html) to explore models and perturbations. The tables above reflect the supplied paper snapshot.
+Cond./Env./Obs./Exec./Lang. = Condition/Environment/Observation/Execution/Language; Base = nominal success. OpenVLA-OFT variants: `_w` omits wrist observations, `_m` jointly fine-tunes on the four original LIBERO suites, and `+` uses mixed fine-tuning on LIBERO-Plus data.
 
 ## 🛠️ Installation
 
-### Model Client
-
-Install the lightweight client in your model environment (Python **3.8–3.12**):
-
-```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
-cd LIBERO-Pro2.0
-python -m pip install -e .
-```
-
-The clone above skips simulator assets for a client-only installation. For a complete environment deployment, use the [Hugging Face evaluation bundle](#evaluation-resources), or install [Git LFS](https://git-lfs.com/) and run `git lfs pull` in the clone. You do not need both copies. A client-only installation does not load the simulator.
-
-The model runs locally and connects to an evaluation server. Obtain the server URL and an account API key from the server operator. To host your own service, follow the [Conda deployment guide](deploy/customer-conda/README.md) or the [complete evaluation and deployment guide](docs/remote-evaluation-guide.md).
-
-### Training Data
-
-Download demonstrations and metadata from [LIBERO-Pro2.0-Train](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train):
-
-```bash
-pip install -U huggingface_hub
-hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
-  --include "data/**" "release.json" "manifests/**" \
-            "docs/data_format.md" "scripts/inspect_episode.py" \
-  --exclude "data/**/review_videos/**" "manifests/assets_manifest.json" \
-  --local-dir ./data/LIBERO-Pro2.0-Train
-```
-
-The HDF5 demonstrations contain camera observations, robot states, actions and episode metadata. This command skips review videos, Viewer previews and simulation assets. Remove the review-video exclusion to include training clips. The complete collection, including videos and previews, requires approximately **220 GiB**, plus cache space; the filtered download is smaller. Older asset files remain in Train for compatibility; use Eval for new evaluation deployments.
-
-The paper's collection reports **39,390 training trajectories**. The current Hugging Face package exposes **40,470 stored demonstration records**, including declared replicated trajectories; its record counts and provenance are documented in the [dataset card](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train). These are distinct reporting scopes.
-
 ### Evaluation Resources
 
-The complete evaluation bundle is submitted in [Eval release PR #1](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval/discussions/1). **While the PR is open, use `--revision refs/pr/1` as shown below; after it is merged, omit that option to download from `main`.**
+Download [Eval](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) for evaluation code, BDDL, initial states and simulator assets; training trajectories are unnecessary. The script verifies and extracts both archives into a new directory. Reserve at least **3 GB**, plus dependencies, checkpoints and results. Follow the [installation and evaluation guide](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval/blob/main/docs/evaluation.md) for Linux/NVIDIA EGL setup, policy adapters, continuous execution, resume and per-episode result export.
 
 ```bash
 pip install -U huggingface_hub
 hf download zhouxueyang/LIBERO-Pro2.0-Eval --repo-type dataset \
-  --revision refs/pr/1 \
   --include "evaluation.zip" "evaluation.zip.sha256" "assets.zip" "assets.zip.sha256" \
             "manifests/**" "scripts/**" "docs/**" "README.md" "LICENSE_NOTICE.md" "release.json" \
   --local-dir ./data/LIBERO-Pro2.0-Eval
@@ -178,24 +138,22 @@ python ./data/LIBERO-Pro2.0-Eval/scripts/prepare_evaluation.py \
   --download-dir ./data/LIBERO-Pro2.0-Eval --output-dir ./libero-pro-install
 ```
 
-The preparation script verifies both archives and every member, then extracts code and assets into `libero-pro-install/LIBERO-Pro-evaluation/`. Choose a new output directory. The archives contain real files, so no additional GitHub clone or Git LFS download is required. Reserve at least **3 GB** for the release files and extraction, plus dependencies, model checkpoints and results.
+### Model Client
 
-Follow the downloaded `data/LIBERO-Pro2.0-Eval/docs/evaluation.md` to install the Linux/NVIDIA EGL simulator environment, run a smoke test and connect your policy adapter. Its repeated-evaluation example selects `--split test` and 30 seeds per instance. The included `run_policy.py` keeps the policy loaded across episodes; resume with the same `run_id` and export per-episode success to JSONL/CSV. Keep each model's **official action horizon, preprocessing, control convention and suite-specific episode limits**.
-
-## 🔧 Evaluation
-
-The examples below use a GitHub client installation connected to an evaluation service. For the self-contained HF bundle, follow its downloaded guide, which uses paths under `service-source/`.
-
-### Connect to an Environment
-
-Set the URL and API key for your evaluation server:
+For a separate model client, install this package in your policy environment (Python **3.8–3.12**) and obtain the server URL and API key from its operator. This clone skips simulator assets; the HF bundle already includes them. Fetch official checkpoints and inference dependencies from each model's release.
 
 ```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+cd LIBERO-Pro2.0
+python -m pip install -e .
+
 export LIBERO_REMOTE_BASE_URL="http://SERVER:8000"
 export LIBERO_REMOTE_API_KEY="YOUR_ACCOUNT_API_KEY"
 ```
 
-The client follows a Gym-style `reset()` / `step()` interface. This example sends one zero action to check the connection; use your policy's action for model evaluation.
+## 🔧 Evaluation
+
+Using the GitHub client, the examples below check connectivity with a zero action and preview a three-seed held-out plan. Keep your policy's **official action horizon, preprocessing, control convention and suite-specific episode limits**; use `--group dynamic` for runtime interventions. See [model adapters](docs/model-adapter-contract.md) and [batch evaluation](docs/grouped-benchmark.md) for scored runs, resume and result export.
 
 ```python
 import os
@@ -217,10 +175,6 @@ with RemoteLiberoEnv(
     observation, reward, terminated, truncated, info = env.step(action)
 ```
 
-Match your policy's preprocessing and control semantics to the server's observation and action schema. See the [model adapter guide](docs/model-adapter-contract.md) for integrating a policy with the scheduled runner.
-
-### Plan a Held-Out Evaluation
-
 ```bash
 python scripts/run_grouped_eval.py \
   --base-url "$LIBERO_REMOTE_BASE_URL" \
@@ -231,22 +185,26 @@ python scripts/run_grouped_eval.py \
   --output-dir results/static-plan
 ```
 
-This three-seed command is a planning example, not the full paper evaluation protocol. For scored runs, also match the model's official action horizon and suite-specific episode limit.
+## Training Data
 
-Use `--group dynamic` for runtime interventions. Available combinations come from the server's `/v1/tasks` catalog. The `plan` command previews episodes; `submit` queues them for an external model runner. See [grouped evaluation](docs/grouped-benchmark.md) for execution, resume, and result export.
+Download HDF5 demonstrations and metadata from [Train](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train). The command excludes videos, Viewer previews and simulator assets; the full collection needs about **220 GiB** plus cache space. The release contains **40,470 stored records**, including declared replicas, while the paper reports **39,390 training trajectories**; see the [dataset card](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) for the counting scope.
+
+```bash
+pip install -U huggingface_hub
+hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
+  --include "data/**" "release.json" "manifests/**" \
+            "docs/data_format.md" "scripts/inspect_episode.py" \
+  --exclude "data/**/review_videos/**" "manifests/assets_manifest.json" \
+  --local-dir ./data/LIBERO-Pro2.0-Train
+```
 
 ## Documentation
 
-- [Evaluation and deployment](docs/remote-evaluation-guide.md)
-- [Conda server deployment](deploy/customer-conda/README.md)
-- [Model adapter contract](docs/model-adapter-contract.md)
-- [Grouped evaluation and result export](docs/grouped-benchmark.md)
-- [Paper results and source tables](docs/paper-results.md)
-- [Environment reproducibility and evaluation SOP](docs/LIBERO_PRO_Agent_SOP.md)
+[Deployment](docs/remote-evaluation-guide.md) · [Conda setup](deploy/customer-conda/README.md) · [Model adapters](docs/model-adapter-contract.md) · [Batch evaluation](docs/grouped-benchmark.md) · [Paper results](docs/paper-results.md) · [Reproducibility](docs/LIBERO_PRO_Agent_SOP.md)
 
 ## Citation
 
-If you use LIBERO-Pro2.0, please acknowledge this project and cite the repository revision used. A repository citation is provided below:
+If you use LIBERO-Pro2.0, cite the project and record the repository revision:
 
 ```bibtex
 @misc{zhou2026liberopro2,
