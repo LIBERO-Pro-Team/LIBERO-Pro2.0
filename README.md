@@ -5,7 +5,8 @@ the Robustness of Embodied Foundation Models
 
 <p align="center">
   🌐 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/index.html"><strong>Website</strong></a> |
-  📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0"><strong>Training Data</strong></a> |
+  📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train"><strong>Training Data</strong></a> |
+  📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation Resources</strong></a> |
   🏆 <a href="#-leaderboard"><strong>Leaderboard</strong></a> |
   📖 <a href="docs/remote-evaluation-guide.md"><strong>Evaluation Guide</strong></a>
 </p>
@@ -22,7 +23,7 @@ This repository provides the evaluation service, Python client, model adapter in
 
 ## 📰 News
 
-- **[2026-10-14]** The [native HDF5 training dataset](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0) is available on Hugging Face, with trajectory previews and review videos.
+- **[2026-10-14]** The [native HDF5 training dataset](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) is available on Hugging Face, with trajectory previews and review videos.
 - **[2026-10-14]** Added the paper's static and runtime [leaderboards](#-leaderboard), covering **17 robot policies**.
 
 ## 📊 LIBERO-Pro2.0 Benchmark
@@ -57,6 +58,18 @@ After validation, the paper contains **1,313 training instances** and **335 eval
 `main` is the maintained branch for the evaluation code, simulator, and task catalogue. It contains **1,688 task instances**: **40 BASE**, **863 static**, and **785 runtime** instances across **22 static** and **20 runtime** perturbation types. All 1,688 BDDL files are listed, with checksums, in [`assets/task_manifest.json`](assets/task_manifest.json) and stored under [`assets/bddl/libero-pro2.0-1680-v1/`](assets/bddl/libero-pro2.0-1680-v1/). The `1680` directory suffix and `1706` manifest version are legacy identifiers, not current counts.
 
 The released catalogue has 1,317 training and 331 evaluation shifted instances (BASE excluded); the paper reports 1,313/335. See [catalogue scope and case-ID mapping](docs/paper-results.md#evaluation-service-versions) for this remaining difference. The evaluation commands below use the connected server's catalogue.
+
+## Data and Evaluation Resources
+
+| Repository | Use it for | Contents |
+|---|---|---|
+| [LIBERO-Pro2.0-Train on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Training or fine-tuning | Native HDF5 demonstrations for the 32 training tasks, training metadata, review videos and Dataset Viewer previews. |
+| [LIBERO-Pro2.0-Eval on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Deploying the environment and evaluating policies | Evaluation service/client and batch runner, all 1,688 BDDL definitions, 40 initial-state files, simulator assets, dependency lock, installation and verification tools. |
+| [This GitHub repository](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Developing against the maintained source | Evaluation code, simulator source, task catalogue, model adapter interfaces and documentation. |
+
+**To evaluate a pretrained model, start with the [Evaluation Resources](#evaluation-resources) below.** Download `evaluation.zip` (code, BDDL and initial states) and `assets.zip` (objects, scenes and textures), together with the manifests and preparation script. Training HDF5 files and preview videos are not needed. Obtain the policy checkpoint and its official inference dependencies from the model's own release.
+
+The Eval repository includes the full compatible catalogue, while the benchmark split remains by base task: **1,349 training instances** (32 BASE + 1,317 shifted) and **339 held-out instances** (8 BASE + 331 shifted). Use `--split test` for held-out evaluation; the authoritative partition is [`assets/benchmark_split_v1.json`](assets/benchmark_split_v1.json). Training review videos are not held-out evaluation results.
 
 ## 🏆 Leaderboard
 
@@ -123,28 +136,55 @@ Visit the [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.
 Install the lightweight client in your model environment (Python **3.8–3.12**):
 
 ```bash
-git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
 cd LIBERO-Pro2.0
 python -m pip install -e .
 ```
 
-Server deployments also need the Git LFS simulator assets: install [Git LFS](https://git-lfs.com/) and run `git lfs pull` in the clone. A client-only installation does not load the simulator.
+The clone above skips simulator assets for a client-only installation. For a complete environment deployment, use the [Hugging Face evaluation bundle](#evaluation-resources), or install [Git LFS](https://git-lfs.com/) and run `git lfs pull` in the clone. You do not need both copies. A client-only installation does not load the simulator.
 
 The model runs locally and connects to an evaluation server. Obtain the server URL and an account API key from the server operator. To host your own service, follow the [Conda deployment guide](deploy/customer-conda/README.md) or the [complete evaluation and deployment guide](docs/remote-evaluation-guide.md).
 
 ### Training Data
 
+Download demonstrations and metadata from [LIBERO-Pro2.0-Train](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train):
+
 ```bash
 pip install -U huggingface_hub
-hf download zhouxueyang/LIBERO-Pro2.0 \
-  --repo-type dataset --local-dir ./data/LIBERO-Pro2.0
+hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
+  --include "data/**" "release.json" "manifests/**" \
+            "docs/data_format.md" "scripts/inspect_episode.py" \
+  --exclude "data/**/review_videos/**" "manifests/assets_manifest.json" \
+  --local-dir ./data/LIBERO-Pro2.0-Train
 ```
 
-The public release uses native HDF5 and includes camera observations, robot states, actions, metadata, and review clips. Allow approximately **220 GiB**, plus cache space.
+The HDF5 demonstrations contain camera observations, robot states, actions and episode metadata. This command skips review videos, Viewer previews and simulation assets. Remove the review-video exclusion to include training clips. The complete collection, including videos and previews, requires approximately **220 GiB**, plus cache space; the filtered download is smaller. Older asset files remain in Train for compatibility; use Eval for new evaluation deployments.
 
-The paper's collection reports **39,390 training trajectories**. The current Hugging Face package exposes **40,470 stored demonstration records**, including declared replicated trajectories; its record counts and provenance are documented in the [dataset card](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0). These are distinct reporting scopes.
+The paper's collection reports **39,390 training trajectories**. The current Hugging Face package exposes **40,470 stored demonstration records**, including declared replicated trajectories; its record counts and provenance are documented in the [dataset card](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train). These are distinct reporting scopes.
+
+### Evaluation Resources
+
+The complete evaluation bundle is submitted in [Eval release PR #1](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval/discussions/1). **While the PR is open, use `--revision refs/pr/1` as shown below; after it is merged, omit that option to download from `main`.**
+
+```bash
+pip install -U huggingface_hub
+hf download zhouxueyang/LIBERO-Pro2.0-Eval --repo-type dataset \
+  --revision refs/pr/1 \
+  --include "evaluation.zip" "evaluation.zip.sha256" "assets.zip" "assets.zip.sha256" \
+            "manifests/**" "scripts/**" "docs/**" "README.md" "LICENSE_NOTICE.md" "release.json" \
+  --local-dir ./data/LIBERO-Pro2.0-Eval
+
+python ./data/LIBERO-Pro2.0-Eval/scripts/prepare_evaluation.py \
+  --download-dir ./data/LIBERO-Pro2.0-Eval --output-dir ./libero-pro-install
+```
+
+The preparation script verifies both archives and every member, then extracts code and assets into `libero-pro-install/LIBERO-Pro-evaluation/`. Choose a new output directory. The archives contain real files, so no additional GitHub clone or Git LFS download is required. Reserve at least **3 GB** for the release files and extraction, plus dependencies, model checkpoints and results.
+
+Follow the downloaded `data/LIBERO-Pro2.0-Eval/docs/evaluation.md` to install the Linux/NVIDIA EGL simulator environment, run a smoke test and connect your policy adapter. Its repeated-evaluation example selects `--split test` and 30 seeds per instance. The included `run_policy.py` keeps the policy loaded across episodes; resume with the same `run_id` and export per-episode success to JSONL/CSV. Keep each model's **official action horizon, preprocessing, control convention and suite-specific episode limits**.
 
 ## 🔧 Evaluation
+
+The examples below use a GitHub client installation connected to an evaluation service. For the self-contained HF bundle, follow its downloaded guide, which uses paths under `service-source/`.
 
 ### Connect to an Environment
 
