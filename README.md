@@ -68,43 +68,22 @@ The leaderboards report success rates (%) for <strong>17 policies</strong>, rank
 [![Runtime leaderboard: all 17 policies and six perturbation categories](static/leaderboards/runtime.svg)](static/leaderboards/runtime.svg)
 
 <p align="justify">
-All scores are reproduced from the paper; Δ is calculated before rounding. <strong>OFT variants:</strong> <code>_w</code> excludes wrist images, <code>_m</code> is jointly fine-tuned on the four original LIBERO suites, and <code>+</code> is fine-tuned on mixed LIBERO-Plus data. <a href="docs/paper-results.md">Scoring details</a> · <a href="docs/results/paper-leaderboards.json">JSON</a> · <a href="https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html">Interactive leaderboard</a>
+All scores are reproduced from the paper; Δ is calculated before rounding. <strong>OFT variants:</strong> <code>_w</code> excludes wrist images, <code>_m</code> is jointly fine-tuned on the four original LIBERO suites, and <code>+</code> is fine-tuned on mixed LIBERO-Plus data.
 </p>
 
 ## Data and Evaluation Resources
-
-### Code and Task Catalogue
-
-<p align="justify">
-The <code>main</code> branch contains the evaluation code, simulator, and <strong>1,688 task instances</strong>: <strong>40 unperturbed (BASE)</strong>, <strong>863 static</strong>, and <strong>785 runtime</strong> instances. These cover <strong>22 static perturbation types</strong> and <strong>20 runtime intervention types</strong>. Each instance has a <a href="assets/bddl/libero-pro2.0-1680-v1/">BDDL task definition</a>; the <a href="assets/task_manifest.json">task manifest</a> lists all definitions and their checksums.
-</p>
-
-<p align="justify">
-The released split contains <strong>1,349 training instances</strong> (32 BASE + 1,317 perturbed) and <strong>339 held-out evaluation instances</strong> (8 BASE + 331 perturbed), separated by base task. The paper reports a different partition of the same 1,648 perturbed instances: 1,313 for training and 335 for evaluation. See <a href="docs/paper-results.md#evaluation-service-versions">benchmark scope and task-ID mapping</a> for details.
-</p>
-
-### Downloads and Source Code
 
 | Resource | Use | Contents |
 |---|---|---|
 | [Training data](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Train or fine-tune policies | HDF5 demonstrations for 32 training tasks, metadata, review videos and trajectory previews. |
 | [Evaluation resources](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Set up evaluation | Evaluation service and client, batch runner, task definitions, initial states, simulator assets, and setup tools. |
-| [GitHub source](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Develop and integrate | Simulator and evaluation source code, task catalogue, model adapter interfaces, and documentation. |
-
-<p align="justify">
-<strong>To evaluate a pretrained policy, start with <a href="#evaluation-resources">Evaluation Resources</a>.</strong> The download includes <code>evaluation.zip</code> for code, task definitions, and initial states, plus <code>assets.zip</code> for objects, scenes, and textures. Download your policy checkpoint and install its inference dependencies from the model's official release; training demonstrations are not required for evaluation.
-</p>
-
-<p align="justify">
-The evaluation package includes both training and held-out tasks. Use <code>--split test</code> to select the held-out set defined in the <a href="assets/benchmark_split_v1.json">benchmark split</a>. Review videos in the training dataset illustrate demonstrations and do not represent held-out evaluation results.
-</p>
 
 ## 🛠️ Installation
 
 ### Evaluation Resources
 
 <p align="justify">
-Download the evaluation package and run the preparation script to verify and extract both archives. Allow at least <strong>3 GB</strong> for the package, plus space for dependencies, policy checkpoints, and results. The <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval/blob/main/docs/evaluation.md">installation and evaluation guide</a> covers Linux/NVIDIA EGL setup, policy adapters, batch runs, resuming interrupted runs, and exporting episode results.
+Download <code>evaluation.zip</code> (evaluation code, task definitions, and initial states) and <code>assets.zip</code> (objects, scenes, and textures), together with the manifests and preparation script. Run the script below to verify and extract both archives. Allow at least <strong>3 GB</strong> for the package, plus space for dependencies, policy checkpoints, and results. The <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval/blob/main/docs/evaluation.md">installation and evaluation guide</a> covers Linux/NVIDIA EGL setup, policy adapters, batch runs, resuming interrupted runs, and exporting episode results.
 </p>
 
 ```bash
@@ -121,7 +100,7 @@ python ./data/LIBERO-Pro2.0-Eval/scripts/prepare_evaluation.py \
 ### Model Client
 
 <p align="justify">
-To connect your policy to an evaluation server, install the client in your policy environment using Python <strong>3.8–3.12</strong>. Ask the server operator for the server URL and your API key. The command below skips downloading simulator assets, which are included in the evaluation package.
+To connect your policy to an evaluation server, install the client in your policy environment using Python <strong>3.8–3.12</strong>. Install your policy checkpoint and inference dependencies from the model's official release, and obtain the server URL and your API key from the server operator. The command below skips downloading simulator assets, which are included in the evaluation package.
 </p>
 
 ```bash
@@ -183,12 +162,6 @@ hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
   --exclude "data/**/review_videos/**" "manifests/assets_manifest.json" \
   --local-dir ./data/LIBERO-Pro2.0-Train
 ```
-
-## Documentation
-
-<p align="justify">
-<a href="docs/remote-evaluation-guide.md">Deployment</a> · <a href="deploy/customer-conda/README.md">Conda setup</a> · <a href="docs/model-adapter-contract.md">Model adapters</a> · <a href="docs/grouped-benchmark.md">Batch evaluation</a> · <a href="docs/paper-results.md">Paper results</a> · <a href="docs/LIBERO_PRO_Agent_SOP.md">Reproducibility</a>
-</p>
 
 ## Citation
 
