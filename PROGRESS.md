@@ -15,3 +15,10 @@
 - Replaced the complete Key Findings section, including its figure and caption, with News entries about the available training dataset and paper leaderboards.
 - Verified the change is confined to that README section and Markdown whitespace checks pass.
 - Implementation commit: `f01bcdad9977ca6086423fde016fc1d765e2f860`.
+
+## 2026-10-16 — README authors and affiliations
+
+- Added all 13 paper authors, five numbered affiliations, equal-contribution and corresponding-author markers below the title.
+- Reused the five original institution logos from the project website; stored them in `static/institutions/`.
+- Verified names, order and markers against the paper source; checked desktop rendering and mobile wrapping without horizontal overflow.
+- Implementation commit: `49a61f51b206fca5a4a6118f1e76b384edcbf4e7`.
