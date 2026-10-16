@@ -87,3 +87,10 @@
 - Applied justified alignment to every body paragraph and both News list entries. Converted inline Markdown to HTML where required for correct rendering inside aligned elements; retained centered header blocks, table layout and code formatting.
 - Compared rendered text, links, image targets and fenced code before/after; all are unchanged. Browser checks confirm all 14 prose paragraphs and 2 news entries use justified alignment, with no unaligned prose remaining.
 - Implementation commit: `1d60899ff62fc48620d8df5bfec7ee7d112b4acd`.
+
+## 2026-10-16 — Requested README simplification
+
+- Removed the three leaderboard footer links, Code and Task Catalogue section, GitHub source resource row, pre-installation explanatory paragraphs and Documentation link section as requested.
+- Kept the two external dataset resources directly under Data and Evaluation Resources. Consolidated archive contents and official policy dependencies into Installation; preserved justified prose, leaderboard assets, citations and all code examples.
+- Verified all requested removals, unchanged fenced code blocks, balanced paragraph tags and clean whitespace.
+- Implementation commit: `e2ede16514ef4b7c08e3ed62a573a61ff8735050`.
