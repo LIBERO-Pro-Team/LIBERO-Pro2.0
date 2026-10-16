@@ -55,3 +55,10 @@
 - Combined the three footer paragraphs into one continuous paragraph, shortened the link labels and clarified OFT variant descriptions. Detailed scoring scope remains in the linked results guide.
 - Checked Markdown whitespace and confirmed that the figures, scores and other README sections are unchanged.
 - Implementation commit: `9156fe616febcd27739c948e451ee99e5980e087`.
+
+## 2026-10-16 — README editorial review
+
+- Polished the overview, leaderboard explanations, catalogue description, resource table, installation steps, evaluation guidance and training-data introduction for an external research audience. Removed historical identifier commentary from the homepage and reduced repeated instructions.
+- Retained the distinction between paper and release counts, clarified that the plan command does not execute a policy, and preserved all executable examples, author information and leaderboard graphics.
+- Verified unchanged fenced code blocks, key counts, local link targets, resource anchors and Markdown whitespace.
+- Implementation commit: `e2fb346ac144638619ebd6d1386a1e2500b2e656`.
