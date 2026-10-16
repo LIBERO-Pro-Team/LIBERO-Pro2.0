@@ -22,3 +22,9 @@
 - Reused the five original institution logos from the project website; stored them in `static/institutions/`.
 - Verified names, order and markers against the paper source; checked desktop rendering and mobile wrapping without horizontal overflow.
 - Implementation commit: `49a61f51b206fca5a4a6118f1e76b384edcbf4e7`.
+
+## 2026-10-16 — Resource chapter organization
+
+- Grouped Released Code and Task Catalogue and Resource Repositories under one Data and Evaluation Resources chapter, immediately before Installation.
+- Preserved the original section bodies and all other README content; checked Markdown whitespace and heading order.
+- Implementation commit: `e373fe55ac81f440aff6d7d2e2d7d67a7146c504`.
