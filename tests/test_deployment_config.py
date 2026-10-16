@@ -79,8 +79,8 @@ def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     assert baseline["simulator_commit"] == simulator_commit
     assert simulator_commit in readme
     assert "eafdb809426b13153aa1e4c42d6601844217dfec" not in readme
-    assert "libero-pro-conda-bundle-1.0.0.tar.gz" in readme
-    assert "main` 分支包含完整的" in readme
+    assert "assets.zip" in readme
+    assert "Run from the GitHub source" in readme
     assert "git lfs pull" in readme
     assert "普通 Git clone 只包含服务代码和打包入口" not in readme
     simulator_source = ROOT / "simulator-source"
@@ -90,12 +90,6 @@ def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     assert "docker compose build" not in readme
 
 
-def test_customer_bundle_hashes_bddl_with_canonical_lf_endings() -> None:
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-
-    assert '.Replace("`r`n", "`n").Replace("`r", "`n")' in builder
 
 
 def test_sdk_metadata_separates_client_and_server_dependencies() -> None:
@@ -232,167 +226,14 @@ bash add_account.sh team-b
     assert "LIBERO_REMOTE_URL=http://server.example:8000\n" in client_environment
 
 
-def test_customer_bundle_export_preserves_manifest_bddl_bytes(tmp_path: Path) -> None:
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-
-    assert "git -c core.autocrlf=false" in builder
-    assert builder.count("Assert-ManifestBddlHashes $manifest") == 2
-    assert 'Assert-ManifestBddlHashes $manifest (Join-Path $sourceRoot "assets")' in builder
-
-    archive = tmp_path / "service.zip"
-    subprocess.run(
-        [
-            "git",
-            "-c",
-            "core.autocrlf=false",
-            "archive",
-            "--format=zip",
-            f"--output={archive}",
-            "HEAD",
-        ],
-        cwd=ROOT,
-        check=True,
-    )
-    with zipfile.ZipFile(archive) as exported:
-        manifest = json.loads(exported.read("assets/task_manifest.json"))
-        for task in manifest["tasks"]:
-            content = exported.read(f"assets/{task['bddl_path']}")
-            assert hashlib.sha256(content).hexdigest() == task["bddl_sha256"]
 
 
-def test_customer_bundle_records_built_image_digest() -> None:
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-
-    assert 'docker image inspect `' in builder
-    assert "image_digest = $imageDigest" in builder
 
 
-def test_customer_bundle_includes_current_offline_operating_documents(
-    tmp_path: Path,
-) -> None:
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-    required_documents = {
-        "customer-local-deployment-technical-plan.md",
-        "model-adapter-contract.md",
-        "LIBERO-Pro2.0_远程评测可靠性与多用户并发修复方案.md",
-        "remote-run-scheduler.md",
-    }
-
-    manifest_path = ROOT / "scripts" / "customer-documents.json"
-    destination = tmp_path / "docs"
-    powershell = subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-Command",
-            (
-                "$ErrorActionPreference='Stop';"
-                f"$manifest=Get-Content -LiteralPath '{manifest_path}' "
-                "-Raw -Encoding UTF8 | ConvertFrom-Json;"
-                f"New-Item -ItemType Directory -Path '{destination}' | Out-Null;"
-                "$manifest | ForEach-Object {"
-                f"Copy-Item -LiteralPath (Join-Path '{ROOT / 'docs'}' $_) "
-                f"-Destination (Join-Path '{destination}' $_)"
-                "};"
-                f"Get-ChildItem -LiteralPath '{destination}' -File | "
-                "Select-Object -ExpandProperty Name | ConvertTo-Json -Compress"
-            ),
-        ],
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8-sig",
-    )
-    copied_documents = set(json.loads(powershell.stdout))
-
-    for document in required_documents:
-        assert (ROOT / "docs" / document).is_file()
-    assert copied_documents == required_documents
-    assert "Get-Content -LiteralPath $customerDocumentManifest" in builder
-    assert "-Raw -Encoding UTF8 | ConvertFrom-Json" in builder
-    assert "Copy-Item -LiteralPath $documentSource -Destination $documentDestination" in builder
-    assert not any(line.rstrip().endswith("\\") for line in builder.splitlines())
 
 
-def test_customer_bundle_checksum_manifest_supports_unicode_paths(
-    tmp_path: Path,
-) -> None:
-    bundle = tmp_path / "bundle"
-    bundle.mkdir()
-    (bundle / "普通文件.txt").write_text("unicode path", encoding="utf-8")
-    manifest = bundle / "SHA256SUMS"
-    writer = ROOT / "scripts" / "write_sha256_manifest.ps1"
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-
-    subprocess.run(
-        [
-            "powershell.exe",
-            "-NoProfile",
-            "-File",
-            str(writer),
-            "-Root",
-            str(bundle),
-            "-OutputFile",
-            str(manifest),
-        ],
-        check=True,
-    )
-    assert 'Join-Path $PSScriptRoot "write_sha256_manifest.ps1"' in builder
-    assert '[IO.File]::WriteAllText(' in builder
-
-    manifest_bytes = manifest.read_bytes()
-    assert not manifest_bytes.startswith(b"\xef\xbb\xbf")
-    assert b"\r" not in manifest_bytes
-    assert "普通文件.txt" in manifest_bytes.decode("utf-8")
-    wsl_bundle = f"/mnt/{bundle.drive[0].lower()}/{bundle.as_posix()[3:]}"
-    subprocess.run(
-        [
-            "wsl.exe",
-            "--cd",
-            wsl_bundle,
-            "--",
-            "sha256sum",
-            "-c",
-            "SHA256SUMS",
-        ],
-        check=True,
-    )
 
 
-def test_customer_bundle_builds_an_offline_linux_sdk_wheelhouse() -> None:
-    builder = (ROOT / "scripts" / "build_customer_bundle.ps1").read_text(
-        encoding="utf-8"
-    )
-    readme = (ROOT / "deploy" / "customer-local" / "README.md").read_text(
-        encoding="utf-8"
-    )
-    installer = (ROOT / "deploy" / "customer-local" / "install.sh").read_text(
-        encoding="utf-8"
-    )
-
-    assert '$clientPythonVersions = @("38", "39", "310", "311", "312")' in builder
-    assert '"--platform", "manylinux2014_x86_64"' in builder
-    assert '"--no-deps"' in builder
-    assert '"--only-binary=:all:"' in builder
-    assert '"--python-version", $pythonVersion' in builder
-    assert '"numpy==1.22.4"' in builder
-    assert '"numpy==1.26.4"' in builder
-    assert '"anyio==3.7.1"' in builder
-    assert '"httpcore==0.17.3"' in builder
-    offline_install = (
-        "python3 -m pip install --no-index --find-links wheels "
-        "wheels/libero_remote-1.0.0-py3-none-any.whl"
-    )
-    assert offline_install in readme
-    assert offline_install in installer
 
 
 def test_customer_install_checks_container_gpu_and_uses_bash_entrypoints() -> None:
@@ -516,36 +357,6 @@ def test_customer_examples_use_a_published_manifest_task() -> None:
     assert reset_arguments["seed"] == 142
 
     customer_readme = (deployment / "README.md").read_text(encoding="utf-8")
-    technical_plan = (ROOT / "docs" / "customer-local-deployment-technical-plan.md").read_text(
-        encoding="utf-8"
-    )
     assert 'suite="libero_goal",\n    task_id=9,' in customer_readme
-    assert 'suite="libero_goal",\n    task_id=9,' in technical_plan
-    for document in (customer_readme, technical_plan):
-        assert "seed=142," in document
-        assert "seed=42," not in document
-
-
-def test_customer_technical_plan_matches_the_released_bundle_workflow() -> None:
-    technical_plan = (ROOT / "docs" / "customer-local-deployment-technical-plan.md").read_text(
-        encoding="utf-8"
-    )
-
-    assert "版本：1.0.0（2026-08-03）" in technical_plan
-    assert "libero-pro-bundle-1.0.0.tar.gz" in technical_plan
-    assert "bash install.sh" in technical_plan
-    assert "LIBERO_REMOTE_MAX_SESSIONS" in technical_plan
-    assert "LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER" in technical_plan
-    assert "bash add_account.sh team-b" in technical_plan
-    assert "1701 个有效任务组合" in technical_plan
-    assert "AgentAdapter" in technical_plan
-    assert "GitHub 不是客户部署来源" in technical_plan
-    for obsolete in (
-        "libero-pro-bundle-v1.0.0",
-        "libero-pro-server-v1.0.0.tar",
-        "LIBERO_MAX_SESSIONS",
-        "LIBERO_API_TOKEN",
-        "API_TOKEN=replace-with-random-token",
-        "cp .env.example .env",
-    ):
-        assert obsolete not in technical_plan
+    assert "seed=142," in customer_readme
+    assert "seed=42," not in customer_readme

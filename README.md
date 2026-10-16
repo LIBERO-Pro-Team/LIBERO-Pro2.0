@@ -1,84 +1,19 @@
-<h1 align="center">
-LIBERO-Pro2.0: A Benchmark for Evaluating<br>
-the Robustness of Embodied Foundation Models
-</h1>
+# LIBERO-Pro2.0
 
-<p align="center">
-  Xueyang Zhou<sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, Guiyao Tie<sup>1</sup>,<br>
-  Junhao Wu<sup>2</sup>, Ziheng Huang<sup>2</sup>, Guowen Zhang<sup>1</sup>, Zhijie Yuan<sup>5</sup>,<br>
-  Di Wu<sup>1</sup>, Duanfeng Chu<sup>3</sup>, Pan Zhou<sup>1,†</sup>, Lichao Sun<sup>4</sup>, Yongchao Chen<sup>2</sup>
-</p>
-
-<p align="center">
-  <sup>1</sup> Huazhong University of Science and Technology &nbsp; <sup>2</sup> Tsinghua University<br>
-  <sup>3</sup> Wuhan University of Technology &nbsp; <sup>4</sup> Lehigh University &nbsp; <sup>5</sup> University of Toronto
-</p>
-
-<p align="center">
-  <sup>*</sup> Equal contribution. &nbsp; <sup>†</sup> Corresponding author.
-</p>
-
-<p align="center">
-  <img src="static/institutions/hust.webp" height="34" alt="Huazhong University of Science and Technology"> &nbsp;
-  <img src="static/institutions/tsinghua.webp" height="34" alt="Tsinghua University"> &nbsp;
-  <img src="static/institutions/whut.webp" height="34" alt="Wuhan University of Technology"> &nbsp;
-  <img src="static/institutions/lehigh.webp" height="34" alt="Lehigh University"> &nbsp;
-  <img src="static/institutions/toronto.webp" height="34" alt="University of Toronto">
-</p>
-
-<p align="center">
-  🌐 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/index.html"><strong>Website</strong></a> |
-  📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train"><strong>Training Data</strong></a> |
-  📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation Resources</strong></a> |
-  🏆 <a href="#-leaderboard"><strong>Leaderboard</strong></a> |
-  📖 <a href="docs/remote-evaluation-guide.md"><strong>Evaluation Guide</strong></a>
-</p>
+Evaluation and training resources for robot-policy robustness under 22 static and 20 runtime perturbation types across six domains: Condition, Environment, Observation, Execution, Robot and Language.
 
 ![LIBERO-Pro2.0 benchmark overview](static/images/overview.png)
 
-## Overview
+## Resources
 
-<p align="justify">
-The <strong>LIBERO-PRO series</strong> is our ongoing effort to systematically evaluate the robustness of embodied foundation models beyond standard task success. Our previous work, <a href="https://github.com/Zxy-MLlab/LIBERO-PRO"><strong>LIBERO-PRO</strong></a>, investigated the limitations of robot policies under changes in task conditions, object configurations, and environments. Building on this foundation, <strong>LIBERO-Pro2.0</strong> extends robustness evaluation from <strong>static distribution shifts to runtime interventions</strong>, enabling a more comprehensive assessment of policy generalization, online adaptation, and recovery. The benchmark introduces <strong>42 perturbation types</strong> (22 static and 20 runtime) across six dimensions—Condition, Environment, Observation, Execution, Robot, and Language—comprising <strong>1,646 valid task–perturbation instances</strong> across 32 training tasks and 8 held-out evaluation tasks.
-</p>
-
-<p align="justify">
-To support robustness-oriented learning, we provide <strong>39,390 demonstration trajectories</strong> collected through model-generated and human demonstrations. The benchmark also undergoes <strong>six rounds of human review and correction</strong>, covering <strong>19,776 reviewed rollouts</strong> to assess perturbation correctness, task validity, and physical feasibility.
-</p>
-
-## 📰 News
-
-<ul>
-<li align="justify"><strong>[2026-10-14]</strong> The <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train">native HDF5 training dataset</a> is available on Hugging Face, with trajectory previews and review videos.</li>
-<li align="justify"><strong>[2026-10-14]</strong> Static and runtime <a href="#-leaderboard">leaderboards</a> are available for all <strong>17 policies</strong> evaluated in the paper.</li>
-</ul>
-
-## 🏆 Leaderboard
-
-<p align="justify">
-The leaderboards report success rates (%) for <strong>17 policies</strong>, ranked by average success under perturbations. Bars show the average score; shaded cells show scores for the six perturbation categories. <strong>Base</strong> is success without perturbations, and <strong>Δ = Average − Base</strong> is measured in percentage points. Click either figure to enlarge it.
-</p>
-
-### Static Distribution Shifts
-
-[![Static leaderboard: all 17 policies and six perturbation categories](static/leaderboards/static.svg)](static/leaderboards/static.svg)
-
-### Runtime Distribution Shifts
-
-[![Runtime leaderboard: all 17 policies and six perturbation categories](static/leaderboards/runtime.svg)](static/leaderboards/runtime.svg)
-
-<p align="justify">
-All scores are reproduced from the paper; Δ is calculated before rounding. <strong>OFT variants:</strong> <code>_w</code> excludes wrist images, <code>_m</code> is jointly fine-tuned on the four original LIBERO suites, and <code>+</code> is fine-tuned on mixed LIBERO-Plus data.
-</p>
-
-## Data and Evaluation Resources
-
-| Resource | Use | Contents |
+| Repository | Contents | Use |
 |---|---|---|
-| [Training data](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Train or fine-tune policies | HDF5 demonstrations for 32 training tasks, metadata, review videos and trajectory previews. |
-| [Evaluation resources](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Set up evaluation | Evaluation service and client, batch runner, task definitions, initial states, simulator assets, and setup tools. |
+| [Evaluation resources](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | `evaluation.zip`, `assets.zip`, initial states, task/split manifests and installation tools | Set up evaluation without cloning GitHub |
+| [Training data](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Native HDF5 demonstrations, metadata and trajectory source indices | Train or fine-tune policies |
 
-## 🛠️ Installation
+Pretrained-policy evaluation requires the evaluation resources and the policy's official checkpoint/inference environment. Training demonstrations are downloaded separately.
+
+## Installation
 
 ### Evaluation Resources
 
@@ -148,20 +83,23 @@ python scripts/run_grouped_eval.py \
   --output-dir results/static-plan
 ```
 
-## Training Data
+## Training
 
-<p align="justify">
-The <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train">training dataset</a> provides native HDF5 demonstrations and metadata for the <strong>32 training tasks</strong>. The command below downloads these files without review videos, Dataset Viewer previews, or simulator assets. Allow approximately <strong>220 GiB</strong> for the full repository, plus cache space. The published package contains <strong>40,470 stored demonstrations</strong>; the paper reports <strong>39,390 training trajectories</strong> under a different counting scope. See the <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train/blob/main/docs/data_format.md">data format guide</a> for the schema and provenance.
-</p>
+[LIBERO-Pro2.0-Train](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) contains native HDF5 demonstrations for the 32 training base tasks: 1,349 instances and 40,470 stored demonstrations. Demonstrations were generated by a privileged-state oracle. Of these, 106 instances replicate one source trajectory into 30 records; the release contains 37,396 unique source trajectories. Use `keep_without_declared_fanout` in `manifests/episodes.jsonl` to omit declared copies.
 
 ```bash
 pip install -U huggingface_hub
 hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
   --include "data/**" "release.json" "manifests/**" \
             "docs/data_format.md" "scripts/inspect_episode.py" \
-  --exclude "data/**/review_videos/**" "manifests/assets_manifest.json" \
   --local-dir ./data/LIBERO-Pro2.0-Train
 ```
+
+The [training guide](docs/training.md) explains the HDF5 schema and policy integration. The original LIBERO lifelong-learning implementations and configurations remain in `simulator-source/libero/lifelong/` and `simulator-source/libero/configs/`. Their original task loader expects LIBERO's per-task dataset layout; the released per-instance HDF5 files need an explicit loader or conversion for your policy. Model checkpoints and policy-specific training dependencies come from the corresponding official model releases.
+
+## Licenses
+
+Retain the [upstream LIBERO license](simulator-source/LICENSE) and the asset licenses in `simulator-source/libero/libero/assets/perturbation_assets/THIRD_PARTY_NOTICES.md`. The training dataset's license does not replace code or third-party asset terms.
 
 ## Citation
 

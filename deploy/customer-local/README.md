@@ -1,8 +1,8 @@
 # LIBERO-PRO 2.0 客户本地部署包 v1.0.0
 
-本包用于 Ubuntu 22.04 x86_64 NVIDIA 主机。服务、LIBERO、MuJoCo、robosuite、1706 个已批准
-BDDL、init state 和扰动资产均随 Docker 镜像交付；客户安装时不需要访问 GitHub，也不需要安装
-模拟器 Python 依赖。客户模型运行在自己的环境中，只安装轻量 `libero_remote` wheel。
+这些脚本用于 Ubuntu 22.04 x86_64 NVIDIA 主机的离线 Docker 部署。当前源码包含 1688 项任务、
+初态及扰动实现。推荐按根目录 README 使用 HF 评估安装包；需要离线 Docker 时，
+先从当前 GitHub checkout 构建并导出自己的镜像，再使用本目录脚本。
 
 ## 主机要求
 
@@ -14,16 +14,23 @@ BDDL、init state 和扰动资产均随 Docker 镜像交付；客户安装时不
 ## 安装
 
 ```bash
-tar -xzf libero-pro-bundle-1.0.0.tar.gz
-cd libero-pro-bundle-1.0.0
+# 在完整下载 Git LFS 资产的仓库根目录构建离线交付目录
+git lfs pull
+docker build -t libero-pro-server:1.0.0 .
+mkdir -p docker-delivery/images
+cp -a deploy/customer-local/. docker-delivery/
+docker save -o docker-delivery/images/libero-pro-server-1.0.0.tar libero-pro-server:1.0.0
+cd docker-delivery
+sha256sum images/libero-pro-server-1.0.0.tar > SHA256SUMS
 bash install.sh
-python3 -m pip install --no-index --find-links wheels wheels/libero_remote-1.0.0-py3-none-any.whl
+# 在模型环境中，从下载的源码安装轻量客户端
+python3 -m pip install -e /path/to/LIBERO-Pro2.0
 set -a && source client.env && set +a
 python3 smoke_test.py
 ```
 
 `configure.sh` 会生成随机 API key 和独立结果签名密钥，只保存 API key 的 SHA-256 到服务端 `.env`。
-`wheels/` 包含 CPython 3.8-3.12、Linux x86_64 所需的客户端依赖，以上命令不会访问 PyPI。
+如目标机器完全离线，另行准备客户端及其依赖的 wheelhouse；镜像构建和首次依赖下载需要联网。
 `install.sh` 还会在启动服务前验证 Docker 容器能够访问 NVIDIA GPU；这一步失败时，应先修复
 NVIDIA Container Toolkit，不能跳过后继续测试。
 不要共享 `.env`、`client.env` 或 runtime 数据库。若模型在另一台内网机器，修改 Compose 端口为
@@ -96,8 +103,8 @@ TensorFlow、ONNX、私有推理 API 或传统策略。服务端只验证标准 
 ## 当前任务范围
 
 - 4 个 suite：`libero_goal`、`libero_spatial`、`libero_object`、`libero_10`
-- 40 个官方 base 任务；发布集合包含 40 个 BASE、875 个静态 case 和 792 个动态 case
-- 发布 manifest 合计 1706 个有效 BDDL；D19 已全部删除，Goal 另删除 13 个不适用组合，另删除 `libero_10/task8/S04`
+- 40 个官方 base 任务；发布集合包含 40 个 BASE、863 个静态 case 和 785 个动态 case
+- 发布 manifest 合计 1688 个有效 BDDL；只评估 manifest 中存在的适用组合
 - `/v1/tasks` 是具体 suite/task/variant 可用组合的唯一来源，客户端不得自行假设笛卡尔积
 - 支持固定 `init_state_id + seed`，并返回任务、初态、首帧和扰动计划指纹
 - 支持 `relative` 与 `absolute` 7D action，具体 shape/range 以 `info["action_schema"]` 为准
