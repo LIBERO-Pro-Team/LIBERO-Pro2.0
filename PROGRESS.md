@@ -62,3 +62,10 @@
 - Retained the distinction between paper and release counts, clarified that the plan command does not execute a policy, and preserved all executable examples, author information and leaderboard graphics.
 - Verified unchanged fenced code blocks, key counts, local link targets, resource anchors and Markdown whitespace.
 - Implementation commit: `e2fb346ac144638619ebd6d1386a1e2500b2e656`.
+
+## 2026-10-16 — LIBERO-PRO series attribution
+
+- Introduced LIBERO-Pro2.0 as a continuation of the LIBERO-PRO benchmark series and linked the earlier repository from Overview.
+- Added the LIBERO-PRO paper to Citation and requested attribution to both works. Verified title, eight-author order, year and arXiv identifier against the official repository and arXiv record; omitted placeholder publisher fields.
+- Checked that only Overview and Citation changed in README and that Markdown fences and whitespace remain valid.
+- Implementation commit: `0b4e82378828cc0ef03ab620793824ca4e17fe0f`.
