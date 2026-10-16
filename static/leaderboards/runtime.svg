@@ -1,0 +1,399 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1140" viewBox="0 0 1760 1140" role="img" aria-labelledby="title desc">
+<title id="title">Runtime distribution shifts: all 17 policies ranked by average success</title>
+<desc id="desc">Paper scores in percent. Bars show average success on a zero to one hundred scale; shaded cells show category success. Bold category values mark column maxima. Delta is average minus base, reported before rounding.</desc>
+<style>text{font-family:Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums} .number{font-family:Arial,Helvetica,sans-serif}</style>
+<rect x="1" y="1" width="1758" height="1138" rx="20" fill="#ffffff" stroke="#dce3ed"/>
+<path d="M24 1H1736" stroke="#087f8c" stroke-width="3"/>
+<text x="38" y="46" font-size="17" fill="#087f8c" font-weight="700" text-anchor="start" letter-spacing="2">LIBERO-Pro2.0  /  LEADERBOARD</text>
+<text x="38" y="97" font-size="36" fill="#172b45" font-weight="700" text-anchor="start" >Runtime distribution shifts</text>
+<text x="38" y="132" font-size="20" fill="#65758b" font-weight="400" text-anchor="start" >17 policies · Paper results · Success rate (%)</text>
+<rect x="1455" y="64" width="265" height="45" rx="22" fill="#f1f5f9" />
+<text x="1587" y="93" font-size="20" fill="#087f8c" font-weight="600" text-anchor="middle" >Higher is better  ↑</text>
+<path d="M38 158H1722" stroke="#dce3ed"/>
+<text x="397" y="190" font-size="15" fill="#087f8c" font-weight="700" text-anchor="start" letter-spacing="1.5">OVERALL PERFORMANCE</text>
+<text x="874" y="190" font-size="15" fill="#65758b" font-weight="700" text-anchor="start" letter-spacing="1.5">SUCCESS UNDER PERTURBATIONS</text>
+<text x="65" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >#</text>
+<text x="105" y="233" font-size="21" fill="#172b45" font-weight="600" text-anchor="start" >Policy</text>
+<text x="490" y="233" font-size="21" fill="#087f8c" font-weight="700" text-anchor="middle" >Average ↑</text>
+<text x="672" y="233" font-size="21" fill="#65758b" font-weight="600" text-anchor="middle" >Base</text>
+<text x="779" y="233" font-size="21" fill="#65758b" font-weight="600" text-anchor="middle" >Δ (pp)</text>
+<text x="939" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Condition</text>
+<text x="1081" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Environment</text>
+<text x="1223" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Observation</text>
+<text x="1365" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Execution</text>
+<text x="1507" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Robot</text>
+<text x="1649" y="233" font-size="19" fill="#65758b" font-weight="600" text-anchor="middle" >Language</text>
+<g data-model="LingBot-VA">
+<rect x="24" y="253" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<rect x="48" y="261" width="34" height="31" rx="8" fill="rgba(8,127,140,0.10)" />
+<text x="65" y="283" font-size="20" fill="#087f8c" font-weight="700" text-anchor="middle" >1</text>
+<text x="105" y="283" font-size="23" fill="#172b45" font-weight="600" text-anchor="start" >LingBot-VA</text>
+<rect x="397" y="272" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="272" width="112.884" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="283" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">81.8</text>
+<text x="672" y="283" font-size="22" fill="#53657d" font-weight="700" text-anchor="middle" data-field="base">98.5</text>
+<text x="779" y="283" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-16.7</text>
+<rect x="881" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1487)" />
+<text x="939" y="283" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="condition">77.3</text>
+<rect x="1023" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1554)" />
+<text x="1081" y="283" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">81.5</text>
+<rect x="1165" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1698)" />
+<text x="1223" y="283" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">90.5</text>
+<rect x="1307" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1799)" />
+<text x="1365" y="283" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="execution">96.8</text>
+<rect x="1449" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1199)" />
+<text x="1507" y="283" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">59.3</text>
+<rect x="1591" y="259" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1797)" />
+<text x="1649" y="283" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="language">96.7</text>
+</g>
+<g data-model="MolmoAct2">
+<rect x="48" y="308" width="34" height="31" rx="8" fill="rgba(8,127,140,0.10)" />
+<text x="65" y="330" font-size="20" fill="#087f8c" font-weight="700" text-anchor="middle" >2</text>
+<text x="105" y="330" font-size="23" fill="#172b45" font-weight="600" text-anchor="start" >MolmoAct2</text>
+<rect x="397" y="319" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="319" width="106.122" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="330" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">76.9</text>
+<text x="672" y="330" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">97.2</text>
+<text x="779" y="330" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-20.3</text>
+<rect x="881" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1188)" />
+<text x="939" y="330" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">58.6</text>
+<rect x="1023" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1437)" />
+<text x="1081" y="330" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">74.2</text>
+<rect x="1165" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1695)" />
+<text x="1223" y="330" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">90.3</text>
+<rect x="1307" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1696)" />
+<text x="1365" y="330" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">90.4</text>
+<rect x="1449" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1514)" />
+<text x="1507" y="330" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="robot">79.0</text>
+<rect x="1591" y="306" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1757)" />
+<text x="1649" y="330" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">94.2</text>
+</g>
+<g data-model="π₀.₅">
+<rect x="24" y="347" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<rect x="48" y="355" width="34" height="31" rx="8" fill="rgba(8,127,140,0.10)" />
+<text x="65" y="377" font-size="20" fill="#087f8c" font-weight="700" text-anchor="middle" >3</text>
+<text x="105" y="377" font-size="23" fill="#172b45" font-weight="600" text-anchor="start" >π₀.₅</text>
+<rect x="397" y="366" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="366" width="101.844" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="377" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">73.8</text>
+<text x="672" y="377" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">93.3</text>
+<text x="779" y="377" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-19.5</text>
+<rect x="881" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1218)" />
+<text x="939" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">60.5</text>
+<rect x="1023" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1180)" />
+<text x="1081" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">58.1</text>
+<rect x="1165" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1636)" />
+<text x="1223" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">86.6</text>
+<rect x="1307" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1672)" />
+<text x="1365" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">88.9</text>
+<rect x="1449" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1490)" />
+<text x="1507" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">77.5</text>
+<rect x="1591" y="353" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1757)" />
+<text x="1649" y="377" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">94.2</text>
+</g>
+<g data-model="Cosmos Policy">
+<text x="65" y="424" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >4</text>
+<text x="105" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >Cosmos Policy</text>
+<rect x="397" y="413" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="413" width="99.636" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="424" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">72.2</text>
+<text x="672" y="424" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">97.5</text>
+<text x="779" y="424" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-25.3</text>
+<rect x="881" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0980)" />
+<text x="939" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">45.6</text>
+<rect x="1023" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1605)" />
+<text x="1081" y="424" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="environment">84.7</text>
+<rect x="1165" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1656)" />
+<text x="1223" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">87.9</text>
+<rect x="1307" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1620)" />
+<text x="1365" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">85.6</text>
+<rect x="1449" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1380)" />
+<text x="1507" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">70.6</text>
+<rect x="1591" y="400" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1783)" />
+<text x="1649" y="424" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">95.8</text>
+</g>
+<g data-model="FastWAM">
+<rect x="24" y="441" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="471" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >5</text>
+<text x="105" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >FastWAM</text>
+<rect x="397" y="460" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="460" width="96.738" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="471" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">70.1</text>
+<text x="672" y="471" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">97.8</text>
+<text x="779" y="471" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-27.6</text>
+<rect x="881" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0948)" />
+<text x="939" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">43.6</text>
+<rect x="1023" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1324)" />
+<text x="1081" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">67.1</text>
+<rect x="1165" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1701)" />
+<text x="1223" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">90.7</text>
+<rect x="1307" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1688)" />
+<text x="1365" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">89.9</text>
+<rect x="1449" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1392)" />
+<text x="1507" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">71.4</text>
+<rect x="1591" y="447" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1741)" />
+<text x="1649" y="471" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">93.2</text>
+</g>
+<g data-model="X-VLA">
+<text x="65" y="518" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >6</text>
+<text x="105" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >X-VLA</text>
+<rect x="397" y="507" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="507" width="91.08" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="518" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">66.0</text>
+<text x="672" y="518" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">95.0</text>
+<text x="779" y="518" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-29.0</text>
+<rect x="881" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0917)" />
+<text x="939" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">41.7</text>
+<rect x="1023" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1205)" />
+<text x="1081" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">59.7</text>
+<rect x="1165" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1748)" />
+<text x="1223" y="518" font-size="23" fill="#172b45" font-weight="700" text-anchor="middle" data-field="observation">93.6</text>
+<rect x="1307" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1372)" />
+<text x="1365" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">70.1</text>
+<rect x="1449" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1372)" />
+<text x="1507" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">70.1</text>
+<rect x="1591" y="494" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1770)" />
+<text x="1649" y="518" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">95.0</text>
+</g>
+<g data-model="OpenVLA-OFT">
+<rect x="24" y="535" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="565" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >7</text>
+<text x="105" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >OpenVLA-OFT</text>
+<rect x="397" y="554" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="554" width="89.148" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="565" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">64.6</text>
+<text x="672" y="565" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">97.1</text>
+<text x="779" y="565" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-32.5</text>
+<rect x="881" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0935)" />
+<text x="939" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">42.8</text>
+<rect x="1023" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1260)" />
+<text x="1081" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">63.1</text>
+<rect x="1165" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1536)" />
+<text x="1223" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">80.4</text>
+<rect x="1307" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1615)" />
+<text x="1365" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">85.3</text>
+<rect x="1449" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1172)" />
+<text x="1507" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">57.6</text>
+<rect x="1591" y="541" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1776)" />
+<text x="1649" y="565" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">95.4</text>
+</g>
+<g data-model="OpenVLA-OFT_m">
+<text x="65" y="612" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >8</text>
+<text x="105" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >OpenVLA-OFT_m</text>
+<rect x="397" y="601" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="601" width="88.734" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="612" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">64.3</text>
+<text x="672" y="612" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">92.5</text>
+<text x="779" y="612" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-28.2</text>
+<rect x="881" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0884)" />
+<text x="939" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">39.6</text>
+<rect x="1023" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1232)" />
+<text x="1081" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">61.4</text>
+<rect x="1165" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1536)" />
+<text x="1223" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">80.4</text>
+<rect x="1307" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1621)" />
+<text x="1365" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">85.7</text>
+<rect x="1449" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1268)" />
+<text x="1507" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">63.6</text>
+<rect x="1591" y="588" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1751)" />
+<text x="1649" y="612" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">93.8</text>
+</g>
+<g data-model="GR00T N1.7">
+<rect x="24" y="629" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="659" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >9</text>
+<text x="105" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >GR00T N1.7</text>
+<rect x="397" y="648" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="648" width="88.182" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="659" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">63.9</text>
+<text x="672" y="659" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">90.4</text>
+<text x="779" y="659" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-26.6</text>
+<rect x="881" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0917)" />
+<text x="939" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">41.7</text>
+<rect x="1023" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1306)" />
+<text x="1081" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">66.0</text>
+<rect x="1165" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1496)" />
+<text x="1223" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">77.9</text>
+<rect x="1307" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1568)" />
+<text x="1365" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">82.4</text>
+<rect x="1449" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1215)" />
+<text x="1507" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">60.3</text>
+<rect x="1591" y="635" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1684)" />
+<text x="1649" y="659" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">89.6</text>
+</g>
+<g data-model="OpenVLA-OFT+">
+<text x="65" y="706" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >10</text>
+<text x="105" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >OpenVLA-OFT+</text>
+<rect x="397" y="695" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="695" width="88.044" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="706" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">63.8</text>
+<text x="672" y="706" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">92.1</text>
+<text x="779" y="706" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-28.3</text>
+<rect x="881" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0911)" />
+<text x="939" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">41.3</text>
+<rect x="1023" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1160)" />
+<text x="1081" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">56.9</text>
+<rect x="1165" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1527)" />
+<text x="1223" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">79.8</text>
+<rect x="1307" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1597)" />
+<text x="1365" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">84.2</text>
+<rect x="1449" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1274)" />
+<text x="1507" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">64.0</text>
+<rect x="1591" y="682" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1751)" />
+<text x="1649" y="706" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">93.8</text>
+</g>
+<g data-model="OpenVLA-OFT_w">
+<rect x="24" y="723" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="753" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >11</text>
+<text x="105" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >OpenVLA-OFT_w</text>
+<rect x="397" y="742" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="742" width="85.422" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="753" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">61.9</text>
+<text x="672" y="753" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">89.2</text>
+<text x="779" y="753" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-27.3</text>
+<rect x="881" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0808)" />
+<text x="939" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">34.9</text>
+<rect x="1023" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1495)" />
+<text x="1081" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">77.8</text>
+<rect x="1165" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1444)" />
+<text x="1223" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">74.6</text>
+<rect x="1307" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1546)" />
+<text x="1365" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">81.0</text>
+<rect x="1449" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1114)" />
+<text x="1507" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">54.0</text>
+<rect x="1591" y="729" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1717)" />
+<text x="1649" y="753" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">91.7</text>
+</g>
+<g data-model="Anchor-Align">
+<text x="65" y="800" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >12</text>
+<text x="105" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >Anchor-Align</text>
+<rect x="397" y="789" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="789" width="85.008" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="800" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">61.6</text>
+<text x="672" y="800" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">91.3</text>
+<text x="779" y="800" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-29.7</text>
+<rect x="881" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0928)" />
+<text x="939" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">42.4</text>
+<rect x="1023" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1008)" />
+<text x="1081" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">47.4</text>
+<rect x="1165" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1488)" />
+<text x="1223" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">77.4</text>
+<rect x="1307" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1650)" />
+<text x="1365" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">87.5</text>
+<rect x="1449" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1191)" />
+<text x="1507" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">58.8</text>
+<rect x="1591" y="776" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1663)" />
+<text x="1649" y="800" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">88.3</text>
+</g>
+<g data-model="UniVLA">
+<rect x="24" y="817" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="847" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >13</text>
+<text x="105" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >UniVLA</text>
+<rect x="397" y="836" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="836" width="84.18" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="847" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">61.0</text>
+<text x="672" y="847" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">92.1</text>
+<text x="779" y="847" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-31.1</text>
+<rect x="881" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0744)" />
+<text x="939" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">30.9</text>
+<rect x="1023" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1397)" />
+<text x="1081" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">71.7</text>
+<rect x="1165" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1512)" />
+<text x="1223" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">78.9</text>
+<rect x="1307" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1554)" />
+<text x="1365" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">81.5</text>
+<rect x="1449" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1149)" />
+<text x="1507" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">56.2</text>
+<rect x="1591" y="823" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1703)" />
+<text x="1649" y="847" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">90.8</text>
+</g>
+<g data-model="RIPT-VLA">
+<text x="65" y="894" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >14</text>
+<text x="105" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >RIPT-VLA</text>
+<rect x="397" y="883" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="883" width="80.73" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="894" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">58.5</text>
+<text x="672" y="894" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">87.5</text>
+<text x="779" y="894" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-29.0</text>
+<rect x="881" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0864)" />
+<text x="939" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">38.4</text>
+<rect x="1023" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1172)" />
+<text x="1081" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">57.6</text>
+<rect x="1165" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1402)" />
+<text x="1223" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">72.0</text>
+<rect x="1307" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1471)" />
+<text x="1365" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">76.3</text>
+<rect x="1449" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1124)" />
+<text x="1507" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">54.6</text>
+<rect x="1591" y="870" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1637)" />
+<text x="1649" y="894" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">86.7</text>
+</g>
+<g data-model="π₀-FAST">
+<rect x="24" y="911" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="941" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >15</text>
+<text x="105" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >π₀-FAST</text>
+<rect x="397" y="930" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="930" width="77.142" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="941" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">55.9</text>
+<text x="672" y="941" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">80.4</text>
+<text x="779" y="941" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-24.5</text>
+<rect x="881" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0980)" />
+<text x="939" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">45.6</text>
+<rect x="1023" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0976)" />
+<text x="1081" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">45.4</text>
+<rect x="1165" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1224)" />
+<text x="1223" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">60.9</text>
+<rect x="1307" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1370)" />
+<text x="1365" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">70.0</text>
+<rect x="1449" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1183)" />
+<text x="1507" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">58.3</text>
+<rect x="1591" y="917" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1517)" />
+<text x="1649" y="941" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">79.2</text>
+</g>
+<g data-model="OpenVLA">
+<text x="65" y="988" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >16</text>
+<text x="105" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >OpenVLA</text>
+<rect x="397" y="977" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="977" width="50.232" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="988" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">36.4</text>
+<text x="672" y="988" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">64.6</text>
+<text x="779" y="988" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-28.2</text>
+<rect x="881" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0580)" />
+<text x="939" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">20.6</text>
+<rect x="1023" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0920)" />
+<text x="1081" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">41.9</text>
+<rect x="1165" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0911)" />
+<text x="1223" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">41.3</text>
+<rect x="1307" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1108)" />
+<text x="1365" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">53.6</text>
+<rect x="1449" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0728)" />
+<text x="1507" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">29.9</text>
+<rect x="1591" y="964" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1271)" />
+<text x="1649" y="988" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">63.8</text>
+</g>
+<g data-model="π₀">
+<rect x="24" y="1005" width="1712" height="47" rx="6" fill="#f7f9fc" />
+<text x="65" y="1035" font-size="20" fill="#7b899b" font-weight="400" text-anchor="middle" >17</text>
+<text x="105" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="start" >π₀</text>
+<rect x="397" y="1024" width="138" height="9" rx="4" fill="#e3eaf3" />
+<rect x="397" y="1024" width="48.714" height="9" rx="4" fill="#087f8c" />
+<text x="605" y="1035" font-size="24" fill="#087f8c" font-weight="700" text-anchor="end" data-field="average">35.3</text>
+<text x="672" y="1035" font-size="22" fill="#53657d" font-weight="400" text-anchor="middle" data-field="base">63.8</text>
+<text x="779" y="1035" font-size="21" fill="#9a5660" font-weight="400" text-anchor="middle" data-field="delta">-28.4</text>
+<rect x="881" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0648)" />
+<text x="939" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="condition">24.9</text>
+<rect x="1023" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1160)" />
+<text x="1081" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="environment">56.9</text>
+<rect x="1165" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1093)" />
+<text x="1223" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="observation">52.7</text>
+<rect x="1307" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0743)" />
+<text x="1365" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="execution">30.8</text>
+<rect x="1449" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.0365)" />
+<text x="1507" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="robot">7.2</text>
+<rect x="1591" y="1011" width="116" height="35" rx="7" fill="rgba(8,127,140,0.1231)" />
+<text x="1649" y="1035" font-size="23" fill="#172b45" font-weight="400" text-anchor="middle" data-field="language">61.3</text>
+</g>
+<path d="M38 1068H1722" stroke="#dce3ed"/>
+<text x="38" y="1109" font-size="18" fill="#65758b" font-weight="400" text-anchor="start" >Bars: average success / 100</text>
+<text x="575" y="1109" font-size="18" fill="#65758b" font-weight="400" text-anchor="start" >Cell shading: category success</text>
+<text x="1722" y="1109" font-size="18" fill="#65758b" font-weight="400" text-anchor="end" >Bold: column best · Δ: reported before rounding</text>
+</svg>

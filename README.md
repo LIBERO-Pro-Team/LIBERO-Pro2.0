@@ -51,91 +51,21 @@ This repository provides the evaluation service, Python client, model adapter in
 
 ## 🏆 Leaderboard
 
-Paper results for **17 policies**, ranked by average success rate. Scores are percentages (higher is better); **Base** is nominal success and **Δ = Avg. − Base** is in percentage points. Bold marks the best scores.
+Paper results for **17 policies**, ranked by average success. Bars compare average success; shaded cells show performance across the six perturbation categories. **Base** is nominal success, and **Δ** is the change from Base in percentage points. Click a figure to view it at full resolution.
 
 ### Static Distribution Shifts
 
-<table width="100%">
-<thead>
-<tr>
-<th width="500" align="center">Rank</th>
-<th width="2000" align="left">Policy</th>
-<th width="1000" align="right">Avg. ↑</th>
-<th width="1000" align="right">Base</th>
-<th width="1000" align="right">Δ (pp)</th>
-<th width="1000" align="right">Condition</th>
-<th width="1000" align="right">Environment</th>
-<th width="1000" align="right">Observation</th>
-<th width="1000" align="right">Execution</th>
-<th width="1000" align="right">Robot</th>
-<th width="1000" align="right">Language</th>
-</tr>
-</thead>
-<tbody>
-<tr><td align="center">1</td><td align="left">MolmoAct2</td><td align="right"><strong>71.2</strong></td><td align="right">97.2</td><td align="right">-26.0</td><td align="right"><strong>63.8</strong></td><td align="right">85.0</td><td align="right">65.1</td><td align="right">0.0</td><td align="right">85.0</td><td align="right">94.6</td></tr>
-<tr><td align="center">2</td><td align="left">Cosmos Policy</td><td align="right">70.8</td><td align="right">97.5</td><td align="right">-26.7</td><td align="right">56.9</td><td align="right"><strong>89.3</strong></td><td align="right"><strong>70.8</strong></td><td align="right">4.2</td><td align="right">82.5</td><td align="right">93.3</td></tr>
-<tr><td align="center">3</td><td align="left">LingBot-VA</td><td align="right">68.7</td><td align="right">98.5</td><td align="right">-29.7</td><td align="right">52.2</td><td align="right">86.1</td><td align="right">35.7</td><td align="right"><strong>86.7</strong></td><td align="right"><strong>98.3</strong></td><td align="right"><strong>97.1</strong></td></tr>
-<tr><td align="center">4</td><td align="left">π₀.₅</td><td align="right">66.7</td><td align="right">93.3</td><td align="right">-26.6</td><td align="right">60.7</td><td align="right">83.9</td><td align="right">43.3</td><td align="right">0.8</td><td align="right">85.0</td><td align="right">93.3</td></tr>
-<tr><td align="center">5</td><td align="left">X-VLA</td><td align="right">61.2</td><td align="right">95.0</td><td align="right">-33.8</td><td align="right">42.1</td><td align="right">81.7</td><td align="right">49.3</td><td align="right">71.7</td><td align="right">61.7</td><td align="right">90.8</td></tr>
-<tr><td align="center">6</td><td align="left">GR00T N1.7</td><td align="right">60.0</td><td align="right">90.4</td><td align="right">-30.4</td><td align="right">46.6</td><td align="right">79.2</td><td align="right">48.5</td><td align="right">0.0</td><td align="right">77.9</td><td align="right">88.8</td></tr>
-<tr><td align="center">7</td><td align="left">OpenVLA-OFT_m</td><td align="right">59.3</td><td align="right">92.5</td><td align="right">-33.2</td><td align="right">45.9</td><td align="right">78.3</td><td align="right">49.7</td><td align="right">0.0</td><td align="right">72.1</td><td align="right">92.1</td></tr>
-<tr><td align="center">8</td><td align="left">OpenVLA-OFT+</td><td align="right">59.2</td><td align="right">92.1</td><td align="right">-32.9</td><td align="right">47.2</td><td align="right">78.5</td><td align="right">45.0</td><td align="right">0.0</td><td align="right">73.8</td><td align="right">90.0</td></tr>
-<tr><td align="center">9</td><td align="left">OpenVLA-OFT</td><td align="right">58.9</td><td align="right">97.1</td><td align="right">-38.2</td><td align="right">44.1</td><td align="right">82.0</td><td align="right">46.3</td><td align="right">0.0</td><td align="right">66.5</td><td align="right">94.6</td></tr>
-<tr><td align="center">10</td><td align="left">FastWAM</td><td align="right">55.9</td><td align="right">97.8</td><td align="right">-41.8</td><td align="right">43.8</td><td align="right">84.7</td><td align="right">5.2</td><td align="right">2.8</td><td align="right">87.5</td><td align="right">90.3</td></tr>
-<tr><td align="center">11</td><td align="left">Anchor-Align</td><td align="right">55.9</td><td align="right">91.3</td><td align="right">-35.4</td><td align="right">43.2</td><td align="right">74.3</td><td align="right">38.6</td><td align="right">0.8</td><td align="right">76.5</td><td align="right">90.8</td></tr>
-<tr><td align="center">12</td><td align="left">RIPT-VLA</td><td align="right">54.1</td><td align="right">87.5</td><td align="right">-33.4</td><td align="right">41.0</td><td align="right">74.3</td><td align="right">41.8</td><td align="right">0.0</td><td align="right">63.8</td><td align="right">86.7</td></tr>
-<tr><td align="center">13</td><td align="left">OpenVLA-OFT_w</td><td align="right">53.8</td><td align="right">89.2</td><td align="right">-35.4</td><td align="right">40.1</td><td align="right">64.9</td><td align="right">67.6</td><td align="right">0.4</td><td align="right">55.4</td><td align="right">90.0</td></tr>
-<tr><td align="center">14</td><td align="left">π₀-FAST</td><td align="right">53.2</td><td align="right">80.4</td><td align="right">-27.3</td><td align="right">43.8</td><td align="right">71.5</td><td align="right">39.9</td><td align="right">0.0</td><td align="right">57.7</td><td align="right">81.2</td></tr>
-<tr><td align="center">15</td><td align="left">UniVLA</td><td align="right">52.9</td><td align="right">92.1</td><td align="right">-39.2</td><td align="right">39.8</td><td align="right">59.5</td><td align="right">58.1</td><td align="right">0.0</td><td align="right">79.6</td><td align="right">91.7</td></tr>
-<tr><td align="center">16</td><td align="left">π₀</td><td align="right">38.6</td><td align="right">63.8</td><td align="right">-25.1</td><td align="right">25.0</td><td align="right">53.8</td><td align="right">60.0</td><td align="right">5.0</td><td align="right">19.2</td><td align="right">46.3</td></tr>
-<tr><td align="center">17</td><td align="left">OpenVLA</td><td align="right">33.9</td><td align="right">64.6</td><td align="right">-30.7</td><td align="right">25.2</td><td align="right">37.6</td><td align="right">34.4</td><td align="right">0.0</td><td align="right">54.0</td><td align="right">67.5</td></tr>
-</tbody>
-</table>
+[![Static leaderboard: all 17 policies and six perturbation categories](static/leaderboards/static.svg)](static/leaderboards/static.svg)
 
 ### Runtime Distribution Shifts
 
-<table width="100%">
-<thead>
-<tr>
-<th width="500" align="center">Rank</th>
-<th width="2000" align="left">Policy</th>
-<th width="1000" align="right">Avg. ↑</th>
-<th width="1000" align="right">Base</th>
-<th width="1000" align="right">Δ (pp)</th>
-<th width="1000" align="right">Condition</th>
-<th width="1000" align="right">Environment</th>
-<th width="1000" align="right">Observation</th>
-<th width="1000" align="right">Execution</th>
-<th width="1000" align="right">Robot</th>
-<th width="1000" align="right">Language</th>
-</tr>
-</thead>
-<tbody>
-<tr><td align="center">1</td><td align="left">LingBot-VA</td><td align="right"><strong>81.8</strong></td><td align="right">98.5</td><td align="right">-16.7</td><td align="right"><strong>77.3</strong></td><td align="right">81.5</td><td align="right">90.5</td><td align="right"><strong>96.8</strong></td><td align="right">59.3</td><td align="right"><strong>96.7</strong></td></tr>
-<tr><td align="center">2</td><td align="left">MolmoAct2</td><td align="right">76.9</td><td align="right">97.2</td><td align="right">-20.3</td><td align="right">58.6</td><td align="right">74.2</td><td align="right">90.3</td><td align="right">90.4</td><td align="right"><strong>79.0</strong></td><td align="right">94.2</td></tr>
-<tr><td align="center">3</td><td align="left">π₀.₅</td><td align="right">73.8</td><td align="right">93.3</td><td align="right">-19.5</td><td align="right">60.5</td><td align="right">58.1</td><td align="right">86.6</td><td align="right">88.9</td><td align="right">77.5</td><td align="right">94.2</td></tr>
-<tr><td align="center">4</td><td align="left">Cosmos Policy</td><td align="right">72.2</td><td align="right">97.5</td><td align="right">-25.3</td><td align="right">45.6</td><td align="right"><strong>84.7</strong></td><td align="right">87.9</td><td align="right">85.6</td><td align="right">70.6</td><td align="right">95.8</td></tr>
-<tr><td align="center">5</td><td align="left">FastWAM</td><td align="right">70.1</td><td align="right">97.8</td><td align="right">-27.6</td><td align="right">43.6</td><td align="right">67.1</td><td align="right">90.7</td><td align="right">89.9</td><td align="right">71.4</td><td align="right">93.2</td></tr>
-<tr><td align="center">6</td><td align="left">X-VLA</td><td align="right">66.0</td><td align="right">95.0</td><td align="right">-29.0</td><td align="right">41.7</td><td align="right">59.7</td><td align="right"><strong>93.6</strong></td><td align="right">70.1</td><td align="right">70.1</td><td align="right">95.0</td></tr>
-<tr><td align="center">7</td><td align="left">OpenVLA-OFT</td><td align="right">64.6</td><td align="right">97.1</td><td align="right">-32.5</td><td align="right">42.8</td><td align="right">63.1</td><td align="right">80.4</td><td align="right">85.3</td><td align="right">57.6</td><td align="right">95.4</td></tr>
-<tr><td align="center">8</td><td align="left">OpenVLA-OFT_m</td><td align="right">64.3</td><td align="right">92.5</td><td align="right">-28.2</td><td align="right">39.6</td><td align="right">61.4</td><td align="right">80.4</td><td align="right">85.7</td><td align="right">63.6</td><td align="right">93.8</td></tr>
-<tr><td align="center">9</td><td align="left">GR00T N1.7</td><td align="right">63.9</td><td align="right">90.4</td><td align="right">-26.6</td><td align="right">41.7</td><td align="right">66.0</td><td align="right">77.9</td><td align="right">82.4</td><td align="right">60.3</td><td align="right">89.6</td></tr>
-<tr><td align="center">10</td><td align="left">OpenVLA-OFT+</td><td align="right">63.8</td><td align="right">92.1</td><td align="right">-28.3</td><td align="right">41.3</td><td align="right">56.9</td><td align="right">79.8</td><td align="right">84.2</td><td align="right">64.0</td><td align="right">93.8</td></tr>
-<tr><td align="center">11</td><td align="left">OpenVLA-OFT_w</td><td align="right">61.9</td><td align="right">89.2</td><td align="right">-27.3</td><td align="right">34.9</td><td align="right">77.8</td><td align="right">74.6</td><td align="right">81.0</td><td align="right">54.0</td><td align="right">91.7</td></tr>
-<tr><td align="center">12</td><td align="left">Anchor-Align</td><td align="right">61.6</td><td align="right">91.3</td><td align="right">-29.7</td><td align="right">42.4</td><td align="right">47.4</td><td align="right">77.4</td><td align="right">87.5</td><td align="right">58.8</td><td align="right">88.3</td></tr>
-<tr><td align="center">13</td><td align="left">UniVLA</td><td align="right">61.0</td><td align="right">92.1</td><td align="right">-31.1</td><td align="right">30.9</td><td align="right">71.7</td><td align="right">78.9</td><td align="right">81.5</td><td align="right">56.2</td><td align="right">90.8</td></tr>
-<tr><td align="center">14</td><td align="left">RIPT-VLA</td><td align="right">58.5</td><td align="right">87.5</td><td align="right">-29.0</td><td align="right">38.4</td><td align="right">57.6</td><td align="right">72.0</td><td align="right">76.3</td><td align="right">54.6</td><td align="right">86.7</td></tr>
-<tr><td align="center">15</td><td align="left">π₀-FAST</td><td align="right">55.9</td><td align="right">80.4</td><td align="right">-24.5</td><td align="right">45.6</td><td align="right">45.4</td><td align="right">60.9</td><td align="right">70.0</td><td align="right">58.3</td><td align="right">79.2</td></tr>
-<tr><td align="center">16</td><td align="left">OpenVLA</td><td align="right">36.4</td><td align="right">64.6</td><td align="right">-28.2</td><td align="right">20.6</td><td align="right">41.9</td><td align="right">41.3</td><td align="right">53.6</td><td align="right">29.9</td><td align="right">63.8</td></tr>
-<tr><td align="center">17</td><td align="left">π₀</td><td align="right">35.3</td><td align="right">63.8</td><td align="right">-28.4</td><td align="right">24.9</td><td align="right">56.9</td><td align="right">52.7</td><td align="right">30.8</td><td align="right">7.2</td><td align="right">61.3</td></tr>
-</tbody>
-</table>
+[![Runtime leaderboard: all 17 policies and six perturbation categories](static/leaderboards/runtime.svg)](static/leaderboards/runtime.svg)
 
 Δ is taken directly from the paper and computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded).
 
 **OFT variants:** `_w` omits wrist observations; `_m` jointly fine-tunes on the four original LIBERO suites; `+` uses mixed fine-tuning on LIBERO-Plus data.
 
-[Result definitions and source tables](docs/paper-results.md) · [Interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html)
+[Result definitions and source tables](docs/paper-results.md) · [Scores (JSON)](docs/results/paper-leaderboards.json) · [Interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html)
 
 ## Data and Evaluation Resources
 
