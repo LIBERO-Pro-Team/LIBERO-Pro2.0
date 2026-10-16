@@ -36,13 +36,11 @@ the Robustness of Embodied Foundation Models
 
 ![LIBERO-Pro2.0 benchmark overview](static/images/overview.png)
 
-## 🔥 Overview
+## Overview
 
-**LIBERO-Pro2.0** continues the [**LIBERO-PRO**](https://github.com/Zxy-MLlab/LIBERO-PRO) series of robustness benchmarks for embodied foundation models. Building on our earlier work, it extends evaluation on LIBERO to cover both changes in initial task conditions and interventions during execution.
+The **LIBERO-PRO series** is our ongoing effort to systematically evaluate the robustness of embodied foundation models beyond standard task success. Our previous work, [**LIBERO-PRO**](https://github.com/Zxy-MLlab/LIBERO-PRO), investigated the limitations of robot policies under changes in task conditions, object configurations, and environments. Building on this foundation, **LIBERO-Pro2.0** extends robustness evaluation from **static distribution shifts to runtime interventions**, enabling a more comprehensive assessment of policy generalization, online adaptation, and recovery. The benchmark introduces **42 perturbation types** (22 static and 20 runtime) across six dimensions—Condition, Environment, Observation, Execution, Robot, and Language—comprising **1,646 valid task–perturbation instances** across 32 training tasks and 8 held-out evaluation tasks.
 
-The benchmark covers **22 static perturbation types** and **20 runtime intervention types** across six domains, with **1,648 validated perturbed task instances**. Its 40 base tasks are divided into **32 training tasks** and **8 held-out evaluation tasks**. The paper reports **39,390 training trajectories** and six rounds of human review and correction, covering **19,776 rollouts**.
-
-This repository provides the simulator, evaluation service, Python client, and model adapter interfaces. Policies run in your own inference environment and communicate with the service, which initializes tasks, executes actions, applies perturbations, and checks task success.
+To support robustness-oriented learning, we provide **39,390 demonstration trajectories** collected through model-generated and human demonstrations. The benchmark also undergoes **six rounds of human review and correction**, covering **19,776 reviewed rollouts** to assess perturbation correctness, task validity, and physical feasibility.
 
 ## 📰 News
 
