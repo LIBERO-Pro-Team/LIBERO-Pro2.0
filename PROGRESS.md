@@ -28,3 +28,10 @@
 - Grouped Released Code and Task Catalogue and Resource Repositories under one Data and Evaluation Resources chapter, immediately before Installation.
 - Preserved the original section bodies and all other README content; checked Markdown whitespace and heading order.
 - Implementation commit: `e373fe55ac81f440aff6d7d2e2d7d67a7146c504`.
+
+## 2026-10-16 — Leaderboard presentation
+
+- Removed the standalone LIBERO-Pro2.0 Benchmark chapter. Added ranked five-column static/runtime summaries with complete six-category results in expandable details.
+- Shortened resource table labels and descriptions. Preserved installation and subsequent sections.
+- Verified all 306 detailed values and 102 summary values against the paper source JSON; checked ordering, expanding details and mobile page width.
+- Implementation commit: `8508c30f10a276a3d0da1745e14a02b8661515e4`.
