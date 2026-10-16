@@ -49,38 +49,34 @@ This repository provides the evaluation service, Python client, model adapter in
 - **[2026-10-14]** The [native HDF5 training dataset](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) is available on Hugging Face, with trajectory previews and review videos.
 - **[2026-10-14]** Added the paper's static and runtime [leaderboards](#-leaderboard), covering **17 robot policies**.
 
-## 📊 LIBERO-Pro2.0 Benchmark
-
-### Six Perturbation Domains
-
-1. **Condition** — Object poses, task geometry, receiving regions, and interaction constraints.
-2. **Environment** — Object instances, distractors, clutter, appearance, and scene context.
-3. **Observation** — Camera settings, sensor quality, frame streams, and modality alignment.
-4. **Execution** — Control timing, command delivery, action chunks, and temporary interventions.
-5. **Robot** — Initialization, calibration, joint state, grasp failures, and recoverable drops.
-6. **Language** — Instruction paraphrases and runtime restatements that preserve the goal.
-
-Static shifts are configured at reset. Runtime interventions are triggered at task-relevant stages such as approach, grasp, transport, or placement. Original task goals and success predicates are preserved.
-
-### Task Partition
-
-The paper samples two evaluation tasks from each LIBERO suite with seed **142**. Task IDs are **zero-based** within each suite. Their complement forms the training pool; all variants of a base task stay in the same partition.
-
-| Suite | Held-out evaluation task IDs | Training tasks |
-|---|---|---:|
-| LIBERO-Spatial | 0, 8 | 8 |
-| LIBERO-Object | 1, 8 | 8 |
-| LIBERO-Goal | 3, 6 | 8 |
-| LIBERO-10 | 5, 8 | 8 |
-| **Total** | **8 evaluation tasks** | **32** |
-
-After validation, the paper contains **1,313 training instances** and **335 evaluation instances**. Detailed perturbation definitions and visual examples are available in the [project documentation](https://racingemperor.github.io/LIBERO-Pro2.0/docs.html).
-
 ## 🏆 Leaderboard
 
-Paper results for **17 policies**, ranked by average success rate (%); bold marks the best scores. **Δ = Avg. − Base** is in percentage points, computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded). See the [result definitions and source tables](docs/paper-results.md) or [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html).
+Paper results for **17 policies**, ranked by average success rate. **Avg.** and **Base** are percentages (higher is better); **Δ = Avg. − Base** is in percentage points. Bold marks the best scores. Expand either table to see the six perturbation categories.
 
 ### Static Distribution Shifts
+
+| Rank | Policy | Avg. ↑ | Base | Δ (pp) |
+|:---:|---|---:|---:|---:|
+| 1 | MolmoAct2 | **71.2** | 97.2 | -26.0 |
+| 2 | Cosmos Policy | 70.8 | 97.5 | -26.7 |
+| 3 | LingBot-VA | 68.7 | 98.5 | -29.7 |
+| 4 | π₀.₅ | 66.7 | 93.3 | -26.6 |
+| 5 | X-VLA | 61.2 | 95.0 | -33.8 |
+| 6 | GR00T N1.7 | 60.0 | 90.4 | -30.4 |
+| 7 | OpenVLA-OFT_m | 59.3 | 92.5 | -33.2 |
+| 8 | OpenVLA-OFT+ | 59.2 | 92.1 | -32.9 |
+| 9 | OpenVLA-OFT | 58.9 | 97.1 | -38.2 |
+| 10 | FastWAM | 55.9 | 97.8 | -41.8 |
+| 11 | Anchor-Align | 55.9 | 91.3 | -35.4 |
+| 12 | RIPT-VLA | 54.1 | 87.5 | -33.4 |
+| 13 | OpenVLA-OFT_w | 53.8 | 89.2 | -35.4 |
+| 14 | π₀-FAST | 53.2 | 80.4 | -27.3 |
+| 15 | UniVLA | 52.9 | 92.1 | -39.2 |
+| 16 | π₀ | 38.6 | 63.8 | -25.1 |
+| 17 | OpenVLA | 33.9 | 64.6 | -30.7 |
+
+<details>
+<summary>View scores by perturbation category</summary>
 
 | Model | Cond. | Env. | Obs. | Exec. | Robot | Lang. | Avg. | Base | Δ (pp) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -102,7 +98,32 @@ Paper results for **17 policies**, ranked by average success rate (%); bold mark
 | π₀ | 25.0 | 53.8 | 60.0 | 5.0 | 19.2 | 46.3 | 38.6 | 63.8 | -25.1 |
 | OpenVLA | 25.2 | 37.6 | 34.4 | 0.0 | 54.0 | 67.5 | 33.9 | 64.6 | -30.7 |
 
+</details>
+
 ### Runtime Distribution Shifts
+
+| Rank | Policy | Avg. ↑ | Base | Δ (pp) |
+|:---:|---|---:|---:|---:|
+| 1 | LingBot-VA | **81.8** | 98.5 | -16.7 |
+| 2 | MolmoAct2 | 76.9 | 97.2 | -20.3 |
+| 3 | π₀.₅ | 73.8 | 93.3 | -19.5 |
+| 4 | Cosmos Policy | 72.2 | 97.5 | -25.3 |
+| 5 | FastWAM | 70.1 | 97.8 | -27.6 |
+| 6 | X-VLA | 66.0 | 95.0 | -29.0 |
+| 7 | OpenVLA-OFT | 64.6 | 97.1 | -32.5 |
+| 8 | OpenVLA-OFT_m | 64.3 | 92.5 | -28.2 |
+| 9 | GR00T N1.7 | 63.9 | 90.4 | -26.6 |
+| 10 | OpenVLA-OFT+ | 63.8 | 92.1 | -28.3 |
+| 11 | OpenVLA-OFT_w | 61.9 | 89.2 | -27.3 |
+| 12 | Anchor-Align | 61.6 | 91.3 | -29.7 |
+| 13 | UniVLA | 61.0 | 92.1 | -31.1 |
+| 14 | RIPT-VLA | 58.5 | 87.5 | -29.0 |
+| 15 | π₀-FAST | 55.9 | 80.4 | -24.5 |
+| 16 | OpenVLA | 36.4 | 64.6 | -28.2 |
+| 17 | π₀ | 35.3 | 63.8 | -28.4 |
+
+<details>
+<summary>View scores by perturbation category</summary>
 
 | Model | Cond. | Env. | Obs. | Exec. | Robot | Lang. | Avg. | Base | Δ (pp) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -124,7 +145,13 @@ Paper results for **17 policies**, ranked by average success rate (%); bold mark
 | OpenVLA | 20.6 | 41.9 | 41.3 | 53.6 | 29.9 | 63.8 | 36.4 | 64.6 | -28.2 |
 | π₀ | 24.9 | 56.9 | 52.7 | 30.8 | 7.2 | 61.3 | 35.3 | 63.8 | -28.4 |
 
-Cond./Env./Obs./Exec./Lang. = Condition/Environment/Observation/Execution/Language; Base = nominal success. OpenVLA-OFT variants: `_w` omits wrist observations, `_m` jointly fine-tunes on the four original LIBERO suites, and `+` uses mixed fine-tuning on LIBERO-Plus data.
+</details>
+
+Δ is taken directly from the paper and computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded).
+
+**Category key:** Cond. = Condition; Env. = Environment; Obs. = Observation; Exec. = Execution; Lang. = Language. **OFT variants:** `_w` omits wrist observations; `_m` jointly fine-tunes on the four original LIBERO suites; `+` uses mixed fine-tuning on LIBERO-Plus data.
+
+[Result definitions and source tables](docs/paper-results.md) · [Interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html)
 
 ## Data and Evaluation Resources
 
@@ -136,11 +163,11 @@ The released catalogue has 1,317 training and 331 evaluation shifted instances (
 
 ### Resource Repositories
 
-| Repository | Use it for | Contents |
+| Resource | Purpose | Includes |
 |---|---|---|
-| [LIBERO-Pro2.0-Train on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Training or fine-tuning | Native HDF5 demonstrations for the 32 training tasks, training metadata, review videos and Dataset Viewer previews. |
-| [LIBERO-Pro2.0-Eval on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Deploying the environment and evaluating policies | Evaluation service/client and batch runner, all 1,688 BDDL definitions, 40 initial-state files, simulator assets, dependency lock, installation and verification tools. |
-| [This GitHub repository](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Developing against the maintained source | Evaluation code, simulator source, task catalogue, model adapter interfaces and documentation. |
+| [Training data](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Train or fine-tune policies | HDF5 demonstrations for 32 training tasks, metadata, review videos and trajectory previews. |
+| [Evaluation resources](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Deploy and evaluate | Service/client, batch runner, 1,688 BDDL definitions, 40 initial-state files, simulator assets, locked dependencies and setup/verification tools. |
+| [GitHub source](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Develop and integrate | Maintained evaluation code, simulator, task catalogue, model adapters and documentation. |
 
 **To evaluate a pretrained model, start with the [Evaluation Resources](#evaluation-resources) below.** Download `evaluation.zip` (code, BDDL and initial states) and `assets.zip` (objects, scenes and textures), together with the manifests and preparation script. Training HDF5 files and preview videos are not needed. Obtain the policy checkpoint and its official inference dependencies from the model's own release.
 
