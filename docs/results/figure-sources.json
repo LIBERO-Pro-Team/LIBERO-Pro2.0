@@ -1,11 +1,16 @@
 [
   {
-    "source": "figures/promain.pdf",
-    "source_sha256": "d74ff575fd703aeedf2c436fe047e672e4aa3c066fa8a2e327c615e8ae8d7835",
+    "source": "promain.pdf",
+    "source_sha256": "903df91e95fbe0da31dec76aef280e863de9b38e0bdfc9de48e26bc8cf6095ea",
+    "source_note": "Updated overview PDF supplied by the authors on 2026-10-16; source file not redistributed here.",
     "image": "static/images/overview.png",
-    "image_sha256": "0333f8b55f2e85bf2c2dcc7f43e68c89f720981f90931298eea04a0cfbf90aec",
-    "conversion": "pdftoppm -singlefile -scale-to 2200 -png",
-    "postprocessing": "Shift the lower logo line 35 pixels left and restore its previous background; preserve all labels, numbers, and image dimensions."
+    "image_sha256": "9ae74a90f736d0a08202cdbbac6b90dddf3b0bef8a8eb0f564f24738da9f5570",
+    "dimensions": [
+      3200,
+      1634
+    ],
+    "conversion": "pdftoppm -cropbox -singlefile -scale-to 3200 -png",
+    "postprocessing": "Use the PDF CropBox to omit page margins; preserve all figure content and original colors. No logo or label edits."
   },
   {
     "source": "figures/example.png",

@@ -110,9 +110,9 @@ describes task selection, resuming evaluations, and exporting results.
 
 ## Figures
 
-- `static/images/overview.png`: rendered from `figures/promain.pdf`, then the
-  lower logo line was shifted 35 pixels left to center it; its former background
-  was restored. Figure labels, numbers, and dimensions are unchanged.
+- `static/images/overview.png`: rendered from the updated author-supplied
+  `promain.pdf` (2026-10-16) at 3200 x 1634 pixels, using the PDF CropBox
+  to omit page margins. Figure content, colors, and labels are preserved.
 - `static/images/failure-patterns.png`: byte-preserved copy of `figures/example.png`.
 - `static/images/static-runtime-comparison.png`: rendered directly from
   `figures/fig_grouped_static_runtime.pdf`.
