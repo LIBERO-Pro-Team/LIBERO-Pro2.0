@@ -4,6 +4,29 @@ the Robustness of Embodied Foundation Models
 </h1>
 
 <p align="center">
+  Xueyang Zhou<sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, Guiyao Tie<sup>1</sup>,<br>
+  Junhao Wu<sup>2</sup>, Ziheng Huang<sup>2</sup>, Guowen Zhang<sup>1</sup>, Zhijie Yuan<sup>5</sup>,<br>
+  Di Wu<sup>1</sup>, Duanfeng Chu<sup>3</sup>, Pan Zhou<sup>1,†</sup>, Lichao Sun<sup>4</sup>, Yongchao Chen<sup>2</sup>
+</p>
+
+<p align="center">
+  <sup>1</sup> Huazhong University of Science and Technology &nbsp; <sup>2</sup> Tsinghua University<br>
+  <sup>3</sup> Wuhan University of Technology &nbsp; <sup>4</sup> Lehigh University &nbsp; <sup>5</sup> University of Toronto
+</p>
+
+<p align="center">
+  <sup>*</sup> Equal contribution. &nbsp; <sup>†</sup> Corresponding author.
+</p>
+
+<p align="center">
+  <img src="static/institutions/hust.webp" height="34" alt="Huazhong University of Science and Technology"> &nbsp;
+  <img src="static/institutions/tsinghua.webp" height="34" alt="Tsinghua University"> &nbsp;
+  <img src="static/institutions/whut.webp" height="34" alt="Wuhan University of Technology"> &nbsp;
+  <img src="static/institutions/lehigh.webp" height="34" alt="Lehigh University"> &nbsp;
+  <img src="static/institutions/toronto.webp" height="34" alt="University of Toronto">
+</p>
+
+<p align="center">
   🌐 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/index.html"><strong>Website</strong></a> |
   📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train"><strong>Training Data</strong></a> |
   📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation Resources</strong></a> |
