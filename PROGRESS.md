@@ -81,3 +81,9 @@
 - Set both Overview paragraphs to justified alignment using HTML paragraph attributes; converted inline emphasis and the repository link to HTML for correct Markdown rendering.
 - Confirmed identical visible wording, browser-computed justified alignment, no horizontal overflow and clean Markdown whitespace.
 - Implementation commit: `946ff6ef0fb420af0e8d741d0fccb13ce48d448e`.
+
+## 2026-10-16 — Consistent README alignment
+
+- Applied justified alignment to every body paragraph and both News list entries. Converted inline Markdown to HTML where required for correct rendering inside aligned elements; retained centered header blocks, table layout and code formatting.
+- Compared rendered text, links, image targets and fenced code before/after; all are unchanged. Browser checks confirm all 14 prose paragraphs and 2 news entries use justified alignment, with no unaligned prose remaining.
+- Implementation commit: `1d60899ff62fc48620d8df5bfec7ee7d112b4acd`.
