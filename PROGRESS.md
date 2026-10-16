@@ -42,3 +42,10 @@
 - Used GitHub-compatible HTML column-width hints; measured both tables at 1280/1280 px in a wide README layout, with overflow confined to the table on narrower layouts.
 - Rechecked all 306 scores against the paper data; other README sections are unchanged.
 - Implementation commit: `51a31a7bd7d4bdf27dec1a0a1cda282c7d0201bd`.
+
+## 2026-10-16 — Visual leaderboard redesign
+
+- Replaced plain HTML tables with full-width SVG scoreboards: average bars, category heat cells, highlighted leading ranks and fixed single-line column labels. Both settings retain all 17 policies and all paper scores.
+- Added a dependency-free deterministic renderer at `scripts/render_readme_leaderboards.py`; regenerate after updating the verified source JSON. SVGs use local assets and vector text without external fonts or scripts.
+- Verified all 306 visible scores and both rank orders against the source JSON, inspected both browser-rendered figures at README width, checked text bounds and deterministic regeneration. Other README sections remain unchanged.
+- Implementation commit: `3d350160bbf72eb1516edae7db2917024c4ecae0`.
