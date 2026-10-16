@@ -1,6 +1,6 @@
 # LIBERO-Pro perturbation assets
 
-This directory contains the asset bundle selected for the 22 static and 21
+This directory contains the asset bundle selected for the 22 static and 20
 dynamic non-physical perturbation directions. S22 reuses LIBERO's existing
 `assets/textures/table_light_wood.png` support-surface texture; D20 uses no
 additional mesh asset. The bundle is deliberately
