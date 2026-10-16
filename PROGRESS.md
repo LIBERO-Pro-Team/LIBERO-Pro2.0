@@ -35,3 +35,10 @@
 - Shortened resource table labels and descriptions. Preserved installation and subsequent sections.
 - Verified all 306 detailed values and 102 summary values against the paper source JSON; checked ordering, expanding details and mobile page width.
 - Implementation commit: `8508c30f10a276a3d0da1745e14a02b8661515e4`.
+
+## 2026-10-16 — Full-width leaderboard tables
+
+- Replaced narrow summaries and collapsed details with two complete 11-column tables. Kept rank, policy and headline scores first, followed by all six perturbation categories.
+- Used GitHub-compatible HTML column-width hints; measured both tables at 1280/1280 px in a wide README layout, with overflow confined to the table on narrower layouts.
+- Rechecked all 306 scores against the paper data; other README sections are unchanged.
+- Implementation commit: `51a31a7bd7d4bdf27dec1a0a1cda282c7d0201bd`.
