@@ -76,24 +76,6 @@ The paper samples two evaluation tasks from each LIBERO suite with seed **142**.
 
 After validation, the paper contains **1,313 training instances** and **335 evaluation instances**. Detailed perturbation definitions and visual examples are available in the [project documentation](https://racingemperor.github.io/LIBERO-Pro2.0/docs.html).
 
-### Released Code and Task Catalogue
-
-`main` is the maintained branch for the evaluation code, simulator, and task catalogue. It contains **1,688 task instances**: **40 BASE**, **863 static**, and **785 runtime** instances across **22 static** and **20 runtime** perturbation types. All 1,688 BDDL files are listed, with checksums, in [`assets/task_manifest.json`](assets/task_manifest.json) and stored under [`assets/bddl/libero-pro2.0-1680-v1/`](assets/bddl/libero-pro2.0-1680-v1/). The `1680` directory suffix and `1706` manifest version are legacy identifiers, not current counts.
-
-The released catalogue has 1,317 training and 331 evaluation shifted instances (BASE excluded); the paper reports 1,313/335. See [catalogue scope and case-ID mapping](docs/paper-results.md#evaluation-service-versions) for this remaining difference. The evaluation commands below use the connected server's catalogue.
-
-## Data and Evaluation Resources
-
-| Repository | Use it for | Contents |
-|---|---|---|
-| [LIBERO-Pro2.0-Train on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Training or fine-tuning | Native HDF5 demonstrations for the 32 training tasks, training metadata, review videos and Dataset Viewer previews. |
-| [LIBERO-Pro2.0-Eval on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Deploying the environment and evaluating policies | Evaluation service/client and batch runner, all 1,688 BDDL definitions, 40 initial-state files, simulator assets, dependency lock, installation and verification tools. |
-| [This GitHub repository](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Developing against the maintained source | Evaluation code, simulator source, task catalogue, model adapter interfaces and documentation. |
-
-**To evaluate a pretrained model, start with the [Evaluation Resources](#evaluation-resources) below.** Download `evaluation.zip` (code, BDDL and initial states) and `assets.zip` (objects, scenes and textures), together with the manifests and preparation script. Training HDF5 files and preview videos are not needed. Obtain the policy checkpoint and its official inference dependencies from the model's own release.
-
-The Eval repository includes the full compatible catalogue, while the benchmark split remains by base task: **1,349 training instances** (32 BASE + 1,317 shifted) and **339 held-out instances** (8 BASE + 331 shifted). Use `--split test` for held-out evaluation; the authoritative partition is [`assets/benchmark_split_v1.json`](assets/benchmark_split_v1.json). Training review videos are not held-out evaluation results.
-
 ## 🏆 Leaderboard
 
 Paper results for **17 policies**, ranked by average success rate (%); bold marks the best scores. **Δ = Avg. − Base** is in percentage points, computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded). See the [result definitions and source tables](docs/paper-results.md) or [interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html).
@@ -143,6 +125,26 @@ Paper results for **17 policies**, ranked by average success rate (%); bold mark
 | π₀ | 24.9 | 56.9 | 52.7 | 30.8 | 7.2 | 61.3 | 35.3 | 63.8 | -28.4 |
 
 Cond./Env./Obs./Exec./Lang. = Condition/Environment/Observation/Execution/Language; Base = nominal success. OpenVLA-OFT variants: `_w` omits wrist observations, `_m` jointly fine-tunes on the four original LIBERO suites, and `+` uses mixed fine-tuning on LIBERO-Plus data.
+
+## Data and Evaluation Resources
+
+### Released Code and Task Catalogue
+
+`main` is the maintained branch for the evaluation code, simulator, and task catalogue. It contains **1,688 task instances**: **40 BASE**, **863 static**, and **785 runtime** instances across **22 static** and **20 runtime** perturbation types. All 1,688 BDDL files are listed, with checksums, in [`assets/task_manifest.json`](assets/task_manifest.json) and stored under [`assets/bddl/libero-pro2.0-1680-v1/`](assets/bddl/libero-pro2.0-1680-v1/). The `1680` directory suffix and `1706` manifest version are legacy identifiers, not current counts.
+
+The released catalogue has 1,317 training and 331 evaluation shifted instances (BASE excluded); the paper reports 1,313/335. See [catalogue scope and case-ID mapping](docs/paper-results.md#evaluation-service-versions) for this remaining difference. The evaluation commands below use the connected server's catalogue.
+
+### Resource Repositories
+
+| Repository | Use it for | Contents |
+|---|---|---|
+| [LIBERO-Pro2.0-Train on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train) | Training or fine-tuning | Native HDF5 demonstrations for the 32 training tasks, training metadata, review videos and Dataset Viewer previews. |
+| [LIBERO-Pro2.0-Eval on Hugging Face](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) | Deploying the environment and evaluating policies | Evaluation service/client and batch runner, all 1,688 BDDL definitions, 40 initial-state files, simulator assets, dependency lock, installation and verification tools. |
+| [This GitHub repository](https://github.com/Zxy-MLlab/LIBERO-Pro2.0/tree/main) | Developing against the maintained source | Evaluation code, simulator source, task catalogue, model adapter interfaces and documentation. |
+
+**To evaluate a pretrained model, start with the [Evaluation Resources](#evaluation-resources) below.** Download `evaluation.zip` (code, BDDL and initial states) and `assets.zip` (objects, scenes and textures), together with the manifests and preparation script. Training HDF5 files and preview videos are not needed. Obtain the policy checkpoint and its official inference dependencies from the model's own release.
+
+The Eval repository includes the full compatible catalogue, while the benchmark split remains by base task: **1,349 training instances** (32 BASE + 1,317 shifted) and **339 held-out instances** (8 BASE + 331 shifted). Use `--split test` for held-out evaluation; the authoritative partition is [`assets/benchmark_split_v1.json`](assets/benchmark_split_v1.json). Training review videos are not held-out evaluation results.
 
 ## 🛠️ Installation
 
