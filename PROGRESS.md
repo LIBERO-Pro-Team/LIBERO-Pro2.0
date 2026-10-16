@@ -49,3 +49,9 @@
 - Added a dependency-free deterministic renderer at `scripts/render_readme_leaderboards.py`; regenerate after updating the verified source JSON. SVGs use local assets and vector text without external fonts or scripts.
 - Verified all 306 visible scores and both rank orders against the source JSON, inspected both browser-rendered figures at README width, checked text bounds and deterministic regeneration. Other README sections remain unchanged.
 - Implementation commit: `3d350160bbf72eb1516edae7db2917024c4ecae0`.
+
+## 2026-10-16 — Concise leaderboard notes
+
+- Combined the three footer paragraphs into one continuous paragraph, shortened the link labels and clarified OFT variant descriptions. Detailed scoring scope remains in the linked results guide.
+- Checked Markdown whitespace and confirmed that the figures, scores and other README sections are unchanged.
+- Implementation commit: `9156fe616febcd27739c948e451ee99e5980e087`.
