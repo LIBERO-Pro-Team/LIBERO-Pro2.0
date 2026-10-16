@@ -69,3 +69,9 @@
 - Added the LIBERO-PRO paper to Citation and requested attribution to both works. Verified title, eight-author order, year and arXiv identifier against the official repository and arXiv record; omitted placeholder publisher fields.
 - Checked that only Overview and Citation changed in README and that Markdown fences and whitespace remain valid.
 - Implementation commit: `0b4e82378828cc0ef03ab620793824ca4e17fe0f`.
+
+## 2026-10-16 — Author-provided Overview
+
+- Replaced Overview with the exact two-paragraph text supplied by the author, normalized from escaped Markdown. Retained the supplied 1,646 instance count and demonstration description without independently revising their scope; remaining sections were not changed.
+- Verified exact replacement, unchanged surrounding content and Markdown whitespace.
+- Implementation commit: `e1a4e252db4efc489b630e986832644eefed9dcf`.
