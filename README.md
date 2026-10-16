@@ -61,11 +61,7 @@ Paper results for **17 policies**, ranked by average success. Bars compare avera
 
 [![Runtime leaderboard: all 17 policies and six perturbation categories](static/leaderboards/runtime.svg)](static/leaderboards/runtime.svg)
 
-Δ is taken directly from the paper and computed before rounding. Static Avg. covers 87 valid suite–perturbation entries (LIBERO-Spatial S04 excluded).
-
-**OFT variants:** `_w` omits wrist observations; `_m` jointly fine-tunes on the four original LIBERO suites; `+` uses mixed fine-tuning on LIBERO-Plus data.
-
-[Result definitions and source tables](docs/paper-results.md) · [Scores (JSON)](docs/results/paper-leaderboards.json) · [Interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html)
+Scores follow the paper, with Δ calculated before rounding. **OFT variants:** `_w` excludes wrist images; `_m` uses joint fine-tuning across the four original LIBERO suites; `+` uses mixed fine-tuning on LIBERO-Plus data. [Scoring details](docs/paper-results.md) · [JSON](docs/results/paper-leaderboards.json) · [Interactive leaderboard](https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html)
 
 ## Data and Evaluation Resources
 
