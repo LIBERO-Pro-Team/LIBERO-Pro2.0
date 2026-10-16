@@ -38,7 +38,7 @@ the Robustness of Embodied Foundation Models
 
 ## 🔥 Overview
 
-**LIBERO-Pro2.0** benchmarks the robustness of embodied foundation models in robot manipulation. Built on LIBERO, it tests how policies respond to changes in the initial task conditions and to interventions during execution.
+**LIBERO-Pro2.0** continues the [**LIBERO-PRO**](https://github.com/Zxy-MLlab/LIBERO-PRO) series of robustness benchmarks for embodied foundation models. Building on our earlier work, it extends evaluation on LIBERO to cover both changes in initial task conditions and interventions during execution.
 
 The benchmark covers **22 static perturbation types** and **20 runtime intervention types** across six domains, with **1,648 validated perturbed task instances**. Its 40 base tasks are divided into **32 training tasks** and **8 held-out evaluation tasks**. The paper reports **39,390 training trajectories** and six rounds of human review and correction, covering **19,776 rollouts**.
 
@@ -166,7 +166,7 @@ hf download zhouxueyang/LIBERO-Pro2.0-Train --repo-type dataset \
 
 ## Citation
 
-If you use LIBERO-Pro2.0 in your research, please cite the project and specify the repository revision used in your experiments:
+If you use LIBERO-Pro2.0 in your research, please cite this project and our earlier work, [LIBERO-PRO](https://arxiv.org/abs/2510.03827), and specify the repository revision used in your experiments:
 
 ```bibtex
 @misc{zhou2026liberopro2,
@@ -175,5 +175,13 @@ If you use LIBERO-Pro2.0 in your research, please cite the project and specify t
   year = {2026},
   howpublished = {GitHub repository},
   url = {https://github.com/Zxy-MLlab/LIBERO-Pro2.0}
+}
+
+@article{zhou2025liberopro,
+  title = {LIBERO-PRO: Towards Robust and Fair Evaluation of Vision-Language-Action Models Beyond Memorization},
+  author = {Xueyang Zhou and Yangming Xu and Guiyao Tie and Yongchao Chen and Guowen Zhang and Duanfeng Chu and Pan Zhou and Lichao Sun},
+  journal = {arXiv preprint arXiv:2510.03827},
+  year = {2025},
+  url = {https://arxiv.org/abs/2510.03827}
 }
 ```
