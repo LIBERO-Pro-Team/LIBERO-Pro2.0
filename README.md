@@ -39,7 +39,7 @@ To connect your policy to an evaluation server, install the client in your polic
 </p>
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/Zxy-MLlab/LIBERO-Pro2.0.git
+GIT_LFS_SKIP_SMUDGE=1 git clone https://github.com/LIBERO-Pro-Team/LIBERO-Pro2.0.git
 cd LIBERO-Pro2.0
 python -m pip install -e .
 
@@ -113,7 +113,7 @@ If you use LIBERO-Pro2.0 in your research, please cite this project and our earl
   author = {Xueyang Zhou and Yangming Xu and Qianjiang Li and Guiyao Tie and Junhao Wu and Ziheng Huang and Guowen Zhang and Zhijie Yuan and Di Wu and Duanfeng Chu and Pan Zhou and Lichao Sun and Yongchao Chen},
   year = {2026},
   howpublished = {GitHub repository},
-  url = {https://github.com/Zxy-MLlab/LIBERO-Pro2.0}
+  url = {https://github.com/LIBERO-Pro-Team/LIBERO-Pro2.0}
 }
 
 @article{zhou2025liberopro,
