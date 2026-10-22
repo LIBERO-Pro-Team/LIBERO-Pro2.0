@@ -4,9 +4,9 @@ the Robustness of Embodied Foundation Models
 </h1>
 
 <p align="center">
-  <a href="https://scholar.google.com.hk/citations?user=DmI6FusAAAAJ&amp;hl=zh-CN">Xueyang Zhou</a><sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, Guiyao Tie<sup>1</sup>,<br>
+  <a href="https://scholar.google.com.hk/citations?user=DmI6FusAAAAJ&amp;hl=zh-CN">Xueyang Zhou</a><sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, <a href="https://scholar.google.com/citations?user=BjvGHjoAAAAJ">Guiyao Tie</a><sup>1</sup>,<br>
   Junhao Wu<sup>2</sup>, Ziheng Huang<sup>2</sup>, Guowen Zhang<sup>1</sup>, Zhijie Yuan<sup>5</sup>,<br>
-  Di Wu<sup>1</sup>, Duanfeng Chu<sup>3</sup>, Pan Zhou<sup>1,†</sup>, Lichao Sun<sup>4</sup>, Yongchao Chen<sup>2</sup>
+  Di Wu<sup>1</sup>, <a href="https://scholar.google.com/citations?user=QTR73zwAAAAJ">Duanfeng Chu</a><sup>3</sup>, <a href="https://scholar.google.com/citations?user=cTpFPJgAAAAJ">Pan Zhou</a><sup>1,†</sup>, <a href="https://scholar.google.com/citations?user=WhGUE7AAAAAJ">Lichao Sun</a><sup>4</sup>, <a href="https://scholar.google.com/citations?user=ur8DXV0AAAAJ">Yongchao Chen</a><sup>2</sup>
 </p>
 
 <p align="center">
