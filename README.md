@@ -4,7 +4,7 @@ the Robustness of Embodied Foundation Models
 </h1>
 
 <p align="center">
-  Xueyang Zhou<sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, Guiyao Tie<sup>1</sup>,<br>
+  <a href="https://scholar.google.com.hk/citations?user=DmI6FusAAAAJ&amp;hl=zh-CN">Xueyang Zhou</a><sup>1,*</sup>, Yangming Xu<sup>1,*</sup>, Qianjiang Li<sup>1</sup>, Guiyao Tie<sup>1</sup>,<br>
   Junhao Wu<sup>2</sup>, Ziheng Huang<sup>2</sup>, Guowen Zhang<sup>1</sup>, Zhijie Yuan<sup>5</sup>,<br>
   Di Wu<sup>1</sup>, Duanfeng Chu<sup>3</sup>, Pan Zhou<sup>1,†</sup>, Lichao Sun<sup>4</sup>, Yongchao Chen<sup>2</sup>
 </p>
@@ -27,10 +27,11 @@ the Robustness of Embodied Foundation Models
 </p>
 
 <p align="center">
+  📄 <a href="https://arxiv.org/pdf/2610.24587"><strong>Paper</strong></a> |
   🌐 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/index.html"><strong>Website</strong></a> |
   📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train"><strong>Training Data</strong></a> |
-  📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation Resources</strong></a> |
-  🏆 <a href="#-leaderboard"><strong>Leaderboard</strong></a> |
+  📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation</strong></a> |
+  🏆 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html"><strong>Leaderboard</strong></a> |
   📖 <a href="docs/remote-evaluation-guide.md"><strong>Evaluation Guide</strong></a>
 </p>
 
