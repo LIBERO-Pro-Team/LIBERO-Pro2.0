@@ -109,7 +109,7 @@ class MultiRegionRandomSampler(ObjectPositionSampler):
             rot_angle = np.random.uniform(
                 high=max(self.rotation), low=min(self.rotation)
             )
-        # 支持多轴旋转字典 - 添加对字典形式旋转的支持
+        # Support multi-axis rotations specified as a dictionary.
         # elif isinstance(self.rotation, dict):
         #     from robosuite.utils.transform_utils import quat_multiply
         #     quat = np.array(

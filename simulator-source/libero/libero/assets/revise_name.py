@@ -1,42 +1,42 @@
 import os
 
 def rename_items_recursive(root_path):
-    # 先处理子目录，再处理当前目录的文件，避免路径问题
-    # 首先收集所有子目录
+    # Process subdirectories before files in the current directory to avoid path issues.
+    # Collect all subdirectories first.
     subdirectories = []
     for item in os.listdir(root_path):
         item_path = os.path.join(root_path, item)
         if os.path.isdir(item_path):
             subdirectories.append(item)
     
-    # 递归处理子目录
+    # Process subdirectories recursively.
     for subdir in subdirectories:
         subdir_path = os.path.join(root_path, subdir)
         rename_items_recursive(subdir_path)
     
-    # 处理当前目录中的所有项目（文件和文件夹）
+    # Process all items (files and directories) in the current directory.
     for item in os.listdir(root_path):
         old_path = os.path.join(root_path, item)
         
-        # 检查名称中是否包含"wooden"
+        # Check whether the name contains "wine".
         if "wine" in item:
-            # 替换名称中的"wooden"为"yellow"
+            # Replace "wine" with "brown" in the name.
             new_name = item.replace("wine", "brown")
             new_path = os.path.join(root_path, new_name)
             
-            # 避免重命名到相同的名称
+            # Avoid renaming an item to the same name.
             if old_path != new_path:
                 os.rename(old_path, new_path)
-                print(f"已重命名: {old_path} -> {new_path}")
+                print(f"Renamed: {old_path} -> {new_path}")
 
 if __name__ == "__main__":
-    # 指定要处理的根文件夹路径
+    # Set the root directory to process.
     root_folder = "./turbosquid_objects/brown_rack/"
     
-    # 检查根文件夹是否存在
+    # Check whether the root directory exists.
     if not os.path.exists(root_folder):
-        print(f"错误：根文件夹 '{root_folder}' 不存在")
+        print(f"Error: root directory '{root_folder}' does not exist")
     else:
-        # 调用递归重命名函数
+        # Call the recursive rename function.
         rename_items_recursive(root_folder)
-        print("所有重命名操作完成")
+        print("All rename operations completed")

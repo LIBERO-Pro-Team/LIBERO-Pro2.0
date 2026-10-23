@@ -139,12 +139,12 @@ class RedSticker(CustomObjects):
             obj_name=obj_name,
         )
 
-        # 设置圆柱体100%直立状态
+        # Keep the cylinder fully upright.
         self.rotation = {
-            "x": (0.0, 0.0),  # x轴不旋转，保持直立
-            "y": (0.0, 0.0),  # y轴不旋转，保持直立
-            "z": (0.0, 0.0),  # z轴也不旋转，完全固定朝向
+            "x": (0.0, 0.0),  # No x-axis rotation; keep upright.
+            "y": (0.0, 0.0),  # No y-axis rotation; keep upright.
+            "z": (0.0, 0.0),  # No z-axis rotation; keep the orientation fixed.
         }
-        self.rotation_axis = "z"  # 设置主旋转轴为z轴
+        self.rotation_axis = "z"  # Set z as the main rotation axis.
 
-        # 确保100%直立，不设置任何强制旋转的init_quat
+        # Keep fully upright without an init_quat that forces rotation.

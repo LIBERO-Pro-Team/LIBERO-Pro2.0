@@ -1,8 +1,8 @@
-# EGL / MuJoCo 无头渲染指南
+# EGL / MuJoCo Headless Rendering Guide
 
-## 必须的运行变量
+## Required runtime variables
 
-`configure.sh` 会把这些变量写入 `server.env`；手动启动时也必须保持一致：
+`configure.sh` writes these variables to `server.env`; keep them consistent when starting manually:
 
 ```bash
 export MUJOCO_GL=egl
@@ -15,11 +15,13 @@ export CUDA_VISIBLE_DEVICES=0
 export MUJOCO_EGL_DEVICE_ID=0
 ```
 
-`CUDA_VISIBLE_DEVICES` 和 `MUJOCO_EGL_DEVICE_ID` 是可选的设备选择项；多 GPU 主机应为每个独立服务实例选择明确的设备。不要在同一实例中混用 `MUJOCO_GL=egl` 与 `PYOPENGL_PLATFORM=osmesa`。
+`CUDA_VISIBLE_DEVICES` and `MUJOCO_EGL_DEVICE_ID` are optional device selectors. On a multi-GPU host,
+select an explicit device for each independent service instance. Do not combine `MUJOCO_GL=egl`
+with `PYOPENGL_PLATFORM=osmesa` in the same instance.
 
-## 主机检查
+## Host checks
 
-普通用户先执行：
+As a regular user, first run:
 
 ```bash
 nvidia-smi
@@ -27,17 +29,25 @@ ldconfig -p | grep -E 'libEGL_nvidia|libGLX_nvidia|libOpenGL'
 /data/user/envs/libero-pro2/bin/python -c 'import mujoco; print(mujoco.__version__)'
 ```
 
-如果 `nvidia-smi` 不可用，或 `libEGL_nvidia.so` 不在动态链接器路径中，先让管理员修复 NVIDIA 驱动；不要通过安装另一个模型包或修改 BDDL 绕过该问题。驱动库通常由 NVIDIA 驱动提供，Conda 不应复制宿主专有驱动。
+If `nvidia-smi` is unavailable or `libEGL_nvidia.so` is absent from the dynamic linker path, ask an
+administrator to repair the NVIDIA driver first. Do not work around this by installing another
+model package or changing BDDL. Driver libraries normally come from NVIDIA drivers; Conda should
+not copy the host's proprietary drivers.
 
-## Conda 侧库
+## Conda libraries
 
-`environment.yml` 提供编译和兼容库：`cmake`、`make`、C/C++ compiler、`pkg-config`、`libegl`、`libgl`、`libglvnd`、`libglib`、`mesalib`、`openmpi`、`xorg-libx11` 和 `xorg-libxext`。这些包解决用户环境的 ABI 依赖；NVIDIA 专有 EGL 实现仍来自宿主驱动。
+`environment.yml` provides build and compatibility libraries: `cmake`, `make`, C/C++ compilers,
+`pkg-config`, `libegl`, `libgl`, `libglvnd`, `libglib`, `mesalib`, `openmpi`, `xorg-libx11`, and
+`xorg-libxext`. These packages satisfy user-environment ABI dependencies; the proprietary NVIDIA
+EGL implementation still comes from the host driver.
 
-## Docker v1.0.0 参考系统版本
+## Docker v1.0.0 reference system versions
 
-下表是锁定 Python 依赖时所依据的 Ubuntu 20.04 Docker 镜像系统包版本。它是可审计的 ABI 基线，不表示 Ubuntu 22.04 必须安装完全相同的 apt 字符串；在不同 Ubuntu 小版本上应安装发行版提供的兼容版本。
+These system package versions come from the Ubuntu 20.04 Docker image used to pin Python
+dependencies. They provide an auditable ABI baseline, not a requirement to install identical apt
+version strings on Ubuntu 22.04. Use compatible distribution-provided versions on other Ubuntu releases.
 
-| 组件 | 参考版本 |
+| Component | Reference version |
 | --- | --- |
 | `libegl1` | `1.3.2-1~ubuntu0.20.04.2` |
 | `libgl1` | `1.3.2-1~ubuntu0.20.04.2` |
@@ -49,9 +59,9 @@ ldconfig -p | grep -E 'libEGL_nvidia|libGLX_nvidia|libOpenGL'
 | `libx11-6` | `2:1.6.9-2ubuntu1.6` |
 | `libxext6` | `2:1.3.4-0ubuntu1` |
 
-## 常见故障边界
+## Troubleshooting
 
-- `EGL_NOT_INITIALIZED`：先检查驱动、`libEGL_nvidia.so` 和 `CUDA_VISIBLE_DEVICES`，再检查 `MUJOCO_GL` 是否为 `egl`。
-- 只能在 OSMesa 下运行：这可以用于 CPU 代码烟测，但不能宣称完成 GPU/EGL 评测。
-- 多个普通用户服务使用同一 GPU：为每个服务设置独立端口、runtime 目录、Conda 前缀和 `MUJOCO_EGL_DEVICE_ID`，不要共享 `scheduler.sqlite3`。
-- 服务器没有写系统目录权限不是阻塞项：只要用户能写自己的 Conda 前缀、bundle、runtime 和 logs，脚本即可运行。
+- `EGL_NOT_INITIALIZED`: check drivers, `libEGL_nvidia.so`, and `CUDA_VISIBLE_DEVICES`, then confirm `MUJOCO_GL` is `egl`.
+- OSMesa-only operation supports CPU code smoke tests but does not establish successful GPU/EGL evaluation.
+- When multiple user services share one GPU, give each service a separate port, runtime directory, Conda prefix, and `MUJOCO_EGL_DEVICE_ID`. Do not share `scheduler.sqlite3`.
+- Missing write access to system directories is not a blocker if the user can write to their Conda prefix, bundle, runtime, and logs.

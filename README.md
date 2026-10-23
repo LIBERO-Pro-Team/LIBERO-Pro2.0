@@ -32,7 +32,8 @@ the Robustness of Embodied Foundation Models
   📁 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Train"><strong>Training Data</strong></a> |
   📦 <a href="https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval"><strong>Evaluation</strong></a> |
   🏆 <a href="https://racingemperor.github.io/LIBERO-Pro2.0/leaderboard.html"><strong>Leaderboard</strong></a> |
-  📖 <a href="docs/remote-evaluation-guide.md"><strong>Evaluation Guide</strong></a>
+  📖 <a href="docs/remote-evaluation-guide.md"><strong>Evaluation Guide</strong></a> |
+  📋 <a href="PERTURBATIONS.md"><strong>Perturbation Reference</strong></a>
 </p>
 
 ![LIBERO-Pro2.0 benchmark overview](static/images/overview.png)

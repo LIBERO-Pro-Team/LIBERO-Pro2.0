@@ -1,26 +1,29 @@
-# 用户模型 Adapter 接入契约
+# Model Adapter Contract
 
-## 结论
+## Overview
 
-LIBERO-Pro2.0 远程评测平台不固定模型。xVLA 和 Pi0 是验证过的客户端参考 adapter，
-不是服务端依赖、默认模型或允许列表。用户可使用任意模型，只需在用户端实现 `AgentAdapter`。
+The LIBERO-Pro2.0 remote evaluation platform is model-independent. xVLA and Pi0 are validated
+client-side reference adapters, not server dependencies, default models, or an allowlist.
+Any model can be used by implementing an `AgentAdapter` on the client.
 
 ```text
-任意模型/策略
-  -> 用户 AgentAdapter
-  -> 标准 observation / action
+Any model/policy
+  -> User AgentAdapter
+  -> Standard observation / action
   -> RemoteRunClient
-  -> 远程 LIBERO 环境
+  -> Remote LIBERO environment
 ```
 
-服务端不接收 checkpoint，不导入模型框架，也不执行模型预处理。模型名称和版本只用于用户侧记录，
-不能改变服务端任务、调度、成功判定或重试规则。
+The server does not receive checkpoints, import model frameworks, or preprocess model inputs.
+Model names and versions are client-side metadata; they cannot change server tasks, scheduling,
+success criteria, or retry rules.
 
-`libero_remote.runner` 公共入口只导出模型无关的 adapter 契约和运行函数。参考实现必须从
-`libero_remote.runner.xvla` 或 `libero_remote.runner.pi0` 显式导入；接入其他模型不需要安装、
-导入或继承这两个参考实现。
+The public `libero_remote.runner` entry point exports only the model-independent adapter contract
+and runner functions. Reference implementations must be imported explicitly from
+`libero_remote.runner.xvla` or `libero_remote.runner.pi0`. Other models do not need to install,
+import, or inherit either reference implementation.
 
-## 最小接口
+## Minimal interface
 
 ```python
 from libero_remote.runner import AgentContext
@@ -28,51 +31,53 @@ from libero_remote.runner import AgentContext
 
 class AgentAdapter:
     def reset(self, context: AgentContext) -> None:
-        """开始独立 attempt，清空历史状态并固定模型侧随机性。"""
+        """Start an independent attempt, clear history, and fix model-side randomness."""
 
     def act(self, observation):
-        """将平台标准 observation 映射为符合 action_schema 的 action。"""
+        """Map a standard platform observation to an action matching action_schema."""
 
     def close(self) -> None:
-        """释放模型侧资源。"""
+        """Release model-side resources."""
 ```
 
-这是结构化接口，不要求继承基类。adapter 可以封装 PyTorch、JAX、TensorFlow、ONNX、
-远端私有推理 API、传统规划器或人工控制逻辑。
+This is a structural interface; no base-class inheritance is required. An adapter can wrap PyTorch,
+JAX, TensorFlow, ONNX, a private remote inference API, a traditional planner, or manual control logic.
 
-## Adapter 负责的语义
+## Adapter responsibilities
 
-- 根据模型训练约定处理相机方向、裁剪、resize、颜色空间和归一化。
-- 将标准机器人状态映射为模型需要的 proprio 表示和坐标系。
-- 使用 `context.language_instruction` 构造 prompt。
-- 维护或清空 action chunk、历史帧、缓存和循环状态。
-- 将模型输出反归一化为服务端声明的 action schema。
-- 固定 checkpoint、processor、模型 RNG 和确定性算法设置。
-- 检查 action shape、数值范围和 NaN/Inf，异常时显式失败。
+- Apply the camera orientation, crop, resize, color-space, and normalization conventions used in training.
+- Map standard robot state to the model's proprioceptive representation and coordinate frame.
+- Construct prompts from `context.language_instruction`.
+- Maintain or clear action chunks, frame history, caches, and recurrent state.
+- Unnormalize model outputs into the server's declared action schema.
+- Fix the checkpoint, processor, model RNG, and deterministic algorithm settings.
+- Validate action shape, numeric range, and NaN/Inf values; fail explicitly on invalid output.
 
-服务端负责固定 BDDL、资产、init state、环境 seed、扰动计划、MuJoCo 状态、任务成功谓词和
-环境侧结果。服务端不应包含任何具体模型的图像翻转、tokenizer、proprio 或 action 转换。
+The server fixes BDDL, assets, initial state, environment seed, perturbation plan, MuJoCo state,
+task success predicates, and environment-side results. It must not contain model-specific image
+flips, tokenizers, proprioceptive mappings, or action conversions.
 
 ## AgentContext
 
-调度 runner 在每个 attempt 开始时传入：
+The scheduled runner supplies the following at the start of each attempt:
 
-| 字段 | 作用 |
+| Field | Purpose |
 | --- | --- |
-| `run_id/job_id/job_index` | 稳定定位任务和结果 |
-| `episode_spec` | 服务端锁定的 suite、task、init state、seed、相机和控制模式 |
-| `reproducibility` | job、runtime、MuJoCo 初态、首帧 observation 和扰动 plan 的五个指纹 |
-| `language_instruction` | 当前任务语言指令 |
-| `action_schema` | action 形状、范围、控制模式、坐标系与旋转表示 |
-| `observation_schema_version` | 标准 observation 的版本 |
+| `run_id/job_id/job_index` | Stable task and result identifiers |
+| `episode_spec` | Server-locked suite, task, initial state, seed, cameras, and control mode |
+| `reproducibility` | Five fingerprints for the job, runtime, initial MuJoCo state, first observation, and perturbation plan |
+| `language_instruction` | Current task instruction |
+| `action_schema` | Action shape, range, control mode, coordinate frame, and rotation representation |
+| `observation_schema_version` | Standard observation schema version |
 
-失败重试会创建新 attempt 和 lease generation，但 `episode_spec` 与五个复现指纹必须不变：
-`job_fingerprint`、`runtime_fingerprint`、`initial_state_fingerprint`、
-`initial_observation_fingerprint` 和 `perturbation_plan_fingerprint`。
-adapter 的 `reset()` 必须使用其中的固定 seed 清空模型状态。若模型生成还包含随机性，用户应从该 seed
-稳定派生 policy seed，不能使用领取时间、进程 ID 或 attempt 编号。
+A retry creates a new attempt and lease generation, but `episode_spec` and these five reproducibility
+fingerprints must remain unchanged:
+`job_fingerprint`, `runtime_fingerprint`, `initial_state_fingerprint`,
+`initial_observation_fingerprint`, and `perturbation_plan_fingerprint`.
+The adapter's `reset()` must clear model state using the fixed seed in the spec. If generation is
+stochastic, derive a stable policy seed from that seed, not from claim time, process ID, or attempt number.
 
-## 最小示例
+## Minimal example
 
 ```python
 import numpy as np
@@ -123,25 +128,26 @@ with RemoteRunClient(
     )
 ```
 
-`max_steps` 默认由服务器 manifest 按 suite 解析为 PI0 官方上限；提交记录保存解析后的
-有效整数。需要偏离官方协议时可以在 episode 中显式覆盖。
+By default, the server manifest resolves `max_steps` to the official PI0 limit for the suite;
+the submission record stores the resolved integer. Explicitly override it in the episode only
+when intentionally departing from the official protocol.
 
-## 并发与隔离
+## Concurrency and isolation
 
-- 每个账户使用独立 API key，客户端提交的 `owner_id` 不能覆盖认证身份。
-- 每个 runner 进程只持有自己的 adapter 实例；不同账户不得共享有状态模型对象。
-- 同一账户可以启动多个 runner，但每个 `runner_id` 必须唯一，并受单账户 Slot 配额限制。
-- heartbeat 在独立线程运行，模型推理阻塞不会让有效 lease 静默过期。
-- 陈旧 `lease_id + lease_generation` 无法 step、heartbeat 或提交结果。
-- 服务端仅记录环境侧权威结果；用户侧模型日志是补充证据，不能覆盖 success。
+- Each account uses a separate API key; a client-supplied `owner_id` cannot override authenticated identity.
+- Each runner process owns its adapter instance; accounts must not share stateful model objects.
+- An account can start multiple runners with unique `runner_id` values, subject to its slot quota.
+- Heartbeats run in a separate thread so blocking model inference does not silently expire a valid lease.
+- A stale `lease_id + lease_generation` cannot step, send heartbeats, or submit results.
+- The server records authoritative environment results; client model logs are supplementary and cannot override success.
 
-## Adapter 验收
+## Adapter acceptance checks
 
-接入新模型前至少验证：
+Before integrating a model, verify at least the following:
 
-1. 固定 observation 黄金样本经 adapter 后的模型输入与该模型本地官方 pipeline 一致。
-2. action 经后处理后与服务端 `action_schema` 的 shape、范围、控制模式和坐标系一致。
-3. 相同 episode spec 和模型 seed 重复两次时，首个 action 以及完整 action hash 链一致。
-4. `reset()` 确实清空 action queue、历史帧和模型缓存。
-5. adapter 异常、超时和进程退出后 lease 被回收，不影响其他账户。
-6. adapter 只依赖轻量客户端协议；服务端即使未安装该模型框架也能正常启动。
+1. Given a fixed golden observation, the adapter produces model inputs matching the model's official local pipeline.
+2. Postprocessed actions match the server `action_schema` in shape, range, control mode, and coordinate frame.
+3. Repeating an episode spec and model seed twice produces the same first action and full action hash chain.
+4. `reset()` clears the action queue, frame history, and model caches.
+5. Adapter exceptions, timeouts, and process exits release the lease without affecting other accounts.
+6. The adapter depends only on the lightweight client protocol; the server starts without the model framework installed.

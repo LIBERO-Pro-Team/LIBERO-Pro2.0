@@ -1,33 +1,33 @@
-# 远程环境并发调度
+# Remote Environment Scheduling
 
-## 结构
+## Architecture
 
 ```text
-任意用户模型 -> AgentAdapter -> RemoteRunClient
+Any user model -> AgentAdapter -> RemoteRunClient
               -> RunScheduler -> SessionManager -> EnvWorker -> LIBERO/MuJoCo/EGL
 ```
 
-- `SessionManager` 只负责一个环境执行的顺序、幂等、校验和资源释放。
-- `RunScheduler` 负责 episode 队列、用户公平性、Slot 分配、lease、心跳和恢复。
-- 模型、checkpoint、显存和私有推理代码始终在用户端。
-- SQLite 只保存 run、episode spec、attempt 和服务器结果，不保存 observation、模型或权重。
-- 平台不要求或识别 xVLA、Pi0 等具体模型；仓库中的模型 adapter 仅是参考实现。
+- `SessionManager` handles execution order, idempotency, validation, and resource release for one environment.
+- `RunScheduler` manages episode queues, fairness across users, slot allocation, leases, heartbeats, and recovery.
+- Models, checkpoints, model GPU memory, and private inference code remain on the client.
+- SQLite stores runs, episode specs, attempts, and server results, not observations, models, or weights.
+- The platform does not require or identify specific models such as xVLA or Pi0; the included model adapters are reference implementations.
 
-## 用户端 Interface
+## Client interface
 
-平台固定声明：
+The platform defines this interface:
 
 ```python
 class AgentAdapter:
-    def reset(self, context): ...  # 每个 attempt 清空模型状态并固定模型侧 RNG
+    def reset(self, context): ...  # Clear model state and fix model-side RNG for each attempt.
     def act(self, observation): ...
     def close(self): ...
 ```
 
-用户在 Adapter 内处理图像翻转、resize、prompt、proprio 映射、action
-反归一化和限幅。`context.episode_spec` 是服务端锁定的任务配置，
-`context.reproducibility` 包含 job、runtime、MuJoCo 初态、首帧 observation 和扰动 plan
-五个指纹。服务器不识别模型类型，也不加载模型依赖。
+The user's adapter handles image flips, resizing, prompts, proprioceptive mappings, action
+unnormalization, and clipping. `context.episode_spec` is the server-locked task configuration.
+`context.reproducibility` contains five fingerprints for the job, runtime, initial MuJoCo state,
+first observation, and perturbation plan. The server does not identify model types or load model dependencies.
 
 ```python
 import numpy as np
@@ -76,50 +76,52 @@ with RemoteRunClient("http://SERVER:8000", api_key="ACCOUNT_API_KEY") as client:
     episode_records = client.get_episodes(run["run_id"])
 ```
 
-省略 `max_steps` 时，调度器会在 job 入库前读取 manifest 并固化所选任务的 PI0 官方
-suite 上限（Spatial 220、Object 280、Goal 300、LIBERO-10 520）。调用方只有在需要
-有意覆盖评测协议时才应显式传入 `max_steps`。
+When `max_steps` is omitted, the scheduler reads the manifest before storing the job and fixes
+the selected task's official PI0 suite limit: Spatial 220, Object 280, Goal 300, or LIBERO-10 520.
+Pass `max_steps` explicitly only when intentionally overriding the evaluation protocol.
 
-`AgentAdapter` 是结构化协议：只要对象实现上述三个方法即可，不要求继承平台类。
-用户可以连接任意 VLA、强化学习策略、规划器或自定义控制器。adapter 返回的 action 必须符合
-服务端 `action_schema`，否则本次 attempt 明确失败，不会静默转换成其他控制语义。
+`AgentAdapter` is a structural protocol: implementing the three methods is sufficient, with no
+platform base-class inheritance required. Users can connect any VLA, reinforcement learning policy,
+planner, or custom controller. Returned actions must match the server's `action_schema`;
+otherwise the attempt fails explicitly instead of silently changing control semantics.
 
-同一用户可启动多个进程，每个进程使用不同 `runner_id`。每个 runner 只执行自己
-run 中的任务，不会执行其他用户的 episode。
+A user can start multiple processes with distinct `runner_id` values. Each runner executes
+only jobs in its own run, never another user's episodes.
 
-## 调度行为
+## Scheduling behavior
 
-- 当前筛选后的 1701 个有效任务组合被保存为 1701 个独立 episode job；调度器必须直接读取版本化 manifest，不得自行重构 suite、task 和扰动 case 的笛卡尔积。
-- claim 成功时，调度器原子创建一个新 session 和独立 EnvWorker。
-- 用户间按活跃 claim intent 轮询，用户内部按 episode FIFO。
-- `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` 限制单用户占用。
-- 模型推理期间，通用 runner 在线程中独立发送 heartbeat。
-- heartbeat 超时或基础设施故障时，未完成 episode 以同一不可变 job spec 从 reset 重试；模型正常失败不自动重试。
-- 第一次 reset 后持久化规范化扰动 plan；重试时 MuJoCo 初态、首帧 observation 或 plan 任一指纹变化都拒绝执行。
-- completed episode 和服务器结果写入 SQLite，重启后不会重复执行。
-- `complete` 不接受客户端 success；成功状态只从服务器最后一次 committed step 读取。
+- The filtered 1701 valid task combinations are stored as 1701 independent episode jobs. The scheduler must read the versioned manifest directly rather than reconstructing a Cartesian product of suites, tasks, and perturbation cases.
+- A successful claim atomically creates a new session and a separate EnvWorker.
+- Active claim intents are served round-robin across users, with episode FIFO within each user.
+- `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` limits each user's occupancy.
+- The generic runner sends heartbeats in a separate thread during model inference.
+- On heartbeat timeout or infrastructure failure, an unfinished episode retries from reset using the same immutable job spec. Normal policy failures do not retry automatically.
+- The normalized perturbation plan is persisted after the first reset. A retry is rejected if any fingerprint of the initial MuJoCo state, first observation, or plan changes.
+- Completed episodes and server results are written to SQLite and are not executed again after a restart.
+- `complete` does not accept client-reported success; success is read only from the server's last committed step.
 
-## 主要配置
+## Main configuration
 
-| 环境变量 | 默认值 | 作用 |
+| Environment variable | Default | Purpose |
 | --- | ---: | --- |
-| `LIBERO_REMOTE_MAX_SESSIONS` | `1` | 服务器环境 Slot 总数 |
-| `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` | `1` | 单用户活跃 Slot 上限 |
-| `LIBERO_REMOTE_SCHEDULER_QUEUE_CAPACITY` | `4096` | 未完成 episode 总上限 |
-| `LIBERO_REMOTE_MAX_ATTEMPTS` | `3` | 基础设施类失败的最大 attempt 数 |
-| `LIBERO_REMOTE_HEARTBEAT_INTERVAL_SECONDS` | `15` | runner 心跳间隔 |
-| `LIBERO_REMOTE_LEASE_GRACE_PERIOD_SECONDS` | `60` | lease 失联回收时间 |
-| `LIBERO_REMOTE_CLAIM_INTENT_TTL_SECONDS` | `30` | 等待 runner 的活跃时间 |
-| `LIBERO_REMOTE_SCHEDULER_DB_PATH` | `runtime/scheduler.sqlite3` | 调度状态数据库 |
-| `LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS` | `false` | 旧 session 接口兼容开关 |
+| `LIBERO_REMOTE_MAX_SESSIONS` | `1` | Total server environment slots |
+| `LIBERO_REMOTE_MAX_ACTIVE_SESSIONS_PER_OWNER` | `1` | Maximum active slots per user |
+| `LIBERO_REMOTE_SCHEDULER_QUEUE_CAPACITY` | `4096` | Maximum unfinished episodes |
+| `LIBERO_REMOTE_MAX_ATTEMPTS` | `3` | Maximum attempts for infrastructure failures |
+| `LIBERO_REMOTE_HEARTBEAT_INTERVAL_SECONDS` | `15` | Runner heartbeat interval |
+| `LIBERO_REMOTE_LEASE_GRACE_PERIOD_SECONDS` | `60` | Lease reclamation delay after disconnection |
+| `LIBERO_REMOTE_CLAIM_INTENT_TTL_SECONDS` | `30` | Activity window for a waiting runner |
+| `LIBERO_REMOTE_SCHEDULER_DB_PATH` | `runtime/scheduler.sqlite3` | Scheduling state database |
+| `LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS` | `false` | Compatibility switch for the legacy session interface |
 
-部署迁移完成后将 `LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS=false`，防止客户端绕过公平队列。
-Docker Compose 已将 `runtime/` 挂载到容器内，重建容器不会丢失 run 进度。
+After deployment migration, set `LIBERO_REMOTE_ALLOW_DIRECT_SESSIONS=false` to prevent clients
+from bypassing the fair queue. Docker Compose mounts `runtime/` into the container so rebuilding
+the container preserves run progress.
 
-## 运维约束
+## Operational constraints
 
-- API 保持单进程；当前 session registry 在进程内，不能启动多个 Uvicorn worker。
-- 正式部署必须启用 API key 鉴权；账户身份只由服务端从 key 哈希映射得出。
-- 不同账户不能读取、推进、续租、完成或关闭彼此的 Run、Session 和 Lease。
-- 真实容量必须依次压测 `1/2/4/8` 个 EGL 环境，根据 CPU、内存、显存、网络和延迟确定。
-- `/v1/health` 返回 session 容量、队列占用、活跃 lease、等待 runner 和单用户配额。
+- Keep the API single-process; the session registry is process-local and cannot support multiple Uvicorn workers.
+- Production deployments must enable API key authentication; only the server maps key hashes to account identities.
+- Accounts cannot read, advance, renew, complete, or close one another's Runs, Sessions, or Leases.
+- Determine actual capacity by load-testing `1/2/4/8` EGL environments in sequence, considering CPU, RAM, GPU memory, network, and latency.
+- `/v1/health` reports session capacity, queue occupancy, active leases, waiting runners, and per-user quotas.

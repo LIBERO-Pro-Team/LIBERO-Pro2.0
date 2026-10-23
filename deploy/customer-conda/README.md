@@ -1,33 +1,44 @@
-# LIBERO-PRO v1.0.0：普通 Conda 部署
+# LIBERO-PRO v1.0.0: Conda Deployment
 
-这个目录是 Docker 交付之外的本地 Linux 运行方式。服务进程和模型客户端都由普通用户启动；日常运行不需要 root、sudo 或 Docker。NVIDIA 驱动、宿主机 EGL 驱动库和 Conda 本身属于主机前置条件，驱动首次安装可能需要管理员完成。
+This directory provides a local Linux runtime as an alternative to Docker deployment. Regular users
+start both the service and model client; routine operation requires no root, sudo, or Docker.
+NVIDIA drivers, host EGL driver libraries, and Conda are host prerequisites. Initial driver
+installation may require an administrator.
 
-完整安装包从 [LIBERO-Pro2.0-Eval](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval) 下载。
-按根目录 README 运行 `scripts/prepare_evaluation.py` 校验、解压 `evaluation.zip` 与 `assets.zip`，
-再进入生成的 `LIBERO-Pro-evaluation/` 目录执行下列命令。发布包含 1688 项任务
-（40 BASE、863 静态、785 动态）；准确源码提交以包内 `SOURCE_BASELINE.json` 为准。
-当前目录保留部署脚本源文件；直接在此目录运行不具备安装包的两棵源码布局。
+Download the full installation package from
+[LIBERO-Pro2.0-Eval](https://huggingface.co/datasets/zhouxueyang/LIBERO-Pro2.0-Eval).
+Follow the root README to verify and extract `evaluation.zip` and `assets.zip` with
+`scripts/prepare_evaluation.py`, then enter the generated `LIBERO-Pro-evaluation/` directory
+and run the commands below. The release contains 1688 task instances: 40 BASE, 863 static, and
+785 dynamic. See the package's `SOURCE_BASELINE.json` for the exact source revision.
+This directory contains deployment script sources; it does not itself provide the package's
+two-source-tree layout.
 
-## 固定基线
+## Pinned baseline
 
-本包的 Python 依赖来自已验收的 Docker `v1.0.0` 运行环境，详见 `requirements-lock.txt`：Python `3.8.10`、Torch `1.11.0+cpu`、MuJoCo `3.2.3`、robosuite `1.4.0`、FastAPI `0.103.2`、Uvicorn `0.23.2` 等均为精确版本。服务及模拟器代码来自本次发布快照：
+Python dependencies are pinned to the validated Docker `v1.0.0` runtime; see `requirements-lock.txt`.
+Exact versions include Python `3.8.10`, Torch `1.11.0+cpu`, MuJoCo `3.2.3`, robosuite `1.4.0`,
+FastAPI `0.103.2`, and Uvicorn `0.23.2`. Service and simulator code come from the release snapshot:
 
-- 服务：包内 `SOURCE_BASELINE.json` 的 `service_commit`。
-- 模拟器：同一仓库提交的 `simulator-source/` 子目录，详见 `simulator_commit`、`simulator_subdirectory`；上游来源为 `c02ee2c8255db1c36664fad978197c47e495f178`，包含后续运行时及资产修复。
-- Docker 参考镜像摘要（仅用于对照，不是 Conda 运行时镜像）：`sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933`
+- Service: `service_commit` in the package's `SOURCE_BASELINE.json`.
+- Simulator: the `simulator-source/` subdirectory at the same repository revision; see `simulator_commit` and `simulator_subdirectory`. The upstream revision is `c02ee2c8255db1c36664fad978197c47e495f178`, with subsequent runtime and asset fixes included.
+- Reference Docker image digest (for comparison only, not a Conda runtime image): `sha256:969cdf6bc1a3a9f50ce5529bfd7aab6e746d53f9b3d03333bbe793636ba4f933`
 
-`SOURCE_BASELINE.json` 和下载仓库的逐文件 manifest 用于核对；请成套使用包内 `service-source/`、`simulator-source/` 和任务清单。此包包含完整源码与环境资产，安装 Python/Conda 依赖仍需访问配置的软件源。
+Use `SOURCE_BASELINE.json` and the download repository's per-file manifests for verification.
+Keep the packaged `service-source/`, `simulator-source/`, and task manifests together. The package
+includes full source and environment assets; Python/Conda dependency installation still requires
+access to the configured package repositories.
 
-## 主机条件
+## Host requirements
 
-- Ubuntu 20.04/22.04 x86_64，普通用户可写目标 Conda 前缀和本包目录。
-- Conda 或 Miniconda/Miniforge，并能创建 Python 3.8 环境。
-- NVIDIA 驱动可由当前用户执行 `nvidia-smi`。驱动必须提供 `libEGL_nvidia.so`；不要用 CPU OSMesa 结果替代 GPU/EGL 评测。
-- 运行时不需要 Docker、Docker Compose、NVIDIA Container Toolkit 或 root 权限。
+- Ubuntu 20.04/22.04 x86_64, with user write access to the target Conda prefix and package directory.
+- Conda or Miniconda/Miniforge capable of creating a Python 3.8 environment.
+- NVIDIA drivers allowing the current user to run `nvidia-smi`. Drivers must provide `libEGL_nvidia.so`; CPU OSMesa results cannot substitute for GPU/EGL evaluation.
+- No Docker, Docker Compose, NVIDIA Container Toolkit, or root access is required at runtime.
 
-## 安装
+## Installation
 
-从发布包解压后，在本目录执行：
+After extracting the release package, run from its deployment directory:
 
 ```bash
 conda --version
@@ -35,11 +46,14 @@ conda create -p /data/user/envs/libero-pro2 python=3.8.10
 bash install.sh /data/user/envs/libero-pro2
 ```
 
-`install.sh` 会使用 `environment.yml` 同步 Conda 的编译工具和 EGL 运行库，再使用 `requirements-lock.txt` 安装精确 Python 依赖，最后以 editable 方式安装两棵固定源码。也可以省略参数，默认使用 `$HOME/.conda/envs/libero-pro2`。安装脚本不会调用 sudo 或 Docker。
+`install.sh` synchronizes Conda build tools and EGL libraries from `environment.yml`, installs exact
+Python dependencies from `requirements-lock.txt`, then installs both pinned source trees in editable
+mode. Omit the argument to use `$HOME/.conda/envs/libero-pro2`. The script does not invoke sudo or Docker.
 
-## 配置、启动与检查
+## Configure, start, and check
 
-首次配置会随机生成账户 key。服务端只保存 key 的 SHA-256，客户端明文 key 写入 `client.env`；两份文件均为 `0600`，不要提交或发送它们。
+Initial configuration generates a random account key. The server stores only its SHA-256 hash;
+the plaintext client key is written to `client.env`. Both files use mode `0600`; do not commit or share them.
 
 ```bash
 bash configure.sh /data/user/envs/libero-pro2
@@ -52,14 +66,14 @@ set +a
 /data/user/envs/libero-pro2/bin/python smoke_test.py
 ```
 
-停止服务：
+Stop the service:
 
 ```bash
 bash stop.sh
 bash status.sh
 ```
 
-`configure.sh` 默认只监听 `127.0.0.1:8000`。同机模型直接读取客户端配置：
+`configure.sh` binds to `127.0.0.1:8000` by default. A model on the same host can load the client configuration:
 
 ```bash
 set -a
@@ -68,7 +82,9 @@ set +a
 /data/user/envs/libero-pro2/bin/python your_model_client.py
 ```
 
-跨机器测试时，在配置前显式设置服务监听地址和客户端 URL，并用防火墙只允许指定模型机来源；不要把明文 HTTP 8000 暴露到公网：
+For evaluation across machines, explicitly set the service bind address and client URL before
+configuration. Restrict firewall access to the designated model host; do not expose plaintext
+HTTP on port 8000 to the public Internet:
 
 ```bash
 export LIBERO_REMOTE_HOST=0.0.0.0
@@ -77,7 +93,8 @@ export LIBERO_REMOTE_PUBLIC_URL=http://LIBERO_SERVER_LAN_IP:8000
 bash configure.sh /data/user/envs/libero-pro2
 ```
 
-多个账户并发测试时，在首次配置前设置总容量，然后为每个账户生成独立客户端文件。账户变更要求服务处于停止状态：
+For concurrent accounts, set total capacity before initial configuration, then generate a separate
+client file for each account. Stop the service before changing accounts:
 
 ```bash
 export LIBERO_REMOTE_MAX_SESSIONS=2
@@ -86,18 +103,30 @@ bash add_account.sh team-b
 bash start.sh
 ```
 
-`client.env` 与 `client-team-b.env` 必须分别交给对应用户，不能共享。服务内部仍按账户隔离 session、run、lease 和 result；单账户默认最多一个活动会话。
+Give `client.env` and `client-team-b.env` only to their respective users; do not share them.
+The service isolates sessions, runs, leases, and results by account, with one active session per
+account by default.
 
-## 模型接入
+## Model integration
 
-服务端只提供环境 reset/step/result 接口，不加载模型权重。客户端可以实现自己的 `AgentAdapter`，也可以直接使用 `RemoteLiberoEnv`；xVLA、Pi0 或其他模型都不被服务固定。模型端应固定自己的推理随机源、processor 版本和动作序列，才能复现完整轨迹。
+The server provides environment reset/step/result interfaces without loading model weights.
+Clients can implement an `AgentAdapter` or use `RemoteLiberoEnv` directly; the service is not tied
+to xVLA, Pi0, or any other model. Fix inference randomness, processor versions, and action sequences
+on the model side to reproduce full trajectories.
 
-## 复测口径
+## Reproducibility
 
-`smoke_test.py` 使用已发布的 `libero_goal/task 9/BASE/init state 0/seed 142`，执行一次零动作，只验证服务链路，不代表模型任务成功。要得到逐字节一致的环境初态，复测必须保持相同 suite、task、variant、init state、seed、相机尺寸、控制模式和扰动计划；要得到相同完整轨迹，还必须保持模型、processor、模型 seed 和动作序列一致。失败重测应复用同一 episode spec，而不是重新随机选择任务或 seed。
+`smoke_test.py` uses the published `libero_goal/task 9/BASE/init state 0/seed 142` and sends one zero
+action. It checks the service connection, not policy success. Byte-identical initial environment
+states require the same suite, task, variant, initial state, seed, camera dimensions, control mode,
+and perturbation plan. Full trajectory reproduction also requires the same model, processor,
+model seed, and action sequence. Retries must reuse the episode spec rather than randomly choosing
+another task or seed.
 
-## 运行文件
+## Runtime files
 
-`runtime/` 保存 scheduler 数据库和 PID 元数据，`logs/` 保存服务日志。不要删除正在运行服务的数据库或 PID 文件；正常停止请使用 `bash stop.sh`。如需更换 key，先停止服务、备份并删除 `server.env`/`client.env`，再重新执行 `configure.sh`。
+`runtime/` stores the scheduler database and PID metadata; `logs/` stores service logs. Do not delete
+database or PID files while the service runs. Use `bash stop.sh` for a normal shutdown. To rotate
+keys, stop the service, back up and remove `server.env`/`client.env`, then rerun `configure.sh`.
 
-详细 EGL、MuJoCo 和宿主驱动检查见 [`EGL_HEADLESS.md`](EGL_HEADLESS.md)。
+See [`EGL_HEADLESS.md`](EGL_HEADLESS.md) for detailed EGL, MuJoCo, and host-driver checks.

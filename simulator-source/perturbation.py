@@ -10,12 +10,12 @@ import subprocess
 
 
 # -----------------------------
-# 你已有的类：BDDLParser / 5个扰动器
-# （保持实现不变，直接复用你上面的代码）
+# BDDLParser and five perturbator classes
+# Reuse the existing implementations.
 # -----------------------------
 
 class BDDLParser:
-    """解析BDDL文件并提取相关信息"""
+    """Parse a BDDL file and extract relevant information."""
 
     def __init__(self, file_content: str):
         self.file_content = file_content
@@ -23,7 +23,7 @@ class BDDLParser:
         self.initial_states = self._parse_initial_states()
 
     def _parse_obj_of_interest(self) -> List[str]:
-        """解析感兴趣的物体"""
+        """Parse objects of interest."""
         obj_pattern = r'\(:obj_of_interest(.*?)\)'
         obj_match = re.search(obj_pattern, self.file_content, re.DOTALL)
         if not obj_match:
@@ -34,7 +34,7 @@ class BDDLParser:
 
     def _parse_initial_states(self) -> Dict[str, str]:
         """
-        解析 bddl (:init ...) 部分，返回 initial_states[obj] = region
+        Parse the BDDL (:init ...) block and return initial_states[obj] = region.
         """
         initial_states = {}
         init_block_match = re.search(r"\(:init(.*?)(?=\)\s*\(:goal|\)\s*$)", self.file_content, re.S)
@@ -48,7 +48,7 @@ class BDDLParser:
 
 
 class SwapPerturbator:
-    """根据配置文件进行交换扰动"""
+    """Apply object-swap perturbations from a configuration file."""
 
     def __init__(self, parser: BDDLParser, config_path: str):
         self.parser = parser
@@ -59,12 +59,12 @@ class SwapPerturbator:
         content = self.parser.file_content
         objs_interest = list(self.parser.objects_of_interest or [])
         if not objs_interest:
-            print("没有找到感兴趣物体")
+            print("No objects of interest found")
             return content
 
         task_cfg = self.config.get(task_suite_name, {}).get(task_name, None)
         if task_cfg is None:
-            print(f"任务 {task_name} 没有配置 allowed_swaps")
+            print(f"Task {task_name} has no allowed_swaps configuration")
             return content
 
         init_states = dict(self.parser.initial_states)
@@ -95,7 +95,7 @@ class SwapPerturbator:
                 if x != obj and x in init_states and x not in used
             ]
             if not cand_pool:
-                print(f"[跳过] 感兴趣物体 {obj} 没有可用候选（可能未在 init 中或已被占用）")
+                print(f"[Skip] Object of interest {obj} has no available candidates (absent from init or already occupied)")
                 continue
 
             swap_obj = random.choice(cand_pool)
@@ -103,7 +103,7 @@ class SwapPerturbator:
             reg_a = init_states.get(obj)
             reg_b = init_states.get(swap_obj)
             if not reg_a or not reg_b:
-                print(f"[跳过] {obj} 或 {swap_obj} 不在 init 中，无法交换")
+                print(f"[Skip] {obj} or {swap_obj} is absent from init; cannot swap")
                 continue
 
             pat_a = rf"\(On\s+{re.escape(obj)}\s+{re.escape(reg_a)}\s*\)"
@@ -117,19 +117,19 @@ class SwapPerturbator:
                 used.add(obj)
                 used.add(swap_obj)
                 pairs.append((obj, swap_obj))
-                print(f"任务 {task_name}: 已将 {obj} 与 {swap_obj} 交换位置")
+                print(f"Task {task_name}: swapped positions of {obj} and {swap_obj}")
             else:
-                print(f"[警告] {obj} 或 {swap_obj} 的 On 语句未匹配到，可能 BDDL 格式与正则不一致")
+                print(f"[Warning] No matching On statement for {obj} or {swap_obj}; the BDDL format may not match the regex")
 
         if not pairs:
-            print("没有形成任何交换对，未修改文件")
+            print("No swap pairs formed; file unchanged")
 
         return content
 
 
 class ObjectReplacePerturbator:
     """
-    根据 ood_object.yaml 进行“物体替换扰动”
+    Apply object-replacement perturbations using ood_object.yaml.
     """
 
     def __init__(self, parser: BDDLParser, config_path: str):
@@ -149,19 +149,19 @@ class ObjectReplacePerturbator:
         task_cfg: Dict[str, List[str]] = suite_cfg.get(task_name, {})
 
         if not task_cfg:
-            print(f"[物体替换] 任务 {task_name} 在配置中没有条目，跳过。")
+            print(f"[Object replacement] Task {task_name} has no configuration entry; skipping.")
             return self.parser.file_content
 
         mapping: Dict[str, str] = {}
         for obj_interest, candidates in task_cfg.items():
             if not candidates:
-                print(f"[物体替换] {obj_interest} 没有可替换候选，跳过。")
+                print(f"[Object replacement] No replacement candidates for {obj_interest}; skipping.")
                 continue
             chosen = random.choice(candidates)
             mapping[obj_interest] = chosen
 
         if not mapping:
-            print("[物体替换] 没有形成任何替换映射，跳过。")
+            print("[Object replacement] No replacement mapping formed; skipping.")
             return self.parser.file_content
 
         content = self.parser.file_content
@@ -181,14 +181,14 @@ class ObjectReplacePerturbator:
         new_content = prefix + language_block + suffix
 
         for k, v in mapping.items():
-            print(f"[物体替换] {task_name}: {k} -> {v}")
+            print(f"[Object replacement] {task_name}: {k} -> {v}")
 
         return new_content
 
 
 class LanguagePerturbator:
     """
-    从 ood_language.yaml 读取候选指令文本，随机选择一条，替换 (:language ...)
+    Read candidate instructions from ood_language.yaml, select one randomly, and replace (:language ...).
     """
 
     def __init__(self, parser: BDDLParser, config_path: str):
@@ -211,26 +211,26 @@ class LanguagePerturbator:
 
         candidates = (self.config.get(task_suite_name, {}) or {}).get(task_name, [])
         if not candidates:
-            print(f"[language扰动] 任务 {task_name} 在配置中没有候选，跳过。")
+            print(f"[Language perturbation] Task {task_name} has no configured candidates; skipping.")
             return self.parser.file_content
 
         new_lang = random.choice(candidates)
 
         block = self._find_language_block(self.parser.file_content)
         if not block:
-            print("[language扰动] 未找到 (:language ...) 段，跳过。")
+            print("[Language perturbation] No (:language ...) block found; skipping.")
             return self.parser.file_content
 
         s, e, old_inner = block
         new_content = self.parser.file_content[:s] + new_lang + self.parser.file_content[e:]
 
-        print(f"[language扰动] {task_name}: '{old_inner}' -> '{new_lang}'")
+        print(f"[Language perturbation] {task_name}: '{old_inner}' -> '{new_lang}'")
         return new_content
 
 
 class TaskPerturbator:
     """
-    从 ood_task.yaml 读取候选任务，将 (:language ...) 与 (:goal ...) 同时替换，并替换 (:obj_of_interest ...)
+    Read task candidates from ood_task.yaml and replace (:language ...), (:goal ...), and (:obj_of_interest ...).
     """
 
     def __init__(self, parser: BDDLParser, config_path: str):
@@ -263,7 +263,7 @@ class TaskPerturbator:
     def _replace_language(self, text: str, new_lang: str) -> str:
         span = self._find_language_inner_span(text)
         if not span:
-            print("[TaskPerturbator] 未找到 (:language ...) 段，跳过 language 替换。")
+            print("[TaskPerturbator] No (:language ...) block found; skipping language replacement.")
             return text
         s, e, old = span
         print(f"[TaskPerturbator] language: '{old}' -> '{new_lang}'")
@@ -272,24 +272,24 @@ class TaskPerturbator:
     def _replace_goal(self, text: str, new_goal_expr: str) -> str:
         span = self._find_outer_block_span(text, "(:goal")
         if not span:
-            print("[TaskPerturbator] 未找到 (:goal ...) 段，跳过 goal 替换。")
+            print("[TaskPerturbator] No (:goal ...) block found; skipping goal replacement.")
             return text
         start, end = span
         replacement = "(:goal\n  " + new_goal_expr + "\n)"
-        print(f"[TaskPerturbator] goal: 替换为 {new_goal_expr}")
+        print(f"[TaskPerturbator] goal: replaced with {new_goal_expr}")
         return text[:start] + replacement + text[end:]
 
     def _replace_obj_of_interest(self, text: str, new_objs: list) -> str:
         span = self._find_outer_block_span(text, "(:obj_of_interest")
         if not span:
-            print("[TaskPerturbator] 未找到 (:obj_of_interest ...) 段，跳过替换。")
+            print("[TaskPerturbator] No (:obj_of_interest ...) block found; skipping replacement.")
             return text
         start, end = span
         replacement = "(:obj_of_interest\n"
         for obj in new_objs:
             replacement += f"  {obj}\n"
         replacement += ")"
-        print(f"[TaskPerturbator] obj_of_interest: 替换为 {new_objs}")
+        print(f"[TaskPerturbator] obj_of_interest: replaced with {new_objs}")
         return text[:start] + replacement + text[end:]
 
     def perturb(self, task_suite_name: str, task_name: str, seed: Optional[int] = None) -> str:
@@ -299,7 +299,7 @@ class TaskPerturbator:
         suite_cfg = self.config.get(task_suite_name, {})
         task_cfg = suite_cfg.get(task_name, {})
         if not task_cfg:
-            print(f"[TaskPerturbator] 任务 {task_name} 在配置中没有候选，跳过。")
+            print(f"[TaskPerturbator] Task {task_name} has no configured candidates; skipping.")
             return self.parser.file_content
 
         language_options = list(task_cfg.keys())
@@ -309,7 +309,7 @@ class TaskPerturbator:
         chosen_objs = chosen_cfg.get("obj_of_interest", [])
 
         if not chosen_goal:
-            print(f"[TaskPerturbator] 任务 {task_name} 的 language '{chosen_lang}' 没有 goal，跳过。")
+            print(f"[TaskPerturbator] No goal for task {task_name} with language '{chosen_lang}'; skipping.")
             return self.parser.file_content
 
         new_content = self.parser.file_content
@@ -321,7 +321,7 @@ class TaskPerturbator:
 
 class EnvironmentReplacePerturbator:
     """
-    环境替换扰动（全局直接替换）+ 修改 problem 名称场景标记 + 修正(:fixtures)右侧类型
+    Replace the environment globally, update the scene marker in the problem name, and correct (:fixtures) type names.
     """
 
     def __init__(self, parser: BDDLParser, config_path: str):
@@ -395,15 +395,15 @@ class EnvironmentReplacePerturbator:
 
         current_env = self._extract_current_env(task_suite_name, task_name)
         if not current_env:
-            print(f"[环境替换] 任务 {task_name} 未在配置中找到环境（或为空列表），跳过。")
+            print(f"[Environment replacement] Task {task_name} has no configured environment (or an empty list); skipping.")
             return self.parser.file_content
         if current_env not in self.ALLOWED_ENVS:
-            print(f"[环境替换] 配置环境 '{current_env}' 不在允许集合 {self.ALLOWED_ENVS} 中，跳过。")
+            print(f"[Environment replacement] Configured environment '{current_env}' is not in {self.ALLOWED_ENVS}; skipping.")
             return self.parser.file_content
 
         candidates = list(self.ALLOWED_ENVS - {current_env})
         if not candidates:
-            print("[环境替换] 无候选可替换环境，跳过。")
+            print("[Environment replacement] No candidate environments available; skipping.")
             return self.parser.file_content
 
         # new_env = random.choice(candidates)
@@ -414,12 +414,12 @@ class EnvironmentReplacePerturbator:
         if new_fix_type:
             new_content = self._rewrite_fixtures_type(new_content, new_env, new_fix_type)
 
-        print(f"[环境替换] {task_name}: {current_env} -> {new_env}")
+        print(f"[Environment replacement] {task_name}: {current_env} -> {new_env}")
         return new_content
 
 
 # -----------------------------------------
-# 新增：组合扰动器（按布尔开关混合执行）
+# Combined perturbator controlled by Boolean flags
 # -----------------------------------------
 
 @dataclass
@@ -433,9 +433,9 @@ class PerturbFlags:
 
 class BDDLCombinedPerturbator:
     """
-    组合扰动器：
-    - 通过 PerturbFlags 指定哪些扰动启用
-    - 通过 configs 指定每种扰动的 YAML 路径
+    Combined perturbator:
+    - Use PerturbFlags to select enabled perturbations.
+    - Use configs to specify the YAML path for each perturbation.
       configs = {
         "environment": "./ood_environment.yaml",
         "swap": "./ood_spatial_relation.yaml",
@@ -443,11 +443,11 @@ class BDDLCombinedPerturbator:
         "language": "./ood_language.yaml",
         "task": "./ood_task.yaml",
       }
-    - 默认执行顺序：
+    - Default execution order:
         environment -> object -> language -> task
-      但规则：
-        1) 若 use_swap=True，则 SwapPerturbator 必须最先执行
-        2) 若 use_task=True，其它扰动必须全为 False
+      Rules:
+        1) If use_swap=True, SwapPerturbator must run first.
+        2) If use_task=True, all other perturbations must be False.
     """
 
     def __init__(self, configs: Dict[str, str]):
@@ -462,7 +462,7 @@ class BDDLCombinedPerturbator:
                            call_kwargs: Dict[str, Any],
                            task_suite_name: str, task_name: str) -> str:
         """
-        用当前 content 构造 parser 和 perturbator，执行一次扰动；返回新的 content。
+        Build a parser and perturbator from the current content, apply one perturbation, and return the new content.
         """
         parser = BDDLParser(content)
         perturbator = perturbator_cls(parser, cfg_path)
@@ -477,13 +477,13 @@ class BDDLCombinedPerturbator:
                         seed: Optional[int] = None) -> str:
         current = content
 
-        # 规则检查
-        # use_task 模式必须互斥
+        # Validate rules.
+        # Task mode must be mutually exclusive.
         if flags.use_task:
             if flags.use_environment or flags.use_swap or flags.use_object or flags.use_language:
-                raise ValueError("禁止在 use_task=True 时开启其它扰动！")
+                raise ValueError("Other perturbations cannot be enabled when use_task=True.")
 
-        # 1) 若启用 swap，则必须最先执行
+        # 1) If swap is enabled, it must run first.
         if flags.use_swap:
             cfg = self.configs.get("swap")
             if cfg and os.path.exists(cfg):
@@ -491,9 +491,9 @@ class BDDLCombinedPerturbator:
                 perturbator = SwapPerturbator(parser, cfg)
                 current = perturbator.perturb(task_suite_name=task_suite_name, task_name=task_name)
             else:
-                print("[组合扰动] 缺少 swap 配置或路径不存在，跳过交换扰动。")
+                print("[Combined perturbation] Swap configuration missing or path absent; skipping swap.")
 
-        # 2) 其它扰动（按顺序执行）
+        # 2) Apply other perturbations in order.
         if flags.use_environment:
             cfg = self.configs.get("environment")
             if cfg and os.path.exists(cfg):
@@ -502,7 +502,7 @@ class BDDLCombinedPerturbator:
                     {"seed": seed}, task_suite_name, task_name
                 )
             else:
-                print("[组合扰动] 缺少 environment 配置或路径不存在，跳过环境替换。")
+                print("[Combined perturbation] Environment configuration missing or path absent; skipping environment replacement.")
 
         if flags.use_object:
             cfg = self.configs.get("object")
@@ -512,7 +512,7 @@ class BDDLCombinedPerturbator:
                     {"seed": seed}, task_suite_name, task_name
                 )
             else:
-                print("[组合扰动] 缺少 object 配置或路径不存在，跳过物体替换。")
+                print("[Combined perturbation] Object configuration missing or path absent; skipping object replacement.")
 
         if flags.use_language:
             cfg = self.configs.get("language")
@@ -522,9 +522,9 @@ class BDDLCombinedPerturbator:
                     {"seed": seed}, task_suite_name, task_name
                 )
             else:
-                print("[组合扰动] 缺少 language 配置或路径不存在，跳过语言替换。")
+                print("[Combined perturbation] Language configuration missing or path absent; skipping language replacement.")
 
-        # 3) 任务扰动（若启用，且保证其它都禁用）
+        # 3) Apply task perturbation if enabled, with all others disabled.
         if flags.use_task:
             cfg = self.configs.get("task")
             if cfg and os.path.exists(cfg):
@@ -533,7 +533,7 @@ class BDDLCombinedPerturbator:
                     {"seed": seed}, task_suite_name, task_name
                 )
             else:
-                print("[组合扰动] 缺少 task 配置或路径不存在，跳过任务替换。")
+                print("[Combined perturbation] Task configuration missing or path absent; skipping task replacement.")
 
         return current
 
@@ -541,12 +541,12 @@ class BDDLCombinedPerturbator:
 class EvalEnvCreator:
     def __init__(self, input_dir: str, base_output_dir: str = None, script_path: str = "generate_init_states.py"):
         """
-        初始化评估环境创建器
+        Initialize the evaluation environment creator.
 
-        :param input_dir: 输入的bddl文件目录，例如：
+        :param input_dir: Directory containing input BDDL files, for example:
                           /LIBERO/libero/libero/bddl_files/libero_goal_temp
-        :param base_output_dir: 输出目录的基础路径（可选）。
-                                如果不传，将自动替换 input_dir 中的 "bddl_files" 为 "init_files"
+        :param base_output_dir: Base output directory (optional).
+                                If omitted, replace "bddl_files" with "init_files" in input_dir.
         """
         self.input_dir = input_dir.rstrip("/")
         self.folder_name = os.path.basename(self.input_dir)
@@ -555,12 +555,12 @@ class EvalEnvCreator:
         if base_output_dir:
             self.output_dir = os.path.join(base_output_dir, self.folder_name)
         else:
-            # 自动替换 bddl_files → init_files
+            # Automatically replace bddl_files with init_files.
             self.output_dir = self.input_dir.replace("bddl_files", "init_files")
 
     def create_env(self):
         """
-        创建评估环境，执行 generate_init_states.py
+        Create the evaluation environment by running generate_init_states.py.
         """
         os.makedirs(self.output_dir, exist_ok=True)
 
@@ -570,13 +570,13 @@ class EvalEnvCreator:
             "--output_dir", self.output_dir
         ]
 
-        print(f"[INFO] 运行命令: {' '.join(cmd)}")
+        print(f"[INFO] Running command: {' '.join(cmd)}")
         subprocess.run(cmd, check=True)
 
 
 
 # -----------------------------------------
-# 便捷方法：处理单个 .bddl 文件（读入 -> 混合扰动 -> 写出）
+# Convenience helper for a .bddl file: read -> combined perturbation -> write
 # -----------------------------------------
 
 def process_bddl_file_mixed(input_dir: str,
@@ -585,14 +585,14 @@ def process_bddl_file_mixed(input_dir: str,
                             configs: Dict[str, str],
                             seed: Optional[int] = None) -> None:
     """
-        对指定目录下的 BDDL 文件进行扰动，并保存到临时目录。
+        Perturb BDDL files in the specified directory and save them to a temporary directory.
 
         Args:
-            input_dir (str): 输入 BDDL 文件所在的目录。
-            configs (dict): 扰动器配置。
-            task_suite_name (str): 任务集名称。
-            flags (dict): 扰动参数标志。
-            seed (int): 随机种子。
+            input_dir (str): Directory containing input BDDL files.
+            configs (dict): Perturbator configuration.
+            task_suite_name (str): Task suite name.
+            flags (dict): Perturbation flags.
+            seed (int): Random seed.
         """
     input_path = Path(input_dir)
     output_dir = input_path.parent / f"{input_path.name}_temp"
@@ -602,7 +602,7 @@ def process_bddl_file_mixed(input_dir: str,
         with file_path.open("r", encoding="utf-8") as f:
             content = f.read()
 
-        task_name = file_path.stem  # 去掉后缀的文件名
+        task_name = file_path.stem  # Filename without its suffix.
         pipeline = BDDLCombinedPerturbator(configs=configs)
         new_content = pipeline.perturb_content(
             content=content,
@@ -616,29 +616,29 @@ def process_bddl_file_mixed(input_dir: str,
         with output_path.open("w", encoding="utf-8") as f:
             f.write(new_content)
 
-    print(f"[组合扰动] 处理完成，输出：{output_dir}")
+    print(f"[Combined perturbation] Processing completed; output: {output_dir}")
     return str(output_dir)
 
 
 # -----------------------------------------
-# 示例 main：与原始 main 等价，但改为混合扰动方式
+# Example main: equivalent to the original main, using combined perturbations
 # -----------------------------------------
 
 def create_env(
     configs: dict = None,
 ):
     """
-    创建评估环境
+    Create the evaluation environment.
 
-    :param input_path: 输入的 bddl 文件路径
-    :param script_path: generate_init_states.py 的路径
-    :param init_output_dir: 最终 init 文件输出路径
-    :param task_suite_name: 任务套件名 (默认: libero_goal)
-    :param seed: 随机种子 (默认: 28, None 则完全随机)
-    :param flags: 各扰动开关 (默认启用 environment/swap/object/language，关闭 task)
-    :param configs: 各扰动配置文件路径
+    :param input_path: Input BDDL file path.
+    :param script_path: Path to generate_init_states.py.
+    :param init_output_dir: Final output path for initial-state files.
+    :param task_suite_name: Task suite name (default: libero_goal).
+    :param seed: Random seed (default: 28; None leaves randomness unseeded).
+    :param flags: Perturbation switches (environment/swap/object/language enabled and task disabled by default).
+    :param configs: Paths to perturbation configuration files.
     """
-    # 默认扰动 flags
+    # Default perturbation flags.
     flags = PerturbFlags(
         use_environment=configs.get("use_environment", False),
         use_swap=configs.get("use_swap", False),
@@ -649,7 +649,7 @@ def create_env(
 
     ood_task_configs = configs.get("ood_task_configs", {})
 
-    # 生成临时的 bddl 输出路径
+    # Generate a temporary BDDL output path.
     temp_output_dir = process_bddl_file_mixed(
         input_dir=configs.get("bddl_files_path", ""),
         task_suite_name=configs.get("task_suite_name", ""),
@@ -658,7 +658,7 @@ def create_env(
         seed=configs.get("seed", int),
     )
 
-    # 调用 EvalEnvCreator
+    # Call EvalEnvCreator.
     creator = EvalEnvCreator(
         input_dir=temp_output_dir,
         script_path=configs.get("script_path", ""),

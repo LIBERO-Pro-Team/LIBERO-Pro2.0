@@ -1,12 +1,13 @@
-# 分组式多 seed 评测
+# Grouped Evaluation Across Multiple Seeds
 
-## Train/test 划分
+## Train/test split
 
-`assets/benchmark_split_v1.json` 按 `(suite, base_task_id)` 定义版本化 train/test 边界。
-一个基础任务下的 `BASE`、`S01-S22`、`D01-D18`、`D20` 和 `D21` 全部跟随该任务，禁止跨 split。
-当前 main 的训练集含 1349 项、测试集含 339 项（分别含 32/8 项 BASE）。
-正式评估使用 `--split test`，训练侧 rollout 使用 `--split train`；后续仍可叠加
-`--suite`、`--group` 和 `--case` 精确选择套件与扰动。
+`assets/benchmark_split_v1.json` defines the versioned train/test boundary by `(suite, base_task_id)`.
+All `BASE`, `S01-S22`, `D01-D18`, `D20`, and `D21` instances of a base task follow that task's split;
+they must not cross split boundaries. The current main branch contains 1349 training instances and
+339 test instances, including 32/8 BASE instances, respectively.
+Use `--split test` for evaluation and `--split train` for training rollouts. Combine these with
+`--suite`, `--group`, and `--case` to select suites and perturbations precisely.
 
 ```bash
 python scripts/run_grouped_eval.py plan \
@@ -16,27 +17,30 @@ python scripts/run_grouped_eval.py plan \
   --output-dir results/test-plan
 ```
 
-生成的 `plan.json` 会记录 split 名称、版本、SHA-256、suite/task 分配和具体扰动 episode，
-用于审计不同模型是否使用同一评测边界。
+The generated `plan.json` records the split name, version, SHA-256, suite/task allocation, and individual
+perturbation episodes so that evaluation boundaries can be compared across models.
 
-## 目标与边界
+## Scope
 
-分组评测在现有模型无关 `RunScheduler` 上增加任务选择与计划展开能力，不修改服务协议、模型 adapter
-契约或 LIBERO 任务。服务端 `/v1/tasks` 是有效组合的唯一来源，因此不会重新构造不存在的组合。
+Grouped evaluation adds task selection and plan expansion to the existing model-independent
+`RunScheduler`. It does not change the service protocol, model adapter contract, or LIBERO tasks.
+The server's `/v1/tasks` catalog is the sole source of valid combinations; nonexistent combinations
+are never reconstructed.
 
-支持的评测组：
+Supported evaluation groups:
 
-- `base`：所有已发布 BASE 任务。
-- `static`：所有已发布静态扰动。
-- `dynamic`：所有已发布动态扰动。
-- `all`：所有已发布组合。
+- `base`: all published BASE tasks.
+- `static`: all published static perturbations.
+- `dynamic`: all published dynamic perturbations.
+- `all`: all published combinations.
 
-可以继续用 `--suite` 和 `--case` 取交集。例如 `--group dynamic --suite libero_goal` 只选择
-`libero_goal` 中实际发布的动态组合；`--case D07` 选择所有发布 D07 的 suite。
+Use `--suite` and `--case` to intersect selections. For example, `--group dynamic --suite libero_goal`
+selects only published dynamic combinations in `libero_goal`; `--case D07` selects suites with a
+published D07 instance.
 
-## 生成和提交计划
+## Generate and submit a plan
 
-先预览计划，不提交环境任务：
+Preview the plan without submitting environment jobs:
 
 ```bash
 python scripts/run_grouped_eval.py \
@@ -50,7 +54,7 @@ python scripts/run_grouped_eval.py \
   --output-dir results/goal_dynamic_plan
 ```
 
-确认 rollout 数量后提交：
+After checking the rollout count, submit the plan:
 
 ```bash
 export LIBERO_REMOTE_API_KEY="ACCOUNT_API_KEY"
@@ -65,17 +69,17 @@ python scripts/run_grouped_eval.py \
   --output-dir results/goal_dynamic
 ```
 
-未传 `--max-steps` 时，每个 episode 使用 `/v1/tasks` 中该任务的 `max_steps`，因此一个
-跨 suite 计划可以同时包含 220、280、300 和 520 步的任务。显式传入该参数会统一覆盖
-计划内全部 episode，并在 `plan.json` 中标记来源为 `override`。
+Without `--max-steps`, each episode uses its task's `max_steps` from `/v1/tasks`, so a plan spanning
+suites can contain limits of 220, 280, 300, and 520 steps. Passing this option explicitly overrides
+all episodes in the plan and records the source as `override` in `plan.json`.
 
-也可用连续 seed 简写：
+Consecutive seeds can also be specified with:
 
 ```bash
 --seed 42 --num-seeds 5
 ```
 
-默认情况下，seed 与 init state 一一对应；一侧只有一个值时广播：
+By default, seeds and initial states are paired; a single value on either side is broadcast:
 
 ```text
 seed 42 -> init state 0
@@ -83,14 +87,15 @@ seed 43 -> init state 1
 seed 44 -> init state 2
 ```
 
-显式增加 `--matrix` 后才生成 seed 与 init state 的笛卡尔积。
+The Cartesian product of seeds and initial states is generated only when `--matrix` is explicit.
 
-`submit` 只把整个计划提交给模型无关 scheduler。已经在线的通用 Agent runner 可以领取任务；增加
-`--wait` 时，提交命令会等待外部 runner 完成并自动导出结果。模型加载方式不属于该命令。
+`submit` only submits the full plan to the model-independent scheduler. An online generic Agent
+runner can claim the jobs. With `--wait`, the submission command waits for an external runner to
+finish and exports the results automatically. This command does not load the model.
 
-## 在现有 Agent runner 中一键执行
+## Run from an existing Agent runner
 
-已经构造 `AgentAdapter` 的用户代码可以直接复用同一计划：
+User code that already constructs an `AgentAdapter` can reuse the same plan:
 
 ```python
 from pathlib import Path
@@ -116,14 +121,15 @@ with RemoteRunClient(server_url, api_key=api_key) as client:
     )
 ```
 
-该函数只依赖仓库现有 `AgentAdapter`，不判断模型名称。
+This function depends only on the repository's existing `AgentAdapter` contract, not on model names.
 
-## 断点续跑与导出
+## Resume and export
 
-Run 和 episode 状态由服务端 SQLite 持久化。进程中断后，使用原计划和已有 `run_id` 再次调用
-`run_grouped_benchmark(..., run_id=...)`，会先逐项校验 episode spec，然后只领取剩余任务。
+The server persists run and episode state in SQLite. After an interruption, call
+`run_grouped_benchmark(..., run_id=...)` with the original plan and existing `run_id`.
+It validates each episode spec before claiming only the remaining jobs.
 
-也可以只导出已有 run：
+An existing run can also be exported directly:
 
 ```bash
 python scripts/run_grouped_eval.py \
@@ -133,17 +139,17 @@ python scripts/run_grouped_eval.py \
   --output-dir results/recovered_run
 ```
 
-输出目录包含：
+The output directory contains:
 
 ```text
-plan.json          任务选择、manifest 身份和完整 episode 计划
-submission.json    服务端 run ID
-run.json           当前 run 状态
-episodes.jsonl     逐 episode 权威结果
-episodes.csv       便于表格分析的扁平结果
-failures.jsonl     基础设施失败项
-summary.json       总体以及 suite/variant/group/seed 分组汇总
+plan.json          Task selection, manifest identity, and full episode plan
+submission.json    Server run ID
+run.json           Current run state
+episodes.jsonl     Authoritative per-episode results
+episodes.csv       Flattened results for spreadsheet analysis
+failures.jsonl     Infrastructure failures
+summary.json       Overall and suite/variant/group/seed summaries
 ```
 
-成功率只以服务端标记为 `completed` 的策略 episode 为分母；基础设施 `failed` 单独统计，不会被当作
-模型正常失败混入成功率。
+Success rates use only policy episodes marked `completed` by the server as the denominator.
+Infrastructure episodes marked `failed` are counted separately and are not treated as normal policy failures.

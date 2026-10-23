@@ -82,7 +82,7 @@ def test_official_builds_use_the_pinned_local_simulator_runtime() -> None:
     assert "assets.zip" in readme
     assert "Run from the GitHub source" in readme
     assert "git lfs pull" in readme
-    assert "普通 Git clone 只包含服务代码和打包入口" not in readme
+    assert "A plain Git clone contains only service code and packaging entry points" not in readme
     simulator_source = ROOT / "simulator-source"
     assert (simulator_source / "libero/libero/envs/env_wrapper.py").is_file()
     assert (simulator_source / "libero/libero/envs/perturbation_config.py").is_file()
@@ -256,8 +256,8 @@ def test_customer_readme_documents_the_restricted_internal_http_mode() -> None:
 
     assert "LIBERO_REMOTE_BIND_ADDRESS=0.0.0.0" in readme
     assert "LIBERO_REMOTE_PUBLIC_URL=http://LIBERO_SERVER_LAN_IP:8000" in readme
-    assert "只允许模型服务器的内网源地址" in readme
-    assert "不要将 8000 端口直接暴露到公网" in readme
+    assert "allow only the model server's LAN source address" in readme
+    assert "Do not expose port 8000 directly to the public Internet" in readme
     assert "set -a && source client.env && set +a" in readme
 
 
